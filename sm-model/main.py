@@ -85,9 +85,9 @@ if __name__ == "__main__":
     
     # debugging arguments
     ap.add_argument('--debugSingleBatch', action="store_true", help="will stop program after training 1 input batch")
-    ap.add_argument('--no_ext_feats', action="store_true", help="will not include external features in the model")
     ap.add_argument('--num_conv_filters', help="the number of convolution channels (lesser is faster)", default=100, type=int)
-    
+    ap.add_argument('--no_ext_feats', action="store_true", help="will not include external features in the model")    
+    ap.add_argument('--no_loss_reg', help="no loss regularization", action="store_true")
 
     args = ap.parse_args()
 
@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
     torch.set_num_threads(args.num_threads)
     
-    trainer = Trainer(net, args.eta, args.mom)
+    trainer = Trainer(net, args.eta, args.mom, args.no_loss_reg)
 
     best_accuracy = 0.0
     best_model = 0

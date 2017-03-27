@@ -27,11 +27,12 @@ logger.addHandler(ch)
 
 class Trainer(object):
     
-    def __init__(self, model, eta, mom):
+    def __init__(self, model, eta, mom, no_loss_reg):
         self.reg = 1e-5
+        self.no_loss_reg = no_loss_reg
         self.model = model
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.SGD(self.model.parameters(), lr=eta, momentum=mom, weight_decay=self.reg)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=eta, momentum=mom, weight_decay=(0 if no_loss_reg else self.reg) ) 
 
 
     def regularize_loss(self, loss):       
@@ -60,8 +61,9 @@ class Trainer(object):
         logger.debug('loss after criterion {}'.format(loss))
 
         # NOTE: regularizing location 1
-        # loss = self.regularize_loss(loss)
-        # logger.debug('loss after regularizing {}'.format(loss))
+        # if not self.no_loss_reg:
+        #     loss = self.regularize_loss(loss)
+        #     logger.debug('loss after regularizing {}'.format(loss))
         
         loss.backward()
         
@@ -69,10 +71,10 @@ class Trainer(object):
         #logger.debug('params {}'.format([p for p in self.model.parameters()]))
         logger.debug('params grads {}'.format([p.grad for p in self.model.parameters()]))
        
-
         # NOTE: regularizing location 2. It would seem that location 1 is correct?
-        loss = self.regularize_loss(loss)
-        logger.debug('loss after regularizing {}'.format(loss))
+        if not self.no_loss_reg:
+            loss = self.regularize_loss(loss)
+            logger.debug('loss after regularizing {}'.format(loss))
 
         self.optimizer.step()
 
