@@ -20,7 +20,7 @@ $ make
 
 ``2.`` Get the Overlapping features for Q and A:
 ```
-$ python overlap_features.py TrecQA
+$ python overlap_features.py ../../data/TrecQA
 ```
 
 ``3.`` To run the S&M model on TrecQA, please follow the same parameter setting:

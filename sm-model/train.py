@@ -27,11 +27,11 @@ logger.addHandler(ch)
 
 class Trainer(object):
     
-    def __init__(self, model):
+    def __init__(self, model, eta, mom):
         self.reg = 1e-5
         self.model = model
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.SGD(self.model.parameters(), lr=0.001, weight_decay=self.reg)
+        self.optimizer = optim.SGD(self.model.parameters(), lr=eta, momentum=mom, weight_decay=self.reg)
 
 
     def regularize_loss(self, loss):       
@@ -150,7 +150,7 @@ class Trainer(object):
         return float(total_correct)/len(labels), y_pred
 
 
-    def train(self, dataset_folder, set_folder, batch_size, word_vectors_cache_file):
+    def train(self, dataset_folder, set_folder, batch_size, word_vectors_cache_file, debugSingleBatch):
         # read in training data
         questions, sentences, labels, vocab, maxlen_q, maxlen_s, ext_feats = \
                 utils.read_in_dataset(dataset_folder, set_folder)
@@ -186,7 +186,7 @@ class Trainer(object):
             # logger.debug('batch_loss {}, batch_correct {}'.format(batch_loss, batch_correct))
             train_loss += batch_loss
             train_correct += batch_correct
-            # break
+            if debugSingleBatch: break
 
         logger.info('train_correct {}'.format(train_correct))
         logger.info('train_loss {}'.format(train_loss))
