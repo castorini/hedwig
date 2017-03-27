@@ -76,8 +76,8 @@ if __name__ == "__main__":
     # training arguments
     ap.add_argument('--batch_size', type=int, default=1)
     ap.add_argument('--filter_width', type=int, default=5)    
-    ap.add_argument('--eta', help='Initial learning rate', default=0.01, type=float)
-    ap.add_argument('--mom', help='SGD Momentum', default=0.9, type=float)    
+    ap.add_argument('--eta', help='Initial learning rate', default=0.001, type=float)
+    ap.add_argument('--mom', help='SGD Momentum', default=0.0, type=float)    
     
     # epoch related arguments
     ap.add_argument('--epochs', type=int, default=25)
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     logger.info('Evaluating over test set...')
     model = QAModel.load(args.dataset_folder, args.model_fname)
 
-    evaluator = Trainer(model)
+    evaluator = Trainer(model, args.eta, args.mom, args.no_loss_reg)
     test_accuracy, test_scores = evaluator.test(args.dataset_folder, 'clean-test', args.batch_size, cache_file)
 
     logger.info('Test set accuracy = {:.4f}'.format(test_accuracy))
