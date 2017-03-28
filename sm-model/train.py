@@ -150,6 +150,8 @@ class Trainer(object):
 
 
     def train(self, dataset_folder, set_folder, batch_size, word_vectors_cache_file, debugSingleBatch):
+        train_start_time = time.time()
+
         # read in training data
         questions, sentences, labels, vocab, maxlen_q, maxlen_s, ext_feats = \
                 utils.read_in_dataset(dataset_folder, set_folder)
@@ -193,6 +195,7 @@ class Trainer(object):
         logger.info('train_loss = {:.4f}'.format(
             train_loss/num_batches
         ))
+        logger.info('training time = {:.3f} seconds'.format(time.time() - train_start_time))
         return train_correct/num_batches
         
 

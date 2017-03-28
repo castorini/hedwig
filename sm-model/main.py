@@ -126,7 +126,7 @@ if __name__ == "__main__":
         if args.debugSingleBatch: sys.exit(0)
         dev_accuracy, dev_scores = trainer.test(args.dataset_folder, 'clean-dev', args.batch_size, cache_file)
         dev_map, dev_mrr = compute_map_mrr(args.dataset_folder, 'clean-dev', dev_scores)
-        logger.info("MAP {}, MRR {}".format(dev_map, dev_mrr))
+        logger.info("MAP {}\nMRR {}".format(dev_map, dev_mrr))
 
         if np.fabs(dev_map - best_map) > 1e-3:            
             best_model = i
@@ -148,6 +148,6 @@ if __name__ == "__main__":
     logger.info('Test set accuracy = {:.4f}'.format(test_accuracy))
 
     map, mrr = compute_map_mrr(args.dataset_folder, 'clean-test', test_scores)
-    logger.info("MAP {}, MRR {}".format(map, mrr))
+    logger.info("MAP {}\nMRR {}".format(map, mrr))
 
     
