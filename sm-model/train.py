@@ -98,7 +98,7 @@ class Trainer(object):
 
 
     def test(self, dataset_folder, set_folder, batch_size, word_vectors_cache_file):
-        logger.info('Predictions on {} -----'.format(set_folder))
+        logger.info('----- Predictions on {} '.format(set_folder))
                 
         questions, sentences, labels, vocab, maxlen_q, maxlen_s, ext_feats = \
                 utils.read_in_dataset(dataset_folder, set_folder)
@@ -135,15 +135,16 @@ class Trainer(object):
             loss = self.criterion(pred, y)        
             pred = torch.exp(pred)
             total_loss += loss
-            total_correct += self.pred_equals_y(pred, y)
+            # total_correct += self.pred_equals_y(pred, y)
 
             y_pred[ypc] = pred.data.squeeze()[1] # we want to score for relevance, NOT the predicted class
             ypc += 1         
                
-        logger.info('{}_correct {}'.format(set_folder, total_correct))
+        # logger.info('{}_correct {}'.format(set_folder, total_correct))
         logger.info('{}_loss {}'.format(set_folder, total_loss.data[0]))
         logger.info('{} total {}'.format(set_folder, len(labels)))
-        logger.info('{}_loss = {:.4f}, acc = {:.4f}'.format( set_folder, total_loss.data[0]/len(labels), float(total_correct)/len(labels) ))
+        # logger.info('{}_loss = {:.4f}, acc = {:.4f}'.format( set_folder, total_loss.data[0]/len(labels), float(total_correct)/len(labels) ))
+        logger.info('{}_loss = {:.4f}'.format( set_folder, total_loss.data[0]/len(labels) ))
 
         return float(total_correct)/len(labels), y_pred
 
@@ -183,14 +184,14 @@ class Trainer(object):
             
             # logger.debug('batch_loss {}, batch_correct {}'.format(batch_loss, batch_correct))
             train_loss += batch_loss
-            train_correct += batch_correct
+            # train_correct += batch_correct
             if debugSingleBatch: break
 
-        logger.info('train_correct {}'.format(train_correct))
+        # logger.info('train_correct {}'.format(train_correct))
         logger.info('train_loss {}'.format(train_loss))
         logger.info('total training batches = {}'.format(num_batches))
-        logger.info('train_loss = {:.4f}, acc = {:.4f}'.format(
-            train_loss/num_batches, train_correct/num_batches
+        logger.info('train_loss = {:.4f}'.format(
+            train_loss/num_batches
         ))
         return train_correct/num_batches
         

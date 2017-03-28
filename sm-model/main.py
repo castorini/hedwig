@@ -7,6 +7,7 @@ import numpy as np
 
 import pandas as pd
 import subprocess
+import shlex
 
 import torch
 import torch.optim as optim
@@ -59,7 +60,15 @@ def compute_map_mrr(dataset_folder, set_folder, test_scores):
     df_gold['rel'] = y_test
     df_gold.to_csv(os.path.join(args.dataset_folder, 'gold.txt'), header=False, index=False, sep=' ')
 
-    subprocess.call("/bin/sh run_eval.sh '{}'".format(args.dataset_folder), shell=True)
+    # subprocess.call("/bin/sh run_eval.sh '{}'".format(args.dataset_folder), shell=True)
+    pargs = shlex.split("/bin/sh run_eval.sh '{}'".format(args.dataset_folder))
+    p = subprocess.Popen(pargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    pout, perr = p.communicate()    
+    lines = pout.split('\n')
+    map = float(lines[0].strip().split()[-1])
+    mrr = float(lines[1].strip().split()[-1])
+    return map, mrr
+
 
 
 if __name__ == "__main__":
@@ -81,7 +90,7 @@ if __name__ == "__main__":
     
     # epoch related arguments
     ap.add_argument('--epochs', type=int, default=25)
-    ap.add_argument('--patience', type=int, default=5, help="if there is no appreciable change in model after <patience> epochs, then stop")
+    ap.add_argument('--patience', type=int, default=3, help="if there is no appreciable change in model after <patience> epochs, then stop")
     
     # debugging arguments
     ap.add_argument('--debugSingleBatch', action="store_true", help="will stop program after training 1 input batch")
@@ -108,38 +117,37 @@ if __name__ == "__main__":
     
     trainer = Trainer(net, args.eta, args.mom, args.no_loss_reg)
 
-    best_accuracy = 0.0
+    best_map = 0.0
     best_model = 0
     
     for i in range(args.epochs):
-        logger.info('Training epoch {} -------------'.format(i+1))        
+        logger.info('------------- Training epoch {} --------------'.format(i+1))        
         train_accuracy = trainer.train(args.dataset_folder, 'train', args.batch_size, cache_file, args.debugSingleBatch)        
         if args.debugSingleBatch: sys.exit(0)
         dev_accuracy, dev_scores = trainer.test(args.dataset_folder, 'clean-dev', args.batch_size, cache_file)
-        if dev_accuracy > best_accuracy:            
-            best_model = i
-            best_accuracy = dev_accuracy
-            QAModel.save(net, args.dataset_folder, args.model_fname)
-            logger.info('Achieved better dev_accuracy ... saved model')
-        
-        compute_map_mrr(args.dataset_folder, 'clean-dev', dev_scores)
+        dev_map, dev_mrr = compute_map_mrr(args.dataset_folder, 'clean-dev', dev_scores)
+        logger.info("MAP {}, MRR {}".format(dev_map, dev_mrr))
 
+        if np.fabs(dev_map - best_map) > 1e-3:            
+            best_model = i
+            best_map = dev_map
+            QAModel.save(net, args.dataset_folder, args.model_fname)
+            logger.info('Achieved better dev_map ... saved model')
+        
         if (i - best_model) >= args.patience:
             logger.warning('No improvement since the last {} epochs. Stopping training'.format(i - best_model))
             break
     
-    logger.info('Training epochs completed ------------')        
-    logger.info('Best accuracy in training phase = {:.4f}'.format(best_accuracy))
+    logger.info(' ------------ Training epochs completed!')        
+    logger.info('Best MAP in training phase = {:.4f}'.format(best_map))
 
-    logger.info('Evaluating over test set...')
     model = QAModel.load(args.dataset_folder, args.model_fname)
-
     evaluator = Trainer(model, args.eta, args.mom, args.no_loss_reg)
     test_accuracy, test_scores = evaluator.test(args.dataset_folder, 'clean-test', args.batch_size, cache_file)
 
     logger.info('Test set accuracy = {:.4f}'.format(test_accuracy))
 
-    compute_map_mrr(args.dataset_folder, 'clean-test', test_scores)
-    
+    map, mrr = compute_map_mrr(args.dataset_folder, 'clean-test', test_scores)
+    logger.info("MAP {}, MRR {}".format(map, mrr))
 
     
