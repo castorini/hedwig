@@ -116,6 +116,7 @@ if __name__ == "__main__":
     torch.set_num_threads(args.num_threads)
     
     trainer = Trainer(net, args.eta, args.mom, args.no_loss_reg)
+    logger.info("Loading input data...")
     trainer.load_input_data(args.dataset_folder, cache_file, 'train', 'clean-dev', 'clean-test')
 
     best_map = 0.0
@@ -130,7 +131,7 @@ if __name__ == "__main__":
         dev_map, dev_mrr = compute_map_mrr(args.dataset_folder, 'clean-dev', dev_scores)
         logger.info("------- MAP {}, MRR {}".format(dev_map, dev_mrr))
 
-        if np.fabs(dev_map - best_map) > 1e-3:            
+        if dev_map - best_map > 1e-3: # new map is better than best map 
             best_model = i
             best_map = dev_map
             QAModel.save(net, args.dataset_folder, args.model_fname)
