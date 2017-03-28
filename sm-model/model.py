@@ -59,7 +59,7 @@ class QAModel(nn.Module):
         q = self.conv_q.forward(question)        
         q = F.max_pool1d(q, q.size()[2])
         q = q.view(-1, self.conv_channels)
-        logger.debug('forward q: {}'.format(q))
+        # logger.debug('forward q: {}'.format(q))
 
         a = self.conv_a.forward(answer)
         a = F.max_pool1d(a, a.size()[2])
@@ -68,10 +68,10 @@ class QAModel(nn.Module):
         x = None
         if self.no_ext_feats:
             x = torch.cat([q, a], 1)        
-            logger.debug('no_ext_feats')
+            # logger.debug('no_ext_feats')
         else:
             x = torch.cat([q, a, ext_feats], 1)        
-            logger.debug('with ext_feats')
+            # logger.debug('with ext_feats')
         
         logger.debug('featvec x: {}'.format(x))
         # logger.debug(x.creator)

@@ -58,11 +58,8 @@ class Trainer(object):
                 
         self.optimizer.zero_grad()        
         output = self.model(xq, xa, ext_feats)                    
-
-        # output = torch.exp(output)
-
         loss = self.criterion(output, ys)        
-        logger.debug('loss after criterion {}'.format(loss))
+        # logger.debug('loss after criterion {}'.format(loss))
 
         # NOTE: regularizing location 1
         # if not self.no_loss_reg:
@@ -71,20 +68,20 @@ class Trainer(object):
         
         loss.backward()
         
-        logger.debug('AFTER backward')
+        # logger.debug('AFTER backward')
         #logger.debug('params {}'.format([p for p in self.model.parameters()]))
-        logger.debug('params grads {}'.format([p.grad for p in self.model.parameters()]))
+        # logger.debug('params grads {}'.format([p.grad for p in self.model.parameters()]))
        
         # NOTE: regularizing location 2. It would seem that location 1 is correct?
         if not self.no_loss_reg:
             loss = self.regularize_loss(loss)
-            logger.debug('loss after regularizing {}'.format(loss))
+            # logger.debug('loss after regularizing {}'.format(loss))
 
         self.optimizer.step()
 
-        logger.debug('AFTER step')
+        # logger.debug('AFTER step')
         #logger.debug('params {}'.format([p for p in self.model.parameters()]))
-        logger.debug('params grads {}'.format([p.grad for p in self.model.parameters()]))
+        # logger.debug('params grads {}'.format([p.grad for p in self.model.parameters()]))
 
         return loss.data[0], self.pred_equals_y(output, ys)
 
@@ -134,17 +131,15 @@ class Trainer(object):
             xq, xa, x_ext_feats = batch_inputs[0]
             y = batch_labels[0]
             
-            pred = self.model(xq, xa, x_ext_feats)
+            pred = self.model(xq, xa, x_ext_feats)            
             loss = self.criterion(pred, y)        
             pred = torch.exp(pred)
             total_loss += loss
             total_correct += self.pred_equals_y(pred, y)
 
-            p_score, p_class = pred.max(1)                  
-            y_pred[ypc] = p_score.data.squeeze()[0]
+            y_pred[ypc] = pred.data.squeeze()[1] # we want to score for relevance, NOT the predicted class
             ypc += 1         
                
-
         logger.info('{}_correct {}'.format(set_folder, total_correct))
         logger.info('{}_loss {}'.format(set_folder, total_loss.data[0]))
         logger.info('{} total {}'.format(set_folder, len(labels)))
@@ -229,8 +224,7 @@ class Trainer(object):
         tensorized_inputs = []
         for i in xrange(len(batch_ques)):
             xq = Variable(self.make_input_matrix(batch_ques[i], word_vectors, vec_dim) ) #, requires_grad=False)
-            xs = Variable(self.make_input_matrix(batch_sents[i], word_vectors, vec_dim) ) #, requires_grad=False)
-            # ext_feats = Variable(torch.FloatTensor(batch_ext_feats[i]))
+            xs = Variable(self.make_input_matrix(batch_sents[i], word_vectors, vec_dim) ) #, requires_grad=False)            
             ext_feats = Variable(torch.FloatTensor(batch_ext_feats[i]))
             ext_feats =torch.unsqueeze(ext_feats, 0)
             y[i] = batch_labels[i]
