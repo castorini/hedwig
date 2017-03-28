@@ -32,6 +32,7 @@ class Trainer(object):
         self.no_loss_reg = no_loss_reg
         self.model = model
         self.criterion = nn.CrossEntropyLoss()
+        #self.criterion = nn.NLLLoss()
         self.optimizer = optim.SGD(self.model.parameters(), lr=eta, momentum=mom, weight_decay=(0 if no_loss_reg else self.reg) ) 
 
 
@@ -57,6 +58,9 @@ class Trainer(object):
                 
         self.optimizer.zero_grad()        
         output = self.model(xq, xa, ext_feats)                    
+
+        # output = torch.exp(output)
+
         loss = self.criterion(output, ys)        
         logger.debug('loss after criterion {}'.format(loss))
 
@@ -132,14 +136,11 @@ class Trainer(object):
             
             pred = self.model(xq, xa, x_ext_feats)
             loss = self.criterion(pred, y)        
+            pred = torch.exp(pred)
             total_loss += loss
             total_correct += self.pred_equals_y(pred, y)
 
-            p_score, p_class = pred.max(1)
-            logger.debug('pred {}'.format(pred))
-            logger.debug('pred.max {} {}'.format(p_score, p_class))
-            logger.debug('score {}'.format(p_score.squeeze()))
-            logger.debug('score {}'.format(p_score.squeeze()[0]))            
+            p_score, p_class = pred.max(1)                  
             y_pred[ypc] = p_score.data.squeeze()[0]
             ypc += 1         
                
