@@ -131,23 +131,25 @@ class Trainer(object):
             y = batch_labels[0]
             
             pred = self.model(xq, xa, x_ext_feats)
+            pred = torch.exp(pred)
             loss = self.criterion(pred, y)        
             total_loss += loss
             total_correct += self.pred_equals_y(pred, y)
 
-            p_score, p_class = pred.max(1)
-            logger.debug('pred {}'.format(pred))
-            logger.debug('pred.max {} {}'.format(p_score, p_class))
-            logger.debug('score {}'.format(p_score.squeeze()))
-            logger.debug('score {}'.format(p_score.squeeze()[0]))            
-            y_pred[ypc] = p_score.data.squeeze()[0]
+            # p_score, p_class = pred.max(1)
+            # logger.debug('pred {}'.format(pred))
+            # logger.debug('pred.max {} {}'.format(p_score, p_class))
+            # logger.debug('score {}'.format(p_score.squeeze()))
+            # logger.debug('score {}'.format(p_score.squeeze()[0]))            
+            # y_pred[ypc] = p_score.data.squeeze()[0]
+            y_pred[ypc] = pred.data.squeeze()[1]
             ypc += 1         
                
 
-        logger.info('{}_correct {}'.format(set_folder, total_correct))
-        logger.info('{}_loss {}'.format(set_folder, total_loss.data[0]))
-        logger.info('{} total {}'.format(set_folder, len(labels)))
-        logger.info('{}_loss = {:.4f}, acc = {:.4f}'.format( set_folder, total_loss.data[0]/len(labels), float(total_correct)/len(labels) ))
+        # logger.info('{}_correct {}'.format(set_folder, total_correct))
+        # logger.info('{}_loss {}'.format(set_folder, total_loss.data[0]))
+        # logger.info('{} total {}'.format(set_folder, len(labels)))
+        # logger.info('{}_loss = {:.4f}, acc = {:.4f}'.format( set_folder, total_loss.data[0]/len(labels), float(total_correct)/len(labels) ))
 
         return float(total_correct)/len(labels), y_pred
 
