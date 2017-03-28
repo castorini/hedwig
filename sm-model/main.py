@@ -90,7 +90,7 @@ if __name__ == "__main__":
     
     # epoch related arguments
     ap.add_argument('--epochs', type=int, default=25)
-    ap.add_argument('--patience', type=int, default=3, help="if there is no appreciable change in model after <patience> epochs, then stop")
+    ap.add_argument('--patience', type=int, default=5, help="if there is no appreciable change in model after <patience> epochs, then stop")
     
     # debugging arguments
     ap.add_argument('--debugSingleBatch', action="store_true", help="will stop program after training 1 input batch")
@@ -116,17 +116,19 @@ if __name__ == "__main__":
     torch.set_num_threads(args.num_threads)
     
     trainer = Trainer(net, args.eta, args.mom, args.no_loss_reg)
+    trainer.load_input_data(args.dataset_folder, cache_file, 'train', 'clean-dev', 'clean-test')
 
     best_map = 0.0
     best_model = 0
     
     for i in range(args.epochs):
         logger.info('------------- Training epoch {} --------------'.format(i+1))        
-        train_accuracy = trainer.train(args.dataset_folder, 'train', args.batch_size, cache_file, args.debugSingleBatch)        
+        train_accuracy = trainer.train('train', args.batch_size, args.debugSingleBatch)        
         if args.debugSingleBatch: sys.exit(0)
-        dev_accuracy, dev_scores = trainer.test(args.dataset_folder, 'clean-dev', args.batch_size, cache_file)
+        dev_scores = trainer.test('clean-dev', args.batch_size)
+
         dev_map, dev_mrr = compute_map_mrr(args.dataset_folder, 'clean-dev', dev_scores)
-        logger.info("MAP {}\nMRR {}".format(dev_map, dev_mrr))
+        logger.info("------- MAP {}, MRR {}".format(dev_map, dev_mrr))
 
         if np.fabs(dev_map - best_map) > 1e-3:            
             best_model = i
@@ -143,11 +145,10 @@ if __name__ == "__main__":
 
     model = QAModel.load(args.dataset_folder, args.model_fname)
     evaluator = Trainer(model, args.eta, args.mom, args.no_loss_reg)
-    test_accuracy, test_scores = evaluator.test(args.dataset_folder, 'clean-test', args.batch_size, cache_file)
-
-    logger.info('Test set accuracy = {:.4f}'.format(test_accuracy))
-
+    evaluator.load_input_data(args.dataset_folder, cache_file, None, None, 'clean-test')
+    test_scores = evaluator.test('clean-test', args.batch_size)
+    
     map, mrr = compute_map_mrr(args.dataset_folder, 'clean-test', test_scores)
-    logger.info("MAP {}\nMRR {}".format(map, mrr))
+    logger.info("------- MAP {}, MRR {}".format(map, mrr))
 
     

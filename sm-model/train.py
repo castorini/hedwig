@@ -35,7 +35,16 @@ class Trainer(object):
         #self.criterion = nn.NLLLoss()
         self.optimizer = optim.SGD(self.model.parameters(), lr=eta, momentum=mom, weight_decay=(0 if no_loss_reg else self.reg) ) 
 
+        self.datasets = {}
+        self.embeddings = {}
 
+    def load_input_data(self, dataset_root_folder, word_vectors_cache_file, train_set_folder, dev_set_folder, test_set_folder):
+        for set_folder in [train_set_folder, dev_set_folder, test_set_folder]:
+            if set_folder:
+                self.datasets[set_folder] = utils.read_in_dataset(dataset_root_folder, set_folder)
+                # NOTE: self.datasets[set_folder] = questions, sentences, labels, vocab, maxlen_q, maxlen_s, ext_feats 
+                self.embeddings[set_folder] = utils.load_cached_embeddings(word_vectors_cache_file, self.datasets[set_folder][3])
+        
     def regularize_loss(self, loss):       
         
         flattened_params = []
@@ -97,15 +106,12 @@ class Trainer(object):
         return torch.sum(y.data.long() == best)
 
 
-    def test(self, dataset_folder, set_folder, batch_size, word_vectors_cache_file):
+    def test(self, set_folder, batch_size):
         logger.info('----- Predictions on {} '.format(set_folder))
                 
-        questions, sentences, labels, vocab, maxlen_q, maxlen_s, ext_feats = \
-                utils.read_in_dataset(dataset_folder, set_folder)
-
-        # load word embeddings for training set vocab
-        word_vectors, vec_dim = utils.load_cached_embeddings(word_vectors_cache_file, vocab)
-
+        questions, sentences, labels, vocab, maxlen_q, maxlen_s, ext_feats = self.datasets[set_folder]
+        word_vectors, vec_dim = self.embeddings[set_folder]
+        
         self.model.eval()
 
         batch_size = 1
@@ -141,23 +147,19 @@ class Trainer(object):
             ypc += 1         
                
         # logger.info('{}_correct {}'.format(set_folder, total_correct))
-        logger.info('{}_loss {}'.format(set_folder, total_loss.data[0]))
+        # logger.info('{}_loss {}'.format(set_folder, total_loss.data[0]))
         logger.info('{} total {}'.format(set_folder, len(labels)))
         # logger.info('{}_loss = {:.4f}, acc = {:.4f}'.format( set_folder, total_loss.data[0]/len(labels), float(total_correct)/len(labels) ))
-        logger.info('{}_loss = {:.4f}'.format( set_folder, total_loss.data[0]/len(labels) ))
+        #logger.info('{}_loss = {:.4f}'.format( set_folder, total_loss.data[0]/len(labels) ))
 
-        return float(total_correct)/len(labels), y_pred
+        return y_pred
 
 
-    def train(self, dataset_folder, set_folder, batch_size, word_vectors_cache_file, debugSingleBatch):
+    def train(self, set_folder, batch_size, debugSingleBatch):
         train_start_time = time.time()
 
-        # read in training data
-        questions, sentences, labels, vocab, maxlen_q, maxlen_s, ext_feats = \
-                utils.read_in_dataset(dataset_folder, set_folder)
-
-        # load word embeddings for training set vocab
-        word_vectors, vec_dim = utils.load_cached_embeddings(word_vectors_cache_file, vocab)
+        questions, sentences, labels, vocab, maxlen_q, maxlen_s, ext_feats = self.datasets[set_folder]
+        word_vectors, vec_dim = self.embeddings[set_folder]
 
         # set model for training modep
         self.model.train()
