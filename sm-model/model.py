@@ -73,7 +73,7 @@ class QAModel(nn.Module):
             x = torch.cat([q, a, ext_feats], 1)        
             # logger.debug('with ext_feats')
         
-        logger.debug('featvec x: {}'.format(x))
+        # logger.debug('featvec x: {}'.format(x))
         # logger.debug(x.creator)
 
         x = self.combined_feature_vector.forward(x)

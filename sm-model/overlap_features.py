@@ -115,6 +115,7 @@ def compute_dfs(docs):
 if __name__ == '__main__':
   ap = argparse.ArgumentParser(description="compute overlap features for SM model")
   ap.add_argument("dataset", help="path/to/dataset-directory", default="../../data/TrecQA")
+  ap.add_argument("--train_all", help="will generate overlap features for the train-all dataset", action="store_true")
   args = ap.parse_args()
 
   stoplist = set([line.strip() for line in open('stopwords.txt')])
@@ -129,6 +130,9 @@ if __name__ == '__main__':
   # sub_dirs = ['train/', 'raw-dev/', 'test.minimal/','test.complete/']
   # sub_dirs = ['train-all/', 'raw-dev/', 'raw-test/']
   sub_dirs = ['train/', 'clean-dev/', 'clean-test/']
+  if args.train_all:
+      sub_dirs = ['train-all/', 'raw-dev/', 'raw-test/']
+      
   for sub in sub_dirs:
     qids, questions, answers, labels = load_data(base_dir+sub)
     all_questions.extend(questions)

@@ -105,9 +105,9 @@ def load_embedding_dimensions(cache_file):
     return vocab_size, vec_dim
 
     
-def load_cached_embeddings(cache_file, vocab_list):
-    logger.debug( 'loading cached embeddings ')
-    w2v_dict = {}
+def load_cached_embeddings(cache_file, vocab_list, oov_vec = []):
+    logger.debug( 'loading cached embeddings ')    
+
     with open(cache_file + '.dimensions') as d:
         vocab_size, vec_dim = [int(e) for e in d.read().strip().split()]
 
@@ -120,12 +120,16 @@ def load_cached_embeddings(cache_file, vocab_list):
     vocab_dict = {w:k for k,w in enumerate(w2v_vocab_list)}
     
     # Read w2v for vocab appears in Q and A
+    w2v_dict = {}
     for word in vocab_list:
+        if word in w2v_dict:
+            continue
         if word in vocab_dict:
             w2v_dict[word] = W[vocab_dict[word]]
         else:
-            w2v_dict[word] = np.random.uniform(-0.25, 0.25, vec_dim) 
-    return w2v_dict, vec_dim
+            w2v_dict[word] =  np.random.uniform(-0.25, 0.25, vec_dim) if len(oov_vec) == 0 else oov_vec
+            #w2v_dict[word] = W[vocab_dict["unk"]]
+    return w2v_dict
 
 
 def read_in_dataset(dataset_folder, set_folder):
@@ -154,3 +158,14 @@ def get_test_qids_labels(dataset_folder, set_folder):
     qids = [ line.strip() for line in open(os.path.join(set_path, 'id.txt')).readlines() ]
     labels = np.array([ int(line.strip()) for line in open(os.path.join(set_path, 'sim.txt')).readlines() ])
     return qids, labels
+
+
+if __name__ == "__main__":
+    
+    vocab = [ "unk", "idontreallythinkthiswordexists", "hello" ]
+
+    w2v_dict, vec_dim =  load_cached_embeddings("../../data/word2vec-models/aquaint+wiki.txt.gz.ndim=50.cache", vocab)
+    
+    for w, v in w2v_dict.iteritems():
+        print w
+        print v

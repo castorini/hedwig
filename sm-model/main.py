@@ -38,7 +38,7 @@ def logargs(func):
 
 
 def compute_map_mrr(dataset_folder, set_folder, test_scores):
-    logger.info( "Running trec_eval script..." )
+    # logger.info( "Running trec_eval script..." )
     N = len(test_scores)
 
     qids_test, y_test = utils.get_test_qids_labels(dataset_folder, set_folder)
@@ -64,6 +64,7 @@ def compute_map_mrr(dataset_folder, set_folder, test_scores):
     pargs = shlex.split("/bin/sh run_eval.sh '{}'".format(args.dataset_folder))
     p = subprocess.Popen(pargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     pout, perr = p.communicate()    
+    
     lines = pout.split('\n')
     map = float(lines[0].strip().split()[-1])
     mrr = float(lines[1].strip().split()[-1])
@@ -87,6 +88,7 @@ if __name__ == "__main__":
     ap.add_argument('--filter_width', type=int, default=5)    
     ap.add_argument('--eta', help='Initial learning rate', default=0.001, type=float)
     ap.add_argument('--mom', help='SGD Momentum', default=0.0, type=float)    
+    ap.add_argument('--train_all', help='switches to train-all set', action="store_true")
     
     # epoch related arguments
     ap.add_argument('--epochs', type=int, default=25)
@@ -97,11 +99,16 @@ if __name__ == "__main__":
     ap.add_argument('--num_conv_filters', help="the number of convolution channels (lesser is faster)", default=100, type=int)
     ap.add_argument('--no_ext_feats', action="store_true", help="will not include external features in the model")    
     ap.add_argument('--no_loss_reg', help="no loss regularization", action="store_true")
+    ap.add_argument('--test_on_each_epoch', help='runs test on each epoch to track final performance', action="store_true")
 
     args = ap.parse_args()
 
     torch.manual_seed(1234)
     np.random.seed(1234)
+
+    train_set, dev_set, test_set = 'train', 'clean-dev', 'clean-test'
+    if args.train_all:
+        train_set, dev_set, test_set = 'train-all', 'raw-dev', 'raw-test'
 
     # cache word embeddings
     cache_file = os.path.splitext(args.word_vectors_file)[0] + '.cache'    
@@ -115,41 +122,48 @@ if __name__ == "__main__":
 
     torch.set_num_threads(args.num_threads)
     
-    trainer = Trainer(net, args.eta, args.mom, args.no_loss_reg)
+    trainer = Trainer(net, args.eta, args.mom, args.no_loss_reg, vec_dim)
     logger.info("Loading input data...")
-    trainer.load_input_data(args.dataset_folder, cache_file, 'train', 'clean-dev', 'clean-test')
+    trainer.load_input_data(args.dataset_folder, cache_file, train_set, dev_set, test_set)
 
     best_map = 0.0
     best_model = 0
-    
+
     for i in range(args.epochs):
         logger.info('------------- Training epoch {} --------------'.format(i+1))        
-        train_accuracy = trainer.train('train', args.batch_size, args.debugSingleBatch)        
+        train_accuracy = trainer.train(train_set, args.batch_size, args.debugSingleBatch)        
         if args.debugSingleBatch: sys.exit(0)
-        dev_scores = trainer.test('clean-dev', args.batch_size)
-
-        dev_map, dev_mrr = compute_map_mrr(args.dataset_folder, 'clean-dev', dev_scores)
+        
+        dev_scores = trainer.test(dev_set, args.batch_size)
+        
+        dev_map, dev_mrr = compute_map_mrr(args.dataset_folder, dev_set, dev_scores)
         logger.info("------- MAP {}, MRR {}".format(dev_map, dev_mrr))
 
         if dev_map - best_map > 1e-3: # new map is better than best map 
             best_model = i
             best_map = dev_map
+
             QAModel.save(net, args.dataset_folder, args.model_fname)
             logger.info('Achieved better dev_map ... saved model')
+
+        if args.test_on_each_epoch:            
+            test_scores = trainer.test(test_set, args.batch_size)            
+            map, mrr = compute_map_mrr(args.dataset_folder, test_set, test_scores)
+            logger.info("------- MAP {}, MRR {}".format(map, mrr))
         
         if (i - best_model) >= args.patience:
             logger.warning('No improvement since the last {} epochs. Stopping training'.format(i - best_model))
             break
     
-    logger.info(' ------------ Training epochs completed!')        
+    logger.info(' ------------ Training epochs completed! ------------')        
     logger.info('Best MAP in training phase = {:.4f}'.format(best_map))
 
-    model = QAModel.load(args.dataset_folder, args.model_fname)
-    evaluator = Trainer(model, args.eta, args.mom, args.no_loss_reg)
-    evaluator.load_input_data(args.dataset_folder, cache_file, None, None, 'clean-test')
-    test_scores = evaluator.test('clean-test', args.batch_size)
+    trained_model = QAModel.load(args.dataset_folder, args.model_fname)
+    evaluator = Trainer(trained_model, args.eta, args.mom, args.no_loss_reg, vec_dim)    
+    evaluator.load_input_data(args.dataset_folder, cache_file, None, None, test_set)
+    test_scores = evaluator.test(test_set, args.batch_size)
     
-    map, mrr = compute_map_mrr(args.dataset_folder, 'clean-test', test_scores)
+    map, mrr = compute_map_mrr(args.dataset_folder, test_set, test_scores)
     logger.info("------- MAP {}, MRR {}".format(map, mrr))
 
     
