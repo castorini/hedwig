@@ -1,10 +1,10 @@
+import os
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-import numpy as np
-
-import os
 
 # logging setup
 import logging
@@ -23,11 +23,13 @@ class QAModel(nn.Module):
     @staticmethod
     def save(model, out_folder, model_fname):
         torch.save(model, os.path.join(out_folder, model_fname))
+        
 
     @staticmethod
     def load(in_folder, model_fname):
         return torch.load(os.path.join(in_folder, model_fname))
-
+        
+        
     def __init__(self, input_n_dim, filter_width, conv_filters=100, no_ext_feats=False, ext_feats_size=4, n_classes=2):
         super(QAModel, self).__init__()
 

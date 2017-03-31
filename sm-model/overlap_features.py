@@ -169,7 +169,7 @@ if __name__ == '__main__':
     scaler = StandardScaler()
     print("Scaling overlap features")
     overlap_feats = scaler.fit_transform(overlap_feats)
-    print(overlap_feats[:3]    )
+    print(overlap_feats[:3])
 
     '''q_overlap_indices, a_overlap_indices = compute_overlap_idx(questions, answers, stoplist, q_max_sent_length, a_max_sent_length)
     print(q_overlap_indices[:3], a_overlap_indices[:3])

@@ -8,6 +8,9 @@
 1. figure out if the L2 regularization is correct
 2. Batch size of 50 (current batch_size = 1)
 
+#### Getting the data
+
+TODO:
 
 #### Running it
 

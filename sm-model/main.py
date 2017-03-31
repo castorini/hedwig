@@ -1,22 +1,19 @@
-import os 
-import sys
-import time
-import glob
 import argparse
-import numpy as np
 
-import pandas as pd
-import subprocess
+import os
 import shlex
+import subprocess
+import sys
 
+import numpy as np
+import pandas as pd
 import torch
-import torch.optim as optim
 import torch.nn as nn
+import torch.optim as optim
 from torch.autograd import Variable
 
-
-from model import QAModel
 import utils
+from model import QAModel
 from train import Trainer
 
 # logging setup
@@ -38,7 +35,7 @@ def logargs(func):
 
 
 def compute_map_mrr(dataset_folder, set_folder, test_scores):
-    # logger.info( "Running trec_eval script..." )
+    # logger.info("Running trec_eval script...")
     N = len(test_scores)
 
     qids_test, y_test = utils.get_test_qids_labels(dataset_folder, set_folder)
@@ -65,7 +62,7 @@ def compute_map_mrr(dataset_folder, set_folder, test_scores):
     p = subprocess.Popen(pargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     pout, perr = p.communicate()    
     
-    lines = pout.split('\n')
+    lines = pout.split(b'\n')
     map = float(lines[0].strip().split()[-1])
     mrr = float(lines[1].strip().split()[-1])
     return map, mrr
@@ -165,5 +162,3 @@ if __name__ == "__main__":
     
     map, mrr = compute_map_mrr(args.dataset_folder, test_set, test_scores)
     logger.info("------- MAP {}, MRR {}".format(map, mrr))
-
-    

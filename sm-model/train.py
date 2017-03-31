@@ -1,14 +1,11 @@
-import os 
-import sys
+import argparse
 
 import time
-import glob
-import argparse
-import numpy as np
 
+import numpy as np
 import torch
-import torch.optim as optim
 import torch.nn as nn
+import torch.optim as optim
 from torch.autograd import Variable
 
 import utils
@@ -39,7 +36,7 @@ class Trainer(object):
         self.model = model
         self.criterion = nn.CrossEntropyLoss()
         #self.criterion = nn.NLLLoss()
-        self.optimizer = optim.SGD(self.model.parameters(), lr=eta, momentum=mom, weight_decay=(0 if no_loss_reg else self.reg) ) 
+        self.optimizer = optim.SGD(self.model.parameters(), lr=eta, momentum=mom, weight_decay=(0 if no_loss_reg else self.reg)) 
 
         self.datasets = {}
         self.embeddings = {}
@@ -123,7 +120,7 @@ class Trainer(object):
 
         total_loss = 0.0
         total_correct = 0.0
-        num_batches = np.ceil(len(questions)/batch_size )
+        num_batches = np.ceil(len(questions)/batch_size)
         y_pred = np.zeros(len(questions))
         ypc = 0
             
@@ -154,8 +151,8 @@ class Trainer(object):
         # logger.info('{}_correct {}'.format(set_folder, total_correct))
         # logger.info('{}_loss {}'.format(set_folder, total_loss.data[0]))
         logger.info('{} total {}'.format(set_folder, len(labels)))
-        # logger.info('{}_loss = {:.4f}, acc = {:.4f}'.format( set_folder, total_loss.data[0]/len(labels), float(total_correct)/len(labels) ))
-        #logger.info('{}_loss = {:.4f}'.format( set_folder, total_loss.data[0]/len(labels) ))
+        # logger.info('{}_loss = {:.4f}, acc = {:.4f}'.format(set_folder, total_loss.data[0]/len(labels), float(total_correct)/len(labels))
+        #logger.info('{}_loss = {:.4f}'.format(set_folder, total_loss.data[0]/len(labels)))
 
         return y_pred
 
@@ -170,7 +167,7 @@ class Trainer(object):
         self.model.train()
 
         train_loss, train_correct = 0., 0.
-        num_batches = np.ceil(len(questions)/float(batch_size) )
+        num_batches = np.ceil(len(questions)/float(batch_size))
 
         for k in range(int(num_batches)):
             batch_start = k * batch_size
@@ -234,15 +231,11 @@ class Trainer(object):
 
         tensorized_inputs = []
         for i in range(len(batch_ques)):
-            xq = Variable(self.make_input_matrix(batch_ques[i], word_vectors, vec_dim) ) #, requires_grad=False)
-            xs = Variable(self.make_input_matrix(batch_sents[i], word_vectors, vec_dim) ) #, requires_grad=False)                        
+            xq = Variable(self.make_input_matrix(batch_ques[i], word_vectors, vec_dim)) #, requires_grad=False)
+            xs = Variable(self.make_input_matrix(batch_sents[i], word_vectors, vec_dim)) #, requires_grad=False)                        
             ext_feats = Variable(torch.FloatTensor(batch_ext_feats[i]))
             ext_feats =torch.unsqueeze(ext_feats, 0)
             y[i] = batch_labels[i]
             tensorized_inputs.append((xq, xs, ext_feats))
 
         return tensorized_inputs, Variable(y)
-
-
-
-
