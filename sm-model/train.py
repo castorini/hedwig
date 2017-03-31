@@ -127,7 +127,7 @@ class Trainer(object):
         y_pred = np.zeros(len(questions))
         ypc = 0
             
-        for k in xrange(int(num_batches)):
+        for k in range(int(num_batches)):
             batch_start = k * batch_size
             batch_end = (k+1) * batch_size
             # convert raw questions and sentences to tensors
@@ -165,14 +165,14 @@ class Trainer(object):
 
         questions, sentences, labels, vocab, maxlen_q, maxlen_s, ext_feats = self.datasets[set_folder]
         word_vectors, vec_dim = self.embeddings[set_folder], self.vec_dim
-
+        
         # set model for training modep
         self.model.train()
 
         train_loss, train_correct = 0., 0.
         num_batches = np.ceil(len(questions)/float(batch_size) )
 
-        for k in xrange(int(num_batches)):
+        for k in range(int(num_batches)):
             batch_start = k * batch_size
             batch_end = (k+1) * batch_size
 
@@ -210,7 +210,7 @@ class Trainer(object):
         terms = sentence.strip().split()        
         # word_embeddings = torch.zeros(max_len, vec_dim).type(torch.DoubleTensor)
         word_embeddings = torch.zeros(len(terms), vec_dim).type(torch.DoubleTensor)
-        for i in xrange(len(terms)):
+        for i in range(len(terms)):
             word = terms[i]        
             emb = torch.from_numpy(word_vectors[word])                        
             word_embeddings[i] = emb            
@@ -233,9 +233,9 @@ class Trainer(object):
         y = torch.LongTensor(batch_size).type(torch.LongTensor)
 
         tensorized_inputs = []
-        for i in xrange(len(batch_ques)):
+        for i in range(len(batch_ques)):
             xq = Variable(self.make_input_matrix(batch_ques[i], word_vectors, vec_dim) ) #, requires_grad=False)
-            xs = Variable(self.make_input_matrix(batch_sents[i], word_vectors, vec_dim) ) #, requires_grad=False)            
+            xs = Variable(self.make_input_matrix(batch_sents[i], word_vectors, vec_dim) ) #, requires_grad=False)                        
             ext_feats = Variable(torch.FloatTensor(batch_ext_feats[i]))
             ext_feats =torch.unsqueeze(ext_feats, 0)
             y[i] = batch_labels[i]

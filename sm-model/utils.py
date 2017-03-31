@@ -8,10 +8,6 @@ from gensim.models.keyedvectors import KeyedVectors
 
 import torch
 
-import cPickle
-
-
-
 # logging setup
 import logging
 logger = logging.getLogger(__name__)
@@ -22,41 +18,6 @@ ch.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(levelname)s - %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-
-
-
-def load_bin_vec(fname, words):
-  """
-  Loads 300x1 word vecs from Google (Mikolov) word2vec
-  """
-  print fname
-  vocab = set(words)
-  word_vecs = {}
-  with open(fname, "rb") as f:
-    header = f.readline()
-    vocab_size, layer1_size = map(int, header.split())
-    binary_len = numpy.dtype('float32').itemsize * layer1_size
-    print 'vocab_size, layer1_size', vocab_size, layer1_size
-    count = 0
-    for i, line in enumerate(xrange(vocab_size)):
-      if i % 100000 == 0:
-        print '.',
-      word = []
-      while True:
-        ch = f.read(1)
-        if ch == ' ':
-            word = ''.join(word)
-            break
-        if ch != '\n':
-            word.append(ch)
-      if word in vocab:
-        count += 1
-        word_vecs[word] = numpy.fromstring(f.read(binary_len), dtype='float32')
-      else:
-          f.read(binary_len)
-    print "done"
-    print "Words found in wor2vec embeddings", count
-    return word_vecs
 
 
 def logargs(func):
@@ -87,13 +48,13 @@ def cache_word_embeddings(word_embeddings_file, cache_file):
         with open(cache_file + '.vocab', 'w') as f:
             logger.info( 'writing out vocab for {}'.format(word_embeddings_file))
             for _, w in sorted( (voc.index, word) for word, voc in wv.vocab.items()):
-                print >> f, w.encode('utf-8')
+                print(w.encode('utf-8'), file=f)
         with open(cache_file + '.dimensions', 'w') as f:
             logger.info( 'writing out dimensions for {}'.format(word_embeddings_file))
-            print >> f, wv.syn0.shape[0], wv.syn0.shape[1]
+            print(wv.syn0.shape[0], wv.syn0.shape[1], file=f)
         vocab_size, vec_dim  =  wv.syn0.shape
         del fp, wv
-        print 'cached {} into {}'.format(word_embeddings_file, cache_file)
+        print('cached {} into {}'.format(word_embeddings_file, cache_file))
 
     return vocab_size, vec_dim
 
@@ -144,8 +105,8 @@ def read_in_dataset(dataset_folder, set_folder):
     questions = [ line.strip() for line in open(os.path.join(set_path, 'a.toks')).readlines() ]
     len_s_list =[ len(line.strip().split()) for line in open(os.path.join(set_path, 'b.toks')).readlines() ]
     sentences = [ line.strip() for line in open(os.path.join(set_path, 'b.toks')).readlines() ]
-    labels = np.array([ int(line.strip()) for line in open(os.path.join(set_path, 'sim.txt')).readlines() ])
-    ext_feats = np.array([ map(float, line.strip().split(' ')) for line in open(os.path.join(set_path, 'overlap_feats.txt')).readlines() ])
+    labels = [ int(line.strip()) for line in open(os.path.join(set_path, 'sim.txt')).readlines() ]
+    ext_feats = np.array([ list(map(float, line.strip().split(' '))) for line in open(os.path.join(set_path, 'overlap_feats.txt')).readlines() ])
 
     #y = torch.from_numpy(labels)
     #return questions, sentences, y
@@ -167,5 +128,5 @@ if __name__ == "__main__":
     w2v_dict, vec_dim =  load_cached_embeddings("../../data/word2vec-models/aquaint+wiki.txt.gz.ndim=50.cache", vocab)
     
     for w, v in w2v_dict.iteritems():
-        print w
-        print v
+        print(w)
+        print(v)

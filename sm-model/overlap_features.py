@@ -12,7 +12,7 @@ from collections import defaultdict
 def load_data(dname):
   stemmer = PorterStemmer()
   qids, questions, answers, labels = [], [], [], []
-  print dname
+  print(dname)
   with open(dname+'a.toks') as f:
     for line in f:
       line = unicode(line, errors='ignore')
@@ -148,33 +148,33 @@ if __name__ == '__main__':
   
   docs = all_answers + unique_questions
   word2dfs = compute_dfs(docs)
-  print word2dfs.items()[:10]
+  print(word2dfs.items()[:10])
 
   q_max_sent_length = max(map(lambda x: len(x), all_questions))
   a_max_sent_length = max(map(lambda x: len(x), all_answers))
-  print 'q_max_sent_length', q_max_sent_length
-  print 'a_max_sent_length', a_max_sent_length
+  print('q_max_sent_length', q_max_sent_length)
+  print('a_max_sent_length', a_max_sent_length)
 
   for sub in sub_dirs:
-    print sub
+    print(sub)
     qids, questions, answers, labels = load_data(base_dir+sub)
 
     overlap_feats = compute_overlap_features(questions, answers, stoplist=None, word2df=word2dfs)
     overlap_feats_stoplist = compute_overlap_features(questions, answers, stoplist=stoplist, word2df=word2dfs)
     overlap_feats = np.hstack([overlap_feats, overlap_feats_stoplist])
-    print overlap_feats[:3]
-    print 'overlap_feats', overlap_feats.shape
+    print(overlap_feats[:3])
+    print('overlap_feats', overlap_feats.shape)
     
     from sklearn.preprocessing import StandardScaler
     scaler = StandardScaler()
-    print "Scaling overlap features"
+    print("Scaling overlap features")
     overlap_feats = scaler.fit_transform(overlap_feats)
-    print overlap_feats[:3]    
+    print(overlap_feats[:3]    )
 
     '''q_overlap_indices, a_overlap_indices = compute_overlap_idx(questions, answers, stoplist, q_max_sent_length, a_max_sent_length)
-    print q_overlap_indices[:3], a_overlap_indices[:3]
-    print 'q_overlap_indices', q_overlap_indices.shape
-    print 'a_overlap_indices', a_overlap_indices.shape'''
+    print(q_overlap_indices[:3], a_overlap_indices[:3])
+    print('q_overlap_indices', q_overlap_indices.shape)
+    print('a_overlap_indices', a_overlap_indices.shape)'''
 
     with open(base_dir+sub+'overlap_feats.txt', 'w') as f:
       for i in range(overlap_feats.shape[0]):
