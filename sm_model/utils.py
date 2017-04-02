@@ -1,4 +1,4 @@
-# file input output 
+# file input output
 
 import os
 import sys
@@ -27,7 +27,8 @@ def logargs(func):
 
 def cache_word_embeddings(word_embeddings_file, cache_file):
     if not word_embeddings_file.endswith('.gz'):
-        logger.warning('WARNING: expecting a .gz file. Is the {} in the correct format?'.format(word_embeddings_file))
+        logger.warning('WARNING: expecting a .gz file. Is the {} in the correct \
+            format?'.format(word_embeddings_file))
 
     vocab_size, vec_dim = 0, 0
 
@@ -36,8 +37,7 @@ def cache_word_embeddings(word_embeddings_file, cache_file):
         if not os.path.exists(os.path.dirname(cache_file)):
             # make cache folder if needed
             os.mkdir(os.path.dirname(cache_file))
-        
-        logger.info('caching the word embeddings in np.memmap format')   
+        logger.info('caching the word embeddings in np.memmap format')
         wv = KeyedVectors.load_word2vec_format(word_embeddings_file, binary=True)
         # print len(wv.syn0), wv.syn0.shape
         # print len(wv.syn0norm) if wv.syn0norm else None
@@ -50,7 +50,7 @@ def cache_word_embeddings(word_embeddings_file, cache_file):
         with open(cache_file + '.dimensions', 'w') as f:
             logger.info('writing out dimensions for {}'.format(word_embeddings_file))
             print(wv.syn0.shape[0], wv.syn0.shape[1], file=f)
-        vocab_size, vec_dim  =  wv.syn0.shape
+        vocab_size, vec_dim = wv.syn0.shape
         del fp, wv
         print('cached {} into {}'.format(word_embeddings_file, cache_file))
 
@@ -63,9 +63,8 @@ def load_embedding_dimensions(cache_file):
         vocab_size, vec_dim = [int(e) for e in d.read().strip().split()]
     return vocab_size, vec_dim
 
-    
-def load_cached_embeddings(cache_file, vocab_list, oov_vec = []):
-    logger.debug('loading cached embeddings ')    
+def load_cached_embeddings(cache_file, vocab_list, oov_vec=[]):
+    logger.debug('loading cached embeddings ')
 
     with open(cache_file + '.dimensions') as d:
         vocab_size, vec_dim = [int(e) for e in d.read().strip().split()]
@@ -76,8 +75,8 @@ def load_cached_embeddings(cache_file, vocab_list, oov_vec = []):
         logger.debug('loading vocab')
         w2v_vocab_list = map(str.strip, f.readlines())
 
-    vocab_dict = {w:k for k,w in enumerate(w2v_vocab_list)}
-    
+    vocab_dict = {w:k for k, w in enumerate(w2v_vocab_list)}
+
     # Read w2v for vocab appears in Q and A
     w2v_dict = {}
     for word in vocab_list:
@@ -86,7 +85,8 @@ def load_cached_embeddings(cache_file, vocab_list, oov_vec = []):
         if word in vocab_dict:
             w2v_dict[word] = W[vocab_dict[word]]
         else:
-            w2v_dict[word] =  np.random.uniform(-0.25, 0.25, vec_dim) if len(oov_vec) == 0 else oov_vec
+            w2v_dict[word] = np.random.uniform(-0.25, 0.25, vec_dim) \
+                if len(oov_vec) == 0 else oov_vec
             #w2v_dict[word] = W[vocab_dict["unk"]]
     return w2v_dict
 
@@ -99,12 +99,16 @@ def read_in_dataset(dataset_folder, set_folder):
     max_q = 0
     max_s = 0
     set_path = os.path.join(dataset_folder, set_folder)
-    len_q_list =[len(line.strip().split()) for line in open(os.path.join(set_path, 'a.toks')).readlines()]
+
     questions = [line.strip() for line in open(os.path.join(set_path, 'a.toks')).readlines()]
-    len_s_list =[len(line.strip().split()) for line in open(os.path.join(set_path, 'b.toks')).readlines()]
+    len_q_list = [len(q.split()) for q in questions]
+
     sentences = [line.strip() for line in open(os.path.join(set_path, 'b.toks')).readlines()]
+    len_s_list = [len(s.split()) for s in sentences]
+
     labels = [int(line.strip()) for line in open(os.path.join(set_path, 'sim.txt')).readlines()]
-    ext_feats = np.array([list(map(float, line.strip().split(' '))) for line in open(os.path.join(set_path, 'overlap_feats.txt')).readlines()])
+    ext_feats = np.array([list(map(float, line.strip().split(' '))) \
+        for line in open(os.path.join(set_path, 'overlap_feats.txt')).readlines()])
 
     #y = torch.from_numpy(labels)
     #return questions, sentences, y
@@ -121,11 +125,11 @@ def get_test_qids_labels(dataset_folder, set_folder):
 
 
 if __name__ == "__main__":
-    
+
     vocab = ["unk", "idontreallythinkthiswordexists", "hello"]
 
-    w2v_dict, vec_dim =  load_cached_embeddings("../../data/word2vec-models/aquaint+wiki.txt.gz.ndim=50.cache", vocab)
-    
+    w2v_dict, vec_dim = load_cached_embeddings("../../data/word2vec/aquaint+wiki.txt.gz.ndim=50.cache", vocab)
+
     for w, v in w2v_dict.iteritems():
         print(w)
         print(v)

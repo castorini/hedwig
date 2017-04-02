@@ -1,4 +1,5 @@
 import os
+import sys
 import pickle
 import string
 from collections import defaultdict
@@ -8,21 +9,23 @@ import torch
 from nltk.tokenize import TreebankWordTokenizer
 from torch.autograd import Variable
 
-from model import QAModel
+from sm_model import model
+
+sys.modules['model'] = model
 
 
-class SMModelCastorini(object):
+class SMModelBridge(object):
 
     def __init__(self, model_file, word_embeddings_cache_file, stopwords_file, word2dfs_file):
         # init torch random seeds
         torch.manual_seed(1234)
-        np.random.seed(1234)        
+        np.random.seed(1234)
 
         # load model
-        self.model = QAModel.load('', model_file)
+        self.model = model.QAModel.load(model_file)
         # load vectors
         self.vec_dim = self._preload_cached_embeddings(word_embeddings_cache_file)
-        self.unk_term_vec = np.random.uniform(-0.25, 0.25, self.vec_dim) 
+        self.unk_term_vec = np.random.uniform(-0.25, 0.25, self.vec_dim)
 
         # stopwords
         self.stoplist = set([line.strip() for line in open(stopwords_file)])
@@ -34,16 +37,16 @@ class SMModelCastorini(object):
 
 
     def _preload_cached_embeddings(self, cache_file):
-        
+
         with open(cache_file + '.dimensions') as d:
             vocab_size, vec_dim = [int(e) for e in d.read().strip().split()]
 
         self.W = np.memmap(cache_file, dtype=np.double, shape=(vocab_size, vec_dim))
 
-        with open(cache_file + '.vocab') as f:            
+        with open(cache_file + '.vocab') as f:
             w2v_vocab_list = map(str.strip, f.readlines())
 
-        self.vocab_dict = {w:k for k,w in enumerate(w2v_vocab_list)}
+        self.vocab_dict = {w:k for k, w in enumerate(w2v_vocab_list)}
         return vec_dim
 
 
@@ -64,7 +67,7 @@ class SMModelCastorini(object):
         feats_overlap = []
         for a in a_list:
             question = q_str.split()
-            answer = a.split()            
+            answer = a.split()
             # q_set = set(question)
             # a_set = set(answer)
             q_set = set([q for q in question if q not in stoplist])
@@ -82,43 +85,40 @@ class SMModelCastorini(object):
             df_overlap = 0.0
             for w in word_overlap:
                 df_overlap += word2df[w]
-            
+
             if len(q_set) == 0 and len(a_set) == 0:
                 df_overlap = 0
             else:
                 df_overlap /= (len(q_set) + len(a_set))
 
-            feats_overlap.append(np.array([
-                                overlap,
-                                df_overlap,
-                                ]))
+            feats_overlap.append(np.array([overlap, df_overlap]))
         return np.array(feats_overlap)
 
 
-    def make_input_matrix(self,  sentence):
-        terms = sentence.strip().split()                
+    def make_input_matrix(self, sentence):
+        terms = sentence.strip().split()
         # word_embeddings = torch.zeros(max_len, vec_dim).type(torch.DoubleTensor)
         word_embeddings = torch.zeros(len(terms), self.vec_dim).type(torch.DoubleTensor)
         for i in range(len(terms)):
-            word = terms[i]        
+            word = terms[i]
             if word not in self.vocab_dict:
                 emb = torch.from_numpy(self.unk_term_vec)
             else:
-                emb = torch.from_numpy(self.W[self.vocab_dict[word]])                        
-            word_embeddings[i] = emb            
+                emb = torch.from_numpy(self.W[self.vocab_dict[word]])
+            word_embeddings[i] = emb
         input_tensor = torch.zeros(1, self.vec_dim, len(terms))
         input_tensor[0] = torch.transpose(word_embeddings, 0, 1)
         return input_tensor
 
 
-    def get_tensorized_inputs(self, batch_ques, batch_sents, batch_ext_feats):     
-        assert(1 == len(batch_ques))        
+    def get_tensorized_inputs(self, batch_ques, batch_sents, batch_ext_feats):
+        assert(1 == len(batch_ques))
         tensorized_inputs = []
         for i in range(len(batch_ques)):
-            xq = Variable(self.make_input_matrix(batch_ques[i])) 
+            xq = Variable(self.make_input_matrix(batch_ques[i]))
             xs = Variable(self.make_input_matrix(batch_sents[i]))
             ext_feats = Variable(torch.FloatTensor(batch_ext_feats[i]))
-            ext_feats =torch.unsqueeze(ext_feats, 0)            
+            ext_feats = torch.unsqueeze(ext_feats, 0)
             tensorized_inputs.append((xq, xs, ext_feats))
         return tensorized_inputs
 
@@ -128,30 +128,33 @@ class SMModelCastorini(object):
         q_str, a_list = self.parser(question, answers)
 
         # calculate overlap features
-        overlap_feats = self.compute_overlap_features(q_str,a_list, stoplist=None, word2df=self.word2dfs)        
-        overlap_feats_stoplist = self.compute_overlap_features(q_str, a_list, stoplist=self.stoplist, word2df=self.word2dfs)
+        overlap_feats = self.compute_overlap_features(q_str, a_list, \
+            stoplist=None, word2df=self.word2dfs)
+        overlap_feats_stoplist = self.compute_overlap_features(q_str, a_list, \
+            stoplist=self.stoplist, word2df=self.word2dfs)
         overlap_feats_vec = np.hstack([overlap_feats, overlap_feats_stoplist])
 
         # run through the model
         scores_sentences = []
         for i in range(len(a_list)):
-            xq, xa, x_ext_feats = self.get_tensorized_inputs([q], [a_list[i]], [overlap_feats_vec[i]])[0]          
-            pred = self.model(xq, xa, x_ext_feats)               
+            xq, xa, x_ext_feats = self.get_tensorized_inputs([q_str], [a_list[i]], \
+                [overlap_feats_vec[i]])[0]
+            pred = self.model(xq, xa, x_ext_feats)
             pred = torch.exp(pred)
             scores_sentences.append((pred.data.squeeze()[1], a_list[i]))
-        
+
         return scores_sentences
 
 
 if __name__ == "__main__":
-    
-    smmodel = SMModelCastorini('sm.model.py3', 
-                    '../../data/word2vec-models/aquaint+wiki.txt.gz.ndim=50.cache',
-                    'stopwords.txt',
-                    'word2dfs.p')
-        
-    q = "who is the author of the book , `` the iron lady : a biography of margaret thatcher '' ?"
-    a = [ 
+
+    smmodel = SMModelBridge('../models/sm_model/sm_model.TrecQA.TRAIN-ALL.2017-04-02.castor',
+                            '../data/word2vec/aquaint+wiki.txt.gz.ndim=50.cache',
+                            '../data/TrecQA/stopwords.txt',
+                            '../data/TrecQA/word2dfs.p')
+
+    question = "who is the author of the book , `` the iron lady : a biography of margaret thatcher '' ?"
+    answers = [
         "the iron lady ; a biography of margaret thatcher by hugo young -lrb- farrar , straus & giroux -rrb-",
         "in this same revisionist mold , hugo young , the distinguished british journalist , has performed a brilliant \
          dissection of the notion of thatcher as a conservative icon .",
@@ -163,8 +166,8 @@ if __name__ == "__main__":
         "this is not the answer",
         "asdfawe asdf sertse dgfsgsfg"
     ]
-	
-    ss = smmodel.rerank_candidate_answers(q, a)
-    print('Question:', q)
+
+    ss = smmodel.rerank_candidate_answers(question, answers)
+    print('Question:', question)
     for score, sentence in ss:
         print(score, '\t', sentence)
