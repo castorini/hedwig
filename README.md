@@ -10,7 +10,7 @@ Pytorch deep learning models.
 You need Python 3.6 to use the models in this repository.
 
 As per [pytorch.org](pytorch.org), 
-> [Anaconda](https://www.continuum.io/downloads) is our recommended package manager
+> "[Anaconda](https://www.continuum.io/downloads) is our recommended package manager"
 
 ```conda install pytorch torchvision -c soumith```
 
