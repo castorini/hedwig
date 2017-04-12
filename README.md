@@ -30,3 +30,7 @@ CUDA installation guide for linux can be found [here](http://docs.nvidia.com/cud
 ## data for models
 
 Sourcing and pre-processing of input data for each model is described in respective ```model/README.md```'s
+
+## Baselines
+
+1. [IDF Baseline](./idf_baseline/): IDF overlap between question and candidate answers.
