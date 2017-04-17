@@ -92,7 +92,7 @@ if __name__ == "__main__":
     ap.add_argument('--filter_width', type=int, default=5, help="number of convolution channels")
     ap.add_argument('--eta', help='Initial learning rate', default=0.001, type=float)
     ap.add_argument('--mom', help='SGD Momentum', default=0.0, type=float)
-    ap.add_argument('--train_all', help='switches to train-all set', action="store_true")
+    ap.add_argument('--train', help='switches to train set', action="store_true")
 
     # epoch related arguments
     ap.add_argument('--epochs', type=int, default=25, help="number of trainin epochs")
@@ -115,9 +115,9 @@ if __name__ == "__main__":
     torch.manual_seed(1234)
     np.random.seed(1234)
 
-    train_set, dev_set, test_set = 'train', 'clean-dev', 'clean-test'
-    if args.train_all:
-        train_set, dev_set, test_set = 'train-all', 'raw-dev', 'raw-test'
+    train_set, dev_set, test_set = 'train-all', 'raw-dev', 'raw-test'
+    if args.train:
+        train_set, dev_set, test_set = 'train', 'clean-dev', 'clean-test'
 
     # cache word embeddings
     cache_file = os.path.splitext(args.word_vectors_file)[0] + '.cache'

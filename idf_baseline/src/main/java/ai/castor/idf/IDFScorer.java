@@ -126,6 +126,7 @@ public class IDFScorer {
     BufferedWriter outputFile = new BufferedWriter(new FileWriter(args.output));
     int i = 0;
 
+    String old_id = "0";    
     while (true) {
       String question = questionFile.readLine();
       String answer = answerFile.readLine();
@@ -135,9 +136,15 @@ public class IDFScorer {
         break;
       }
 
+      // we need new lines here
+      if (args.config.contains("WikiQA") && !old_id.equals(id)) {
+        old_id = id;
+        i = 0;
+      }
+
       // 32.1 0 0 0 0.6212325096130371 smmodel
       // 32.1 0 1 0 0.13309887051582336 smmodel
-      outputFile.write(id + " 0 " + i + " " + calcIDF(question, answer, args.analyze) + " smmodel\n");
+      outputFile.write(id + " 0 " + i + " 0 " + calcIDF(question, answer, args.analyze) + " idfbaseline\n");
       i++;
     }
     outputFile.close();

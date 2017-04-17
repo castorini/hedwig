@@ -65,7 +65,7 @@ cd ..
 
 To train the S&M model on TrecQA
 ```
-python main.py ../../model/sm_model/sm_model.train-all --train_all
+python main.py ../../model/sm_model/sm_model.train-all 
 ```
 The final model will be saved to ```../../model/sm_model/sm_model.train-all```
 

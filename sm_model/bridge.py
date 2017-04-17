@@ -148,26 +148,55 @@ class SMModelBridge(object):
 
 if __name__ == "__main__":
 
-    smmodel = SMModelBridge('../models/sm_model/sm_model.TrecQA.TRAIN-ALL.2017-04-02.castor',
-                            '../data/word2vec/aquaint+wiki.txt.gz.ndim=50.cache',
-                            '../data/TrecQA/stopwords.txt',
-                            '../data/TrecQA/word2dfs.p')
+    ap = argparse.ArgumentParser(description="Bridge Demo. Produces scores in trec_eval format")
+    ap.add_argument('model')
+    ap.add_argument('--word_embeddings_cache', default='../data/word2vec/aquaint+wiki.txt.gz.ndim=50.cache')
+    ap.add_argument('--stopwords_file', default='../data/TrecQA/stopwords.txt')
+    ap.add_argument('--wordDF_file', default='../data/TrecQA/word2dfs.p')
+    ap.add_argument('--no_ext_feats', action="store_true", help="This argument has no effect because the model saves its members")
+    ap.add_argument('--use_pre_ext_feats', action="store_true", help="use the precomputed external overlap features")
+    ap.add_argument('--data_folder', default='../data/TrecQA/')
+    ap.add_argument('dataset', choices=['train-all', 'raw-test', 'raw-dev', 'train'])
+    ap.add_argument('out_scorefile', help='file in trec_eval format')
+    ap.add_argument('--out_qrels', help='will also output qrels trec_eval format')
 
-    question = "who is the author of the book , `` the iron lady : a biography of margaret thatcher '' ?"
-    answers = [
-        "the iron lady ; a biography of margaret thatcher by hugo young -lrb- farrar , straus & giroux -rrb-",
-        "in this same revisionist mold , hugo young , the distinguished british journalist , has performed a brilliant \
-         dissection of the notion of thatcher as a conservative icon .",
-        "in `` the iron lady , '' young traces the winding staircase of fortune that transformed the younger daughter \
-        of a provincial english grocer into the greatest woman political leader since catherine the great .",
-        "`` he is the very essence of the classless meritocrat , '' says hugo young , thatcher 's biographer .",
-        "from her father , young argues , she inherited a `` joyless earnestness '' that combined with her early \
-        interest in science to produce the roots of her public character .",
-        "this is not the answer",
-        "asdfawe asdf sertse dgfsgsfg"
-    ]
+    args = ap.parse_args()
 
-    ss = smmodel.rerank_candidate_answers(question, answers)
-    print('Question:', question)
-    for score, sentence in ss:
-        print(score, '\t', sentence)
+    smmodel = SMModelBridge(
+            #'../models/sm_model/sm_model.TrecQA.TRAIN-ALL.2017-04-02.castor',
+            args.model,
+            args.word_embeddings_cache,
+            args.stopwords_file,
+            args.wordDF_file)
+    
+    # if args.no_ext_feats:
+    #     smmodel.model.no_ext_feats = True
+
+
+    allque = [q.strip() for q in open(os.path.join('../data/TrecQA/', args.dataset+'/a.toks')).readlines()]
+    allans = [a.strip() for a in open(os.path.join('../data/TrecQA/', args.dataset+'/b.toks')).readlines()]
+    labels = [y.strip() for y in open(os.path.join('../data/TrecQA/', args.dataset+'/sim.txt')).readlines()]
+    qids = [id.strip() for id in open(os.path.join('../data/TrecQA/', args.dataset+'/id.txt')).readlines()]
+
+    pre_ext_feats = None
+    if args.use_pre_ext_feats:
+        pre_ext_feats = [ [float(e) for e in x.split() ] for x in open(os.path.join('../data/TrecQA/', args.dataset+'/overlap_feats.txt')).readlines()]
+    
+    scoref = open(args.out_scorefile, 'w')
+    if args.out_qrels:
+        qrelf = open(args.out_qrels, 'w')
+
+    for i in range(len(allque)):
+        question = allque[i]
+        answers = [allans[i]]
+        ext_feats = None
+        if args.use_pre_ext_feats:
+            ext_feats = [pre_ext_feats[i]]
+        ss = smmodel.rerank_candidate_answers(question, answers, ext_feats)
+        # print('Question:', question)
+        for score, sentence in ss:
+            #print(score, '\t', sentence)
+            #print('{}\t{}'.format(labels[i], score))
+            print('{} {} {} {} {} {}'.format(qids[i], '0', i, 0, score, 'sm_model.'+args.dataset), file=scoref)
+            if args.out_qrels:
+                print('{} {} {} {}'.format(qids[i], '0', i, labels[i]), file=qrelf)
