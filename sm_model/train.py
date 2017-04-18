@@ -37,20 +37,25 @@ class Trainer(object):
         self.optimizer = optim.SGD(self.model.parameters(), lr=eta, momentum=mom, \
             weight_decay=(0 if no_loss_reg else self.reg))
 
-        self.datasets = {}
+        self.data_splits = {}
         self.embeddings = {}
         self.vec_dim = vec_dim
 
 
     def load_input_data(self, dataset_root_folder, word_vectors_cache_file, \
-            train_set_folder, dev_set_folder, test_set_folder):
+            train_set_folder, dev_set_folder, test_set_folder, load_ext_feats=True):
         for set_folder in [test_set_folder, dev_set_folder, train_set_folder]:
             if set_folder:
-                self.datasets[set_folder] = utils.read_in_dataset(dataset_root_folder, set_folder)
-                # NOTE: self.datasets[set_folder] = questions, sentences, labels,
-                #                                       vocab, maxlen_q, maxlen_s, ext_feats
+                questions, sentences, labels, maxlen_q, maxlen_s, vocab = \
+                    utils.read_in_dataset(dataset_root_folder, set_folder)
+
+                self.data_splits[set_folder] = [questions, sentences, labels, maxlen_q, maxlen_s]
+
+                default_ext_feats = [np.zeros(4)] * len(self.data_splits[set_folder][0])
+                self.data_splits[set_folder].append(default_ext_feats)
+
                 self.embeddings[set_folder] = utils.load_cached_embeddings( \
-                    word_vectors_cache_file, self.datasets[set_folder][3], \
+                    word_vectors_cache_file, vocab, \
                     [] if "train" in set_folder else self.unk_term)
 
 
@@ -113,8 +118,8 @@ class Trainer(object):
     def test(self, set_folder, batch_size):
         logger.info('----- Predictions on {} '.format(set_folder))
 
-        questions, sentences, labels, vocab, maxlen_q, maxlen_s, ext_feats = \
-            self.datasets[set_folder]
+        questions, sentences, labels, maxlen_q, maxlen_s, ext_feats = \
+            self.data_splits[set_folder]
         word_vectors, vec_dim = self.embeddings[set_folder], self.vec_dim
 
         self.model.eval()
@@ -136,7 +141,7 @@ class Trainer(object):
                 sentences[batch_start:batch_end],
                 labels[batch_start:batch_end],
                 ext_feats[batch_start:batch_end],
-                word_vectors, vocab, vec_dim
+                word_vectors, vec_dim
                 )
 
             xq, xa, x_ext_feats = batch_inputs[0]
@@ -164,8 +169,8 @@ class Trainer(object):
     def train(self, set_folder, batch_size, debug_single_batch):
         train_start_time = time.time()
 
-        questions, sentences, labels, vocab, maxlen_q, maxlen_s, ext_feats = \
-            self.datasets[set_folder]
+        questions, sentences, labels, maxlen_q, maxlen_s, ext_feats = \
+            self.data_splits[set_folder]
         word_vectors, vec_dim = self.embeddings[set_folder], self.vec_dim
 
         # set model for training modep
@@ -184,7 +189,7 @@ class Trainer(object):
                 sentences[batch_start:batch_end],
                 labels[batch_start:batch_end],
                 ext_feats[batch_start:batch_end],
-                word_vectors, vocab, vec_dim
+                word_vectors, vec_dim
                 )
 
             xq, xa, x_ext_feats = batch_inputs[0]
@@ -225,7 +230,7 @@ class Trainer(object):
 
 
     def get_tensorized_inputs(self, batch_ques, batch_sents, batch_labels, batch_ext_feats, \
-            word_vectors, vocab, vec_dim):
+            word_vectors, vec_dim):
         batch_size = len(batch_ques)
         # NOTE: ideal batch size is one, because sentences are all of different length.
         # In other words, we have no option but to feed in sentences one by one into the model

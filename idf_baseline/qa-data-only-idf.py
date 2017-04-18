@@ -2,6 +2,7 @@ import argparse
 import os
 import numpy as np
 from collections import defaultdict
+import string
 
 import nltk
 nltk.download('stopwords')
@@ -16,6 +17,7 @@ def read_in_data(datapath, set_name, file, stop_and_stem=False):
         if stop_and_stem:
             stemmer = PorterStemmer()
             stoplist = set(stopwords.words('english'))
+            stoplist.update(set(string.punctuation))
             def stop_stem(sentence):
                 return ' '.join([stemmer.stem(word) for word in sentence.split() \
                                                         if word not in stoplist])
@@ -57,8 +59,8 @@ def write_out_idf_sum_similarities(qids, questions, answers, term_idfs, outfile,
             if qids[i] != old_qid and dataset.endswith('WikiQA'):
                 docid_c = 0
                 old_qid = qids[i]
-            print('{} 0 {} 0 {} data_only_idfbaseline'.format(qids[i], docid_c, 
-                  idf_sum_similarity[i]),
+            print('{} 0 {} 0 {} data_only_idfbaseline'.format(qids[i], docid_c,
+                                                              idf_sum_similarity[i]),
                   file=outf)
             docid_c += 1
 
@@ -81,7 +83,7 @@ if __name__ == "__main__":
         train_data, dev_data, test_data = 'train-all', 'raw-dev', 'raw-test'
 
     train_que = read_in_data(args.qa_data, train_data, 'a.toks', args.stop_and_stem)
-    train_ans = read_in_data(args.qa_data, train_data, 'b.toks', args.stop_and_stem)    
+    train_ans = read_in_data(args.qa_data, train_data, 'b.toks', args.stop_and_stem)
 
     dev_que = read_in_data(args.qa_data, dev_data, 'a.toks', args.stop_and_stem)
     dev_ans = read_in_data(args.qa_data, dev_data, 'b.toks', args.stop_and_stem)

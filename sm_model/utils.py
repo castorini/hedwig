@@ -107,14 +107,15 @@ def read_in_dataset(dataset_folder, set_folder):
     len_s_list = [len(s.split()) for s in sentences]
 
     labels = [int(line.strip()) for line in open(os.path.join(set_path, 'sim.txt')).readlines()]
-    ext_feats = np.array([list(map(float, line.strip().split(' '))) \
-        for line in open(os.path.join(set_path, 'overlap_feats.txt')).readlines()])
 
-    #y = torch.from_numpy(labels)
-    #return questions, sentences, y
+    # ext_feats = [np.zeros(4)] * len(questions)
+    # if load_ext_features:
+    #     ext_feats = np.array([list(map(float, line.strip().split(' '))) \
+    #         for line in open(os.path.join(set_path, 'overlap_feats.txt')).readlines()])
 
     vocab = [line.strip() for line in open(os.path.join(dataset_folder, 'vocab.txt')).readlines()]
-    return questions, sentences, labels, vocab, max(len_q_list), max(len_s_list), ext_feats
+
+    return [questions, sentences, labels,  max(len_q_list), max(len_s_list), vocab]
 
 
 def get_test_qids_labels(dataset_folder, set_folder):

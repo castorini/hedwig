@@ -1,0 +1,5 @@
+gensim==1.0.1
+nltk==3.2.1
+numpy==1.11.3
+pandas==0.19.2
+torch==0.1.11+b13b701

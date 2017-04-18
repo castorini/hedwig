@@ -33,7 +33,7 @@ class QAModel(nn.Module):
         self.no_ext_feats = no_ext_feats
 
         self.conv_channels = conv_filters
-        n_hidden = 2*self.conv_channels + 1
+        n_hidden = 2*self.conv_channels + (0 if no_ext_feats else ext_feats_size)
 
         self.conv_q = nn.Sequential(
             nn.Conv1d(input_n_dim, self.conv_channels, filter_width, padding=filter_width-1),
@@ -47,7 +47,7 @@ class QAModel(nn.Module):
 
         self.combined_feature_vector = nn.Linear(2*self.conv_channels + \
             (0 if no_ext_feats else ext_feats_size), n_hidden)
-        # TODO: add +1 to Linear layer^. Will need change in forward function
+
         self.combined_features_activation = nn.Tanh()
         self.dropout = nn.Dropout(0.5)
         self.hidden = nn.Linear(n_hidden, n_classes)
