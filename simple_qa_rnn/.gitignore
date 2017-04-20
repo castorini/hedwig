@@ -1,0 +1,4 @@
+datasets/
+resources/
+saved_checkpoints/
+__pycache__/
