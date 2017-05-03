@@ -28,16 +28,16 @@ git clone https://github.com/castorini/Castor.git
 This should generate:
 ```
 ├── Castor
-│   ├── castorini_smmodel_bridge.py
-│   ├── README.md
-│   └── sm_model/
+│   ├── idf_baseline
+│   ├── kim_cnn
+│   └── sm_cnn
 ├── data
 │   ├── README.md
 │   ├── TrecQA/
 │   └── word2vec/
 └── models
     ├── README.md
-    └── sm_model/
+    └── sm_cnn/
 ```
 
 2. Preprocess data
@@ -57,7 +57,7 @@ python3 build_vocab.py
 Make trec_eval
 
 ```
-cd Castor/sm_model/
+cd Castor/sm_cnn/
 cd trec_eval-8.0
 make clean && make
 cd ..
@@ -65,9 +65,9 @@ cd ..
 
 To train the S&M model on TrecQA
 ```
-python main.py ../../model/sm_model/sm_model.train-all 
+python main.py ../../models/sm_model/sm_model.TrecQA.TRAIN-ALL.2017-04-02.castor
 ```
-The final model will be saved to ```../../model/sm_model/sm_model.train-all```
+The final model will be saved to ```../../models/sm_model/sm_model.TrecQA.TRAIN-ALL.2017-04-02.castor```
 
 _NOTE:_ On first run, the program will create a memory-mapped cache for word e  mbeddings (943MB) in ``data/word2vec``. 
 The cache allows for faster loading of data in future runs.
