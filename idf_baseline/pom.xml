@@ -46,12 +46,15 @@
           <programs>
             <program>
               <mainClass>ai.castor.idf.IDFScorer</mainClass>
-              <name>GetIDF</name>
+              <name>GetIDFSumSimilarity</name>
+            </program>
+            <program>
+              <mainClass>ai.castor.idf.FetchTermIDF</mainClass>
+              <name>FetchTermIDF</name>
             </program>
           </programs>
         </configuration>
       </plugin>
-
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
@@ -65,7 +68,6 @@
           </descriptorRefs>
         </configuration>
       </plugin>
-
     </plugins>
   </build>
 

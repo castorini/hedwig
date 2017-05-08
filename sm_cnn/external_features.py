@@ -1,16 +1,19 @@
-# module to compute various external features for the sm_model.
+# module to compute various external features for the sm cnn model.
 # TODO: add more external features like:
 # word mover distance, cosine sim in tf.idf space, cosine sim in word embedding space
 # overlap based on parts of speech: noun, verb, adj (POS tag)
 # word embedding cosine sim based on part of speech: noun, verb, adj
-
+import sys
+import os
+import shlex
+import subprocess
 import string
 from collections import defaultdict
 
 import numpy as np
 
 import nltk
-nltk.download('stopwords')
+nltk.download('stopwords', quiet=True)
 
 from nltk.stem.porter import PorterStemmer
 from nltk.corpus import stopwords
@@ -49,11 +52,50 @@ def get_qadata_only_idf(all_data):
         term_idfs[term] = np.log(N/(1+n_t))
     return term_idfs
 
-def get_source_corpus_idf(all_data):
+def get_source_corpus_idf(all_data, path_to_index):
     """
     fetches idf weights from source corpus (disks1-5+aquaint|wikipedia) index, for all the qa pairs
     """
-    pass
+    # first run maven to build ../idf_baseline/FetchTermIDF
+    maven_cmd = "mvn -f ../idf_baseline/pom.xml clean package appassembler:assemble"
+    pargs = shlex.split(maven_cmd)
+    p = subprocess.Popen(pargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE, \
+                             bufsize=1, universal_newlines=True)
+    pout, perr = p.communicate()                             
+    # if build failure, exit with message
+    if "BUILD FAILURE" in pout or "BUILD FAILURE" in perr:
+        print("\nERROR: Could not build ../idf_baseline/FetchTermIDF. Fix build errors before proceeding")
+        print("$ cd ../idf_baseline")
+        print("$ mvn clean package appassembler:assemble")
+        sys.exit(0)
+
+    if not type(all_data) is list:
+        all_data = list(all_data)
+    term_idfs = defaultdict(float)
+    all_terms = set([term for doc in all_data for term in doc.split()])
+    with open('dataset.vocab', 'w') as vf:
+        for term in list(all_terms):
+            print(term, file=vf)
+
+    fetchIDF_cmd = \
+        "sh ../idf_baseline/target/appassembler/bin/FetchTermIDF -index {} -vocabFile {}".\
+            format(path_to_index, 'dataset.vocab')
+    pargs = shlex.split(fetchIDF_cmd)
+    p = subprocess.Popen(pargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE, \
+                             bufsize=1, universal_newlines=True)
+    pout, perr = p.communicate()
+
+    lines = str(pout).split('\n')
+    for line in lines:
+        if not line:
+            continue
+        fields = line.strip().split("\t")
+        term, weight = fields[0], fields[-1]
+        term_idfs[term] = float(weight)
+
+    for line in str(perr).split('\n'):
+        print('Warning: '+line)
+    return term_idfs
 
 def compute_overlap(questions, answers):
     """
@@ -83,7 +125,7 @@ def compute_idf_weighted_overlap(questions, answers, idf_weights):
     return np.array(overlap_scores)
 
 
-def set_external_features_as_per_paper(trainer):
+def set_external_features_as_per_paper(trainer, corpus_index=None):
     """
     computes external features as per the paper AND saves them into trainer
     """
@@ -95,7 +137,9 @@ def set_external_features_as_per_paper(trainer):
         all_answers.extend(answers)
 
     all_data = set(all_questions + all_answers)
-    idf_weights = get_qadata_only_idf(list(all_data))
+    print('corpus_index', corpus_index)
+    idf_weights = get_qadata_only_idf(list(all_data)) if not corpus_index else \
+                    get_source_corpus_idf(list(all_data), corpus_index)
 
     external_features = {}
 
@@ -122,7 +166,7 @@ def set_external_features_as_per_paper(trainer):
     return external_features
 
 
-def set_external_features_as_per_paper_and_stem(trainer):
+def set_external_features_as_per_paper_and_stem(trainer, corpus_index=None):
     """
     computes external features as per the paper but performs stemming before computing IDF.
     features are saved into the trainer.data_splits
@@ -143,7 +187,8 @@ def set_external_features_as_per_paper_and_stem(trainer):
         return ' '.join([stemmer.stem(word) if word not in stoplist else word \
                     for word in sentence.split()])
     all_but_stopwords_stemmed = [stem_non_stop_words(sentence) for sentence in list(all_data)]
-    idf_weights = get_qadata_only_idf(all_but_stopwords_stemmed)
+    idf_weights = get_qadata_only_idf(all_but_stopwords_stemmed) if not corpus_index else \
+                    get_source_corpus_idf(all_but_stopwords_stemmed, corpus_index)
 
     external_features = {}
 

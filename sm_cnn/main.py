@@ -78,7 +78,7 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ap.add_argument('model_outfile', help='file to save final model')
     ap.add_argument('--word_vectors_file', \
-        help='NOTE: a cache will be created for faster loading for word vectors',
+        help='NOTE: a cache will be created for faster loading for word vectors',\
         default="../../data/word2vec/aquaint+wiki.txt.gz.ndim=50.bin")
     ap.add_argument('--dataset_folder', help='directory containing train, dev, test sets', \
         default="../../data/TrecQA")
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     # external features related arguments
     ap.add_argument('--no-ext-feats', action="store_true", \
         help="will not include external features in the model")
-    ap.add_argument('--paper-ext-feats', action="store_true", \
+    ap.add_argument('--paper-ext-feats', action="store_true", default=True, \
         help="external features as per the paper")
     ap.add_argument('--paper-ext-feats-stem', action="store_true", \
         help="external features as per the paper")
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     ap.add_argument('--mom', help='SGD Momentum', default=0.0, type=float)
     ap.add_argument('--train', help='switches to train set', action="store_true")
     # epoch related arguments
-    ap.add_argument('--epochs', type=int, default=25, help="number of trainin epochs")
+    ap.add_argument('--epochs', type=int, default=25, help="number of training epochs")
     ap.add_argument('--patience', type=int, default=5, \
         help="if there is no appreciable change in model after <patience> epochs, then stop")
     # debugging arguments
@@ -114,6 +114,10 @@ if __name__ == "__main__":
         help='runs test on each epoch to track final performance')
     ap.add_argument("--skip-training", help="will load pre-trained model", action="store_true")
     ap.add_argument("--run-name-prefix", help="will output train|dev|test runs with provided prefix")
+    ap.add_argument("--stop-punct", help='removes punctuation', action="store_true")
+    ap.add_argument("--dash-split", help="split words containing hyphens", action="store_true")
+    ap.add_argument("--index-for-corpusIDF", help="fetches idf from Index. provide index path. will\
+    generate a vocabFile")
 
     args = ap.parse_args()
 
@@ -144,12 +148,15 @@ if __name__ == "__main__":
     # TODO: remember to update args.* in testing loop below
     if args.paper_ext_feats:
         logger.info("--paper-ext-feats")
-        ext_feats_for_splits = set_external_features_as_per_paper(trainer)
+        ext_feats_for_splits = \
+            set_external_features_as_per_paper(trainer, args.index_for_corpusIDF)
         # ^^ we are saving the features to be used while testing at the end of training
     elif args.paper_ext_feats_stem:
         logger.info("--paper-ext-feats-stem")
-        ext_feats_for_splits = set_external_features_as_per_paper_and_stem(trainer)
+        ext_feats_for_splits = \
+            set_external_features_as_per_paper_and_stem(trainer, args.index_for_corpusIDF)
 
+    
     if not args.skip_training:
         best_map = 0.0
         best_model = 0
@@ -187,7 +194,7 @@ if __name__ == "__main__":
     trained_model = QAModel.load(args.model_outfile)
     evaluator = Trainer(trained_model, args.eta, args.mom, args.no_loss_reg, vec_dim)
 
-    for split in [test_set, dev_set, train_set]:
+    for split in [test_set, dev_set]:
         evaluator.load_input_data(args.dataset_folder, cache_file, None, None, split)
         if args.paper_ext_feats or args.paper_ext_feats_stem:
             evaluator.data_splits[split][-1] = ext_feats_for_splits[split]

@@ -54,10 +54,9 @@ class Trainer(object):
                 default_ext_feats = [np.zeros(4)] * len(self.data_splits[set_folder][0])
                 self.data_splits[set_folder].append(default_ext_feats)
 
-                self.embeddings[set_folder] = utils.load_cached_embeddings( \
-                    word_vectors_cache_file, vocab, \
-                    [] if "train" in set_folder else self.unk_term)
-
+                utils.load_cached_embeddings(word_vectors_cache_file, vocab, self.embeddings,
+                                             [] if "train" in set_folder else self.unk_term)
+        
 
     def regularize_loss(self, loss):
 
@@ -120,7 +119,7 @@ class Trainer(object):
 
         questions, sentences, labels, maxlen_q, maxlen_s, ext_feats = \
             self.data_splits[set_folder]
-        word_vectors, vec_dim = self.embeddings[set_folder], self.vec_dim
+        word_vectors, vec_dim = self.embeddings, self.vec_dim
 
         self.model.eval()
 
@@ -171,7 +170,7 @@ class Trainer(object):
 
         questions, sentences, labels, maxlen_q, maxlen_s, ext_feats = \
             self.data_splits[set_folder]
-        word_vectors, vec_dim = self.embeddings[set_folder], self.vec_dim
+        word_vectors, vec_dim = self.embeddings, self.vec_dim
 
         # set model for training modep
         self.model.train()

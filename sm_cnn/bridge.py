@@ -4,6 +4,8 @@ import sys
 from collections import Counter
 import argparse
 
+import re
+import string
 import numpy as np
 import torch
 from nltk.tokenize import TreebankWordTokenizer
@@ -25,6 +27,8 @@ class SMModelBridge(object):
 
         # load model
         self.model = model.QAModel.load(model_file)
+        self.model_file = model_file
+
         # load vectors
         self.vec_dim = self._preload_cached_embeddings(word_embeddings_cache_file)
         self.unk_term_vec = np.random.uniform(-0.25, 0.25, self.vec_dim)
@@ -48,8 +52,34 @@ class SMModelBridge(object):
 
     def parse(self, sentence):
         s_toks = TreebankWordTokenizer().tokenize(sentence)
-        s_str = ' '.join(s_toks).lower()
-        return s_str
+        sentence = ' '.join(s_toks).lower()
+
+        model_input_args = self.model_file.split('.')
+        punctuation = model_input_args[-3].split('-')[1]
+        dash_words = model_input_args[-2].split('_')[1]
+
+        if dash_words == "split":
+            def split_hyphenated_words(sentence):
+                rtokens = []
+                for term in sentence.split():
+                    for t in term.split('-'):
+                        if t:
+                            rtokens.append(t)
+                return ' '.join(rtokens)
+            sentence = split_hyphenated_words(sentence)
+
+        if punctuation == "remove":
+            regex = re.compile('[{}]'.format(re.escape(string.punctuation)))
+            def remove_punctuation(sentence):
+                rtokens = []
+                for term in sentence.split():
+                    for t in regex.sub(' ', term).strip().split():
+                        if t:
+                            rtokens.append(t)
+                return ' '.join(rtokens)
+            sentence = remove_punctuation(sentence)
+
+        return sentence
 
 
     def make_input_matrix(self, sentence):
@@ -86,9 +116,16 @@ class SMModelBridge(object):
         term_idfs = json.loads(idf_json)
         term_idfs = dict((k, float(v)) for k, v in term_idfs.items())
 
+        for term in question.split():
+            if term not in term_idfs:
+                term_idfs[term] = 0.0
+
         for answer in answers:
             answer = self.parse(answer)
-
+            for term in answer.split():
+                if term not in term_idfs:
+                    term_idfs[term] = 0.0
+    
             overlap = compute_overlap([question], [answer])
             idf_weighted_overlap = compute_idf_weighted_overlap([question], [answer], term_idfs)
             overlap_no_stopwords =\

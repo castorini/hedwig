@@ -2,7 +2,7 @@
 
 Pytorch deep learning models.
 
-1. [SM model](./sm_model/): Similarity between question and candidate answers.
+1. [SM model](./sm_cnn/): Similarity between question and candidate answers.
 
 
 ## Setting up Pytorch

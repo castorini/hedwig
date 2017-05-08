@@ -28,9 +28,11 @@ git clone https://github.com/castorini/Castor.git
 This should generate:
 ```
 ├── Castor
+│   ├── README.md
 │   ├── idf_baseline
 │   ├── kim_cnn
-│   └── sm_cnn
+│   ├── simple_qa_rnn
+│   └── sm_cnn/
 ├── data
 │   ├── README.md
 │   ├── TrecQA/
@@ -65,7 +67,7 @@ cd ..
 
 To train the S&M model on TrecQA
 ```
-python main.py ../../models/sm_model/sm_model.TrecQA.TRAIN-ALL.2017-04-02.castor
+python main.py ../../models/sm_model/sm_model.TrecQA.TRAIN-ALL.2017-04-02.castor --paper-ext-features
 ```
 The final model will be saved to ```../../models/sm_model/sm_model.TrecQA.TRAIN-ALL.2017-04-02.castor```
 
