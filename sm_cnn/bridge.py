@@ -50,15 +50,15 @@ class SMModelBridge(object):
         return vec_dim
 
 
-    def parse(self, sentence):
+    def parse(self, sentence, flags):
         s_toks = TreebankWordTokenizer().tokenize(sentence)
         sentence = ' '.join(s_toks).lower()
 
-        model_input_args = self.model_file.split('.')
-        punctuation = model_input_args[-3].split('-')[1]
-        dash_words = model_input_args[-2].split('_')[1]
+        # model_input_args = self.model_file.split('.')
+        # punctuation = model_input_args[-3].split('-')[1]
+        # dash_words = model_input_args[-2].split('_')[1]
 
-        if dash_words == "split":
+        if flags["dash_words"] == "split":
             def split_hyphenated_words(sentence):
                 rtokens = []
                 for term in sentence.split():
@@ -68,7 +68,7 @@ class SMModelBridge(object):
                 return ' '.join(rtokens)
             sentence = split_hyphenated_words(sentence)
 
-        if punctuation == "remove":
+        if flags["punctuation"] == "remove":
             regex = re.compile('[{}]'.format(re.escape(string.punctuation)))
             def remove_punctuation(sentence):
                 rtokens = []
@@ -83,7 +83,7 @@ class SMModelBridge(object):
 
 
     def make_input_matrix(self, sentence):
-        terms = sentence.strip().split()
+        terms = sentence.strip().split()[:60]
         # word_embeddings = torch.zeros(max_len, vec_dim).type(torch.DoubleTensor)
         word_embeddings = torch.zeros(len(terms), self.vec_dim).type(torch.DoubleTensor)
         for i in range(len(terms)):
@@ -109,10 +109,10 @@ class SMModelBridge(object):
             tensorized_inputs.append((xq, xs, ext_feats))
         return tensorized_inputs
 
-    def rerank_candidate_answers(self, question, answers, idf_json):
+    def rerank_candidate_answers(self, question, answers, idf_json, flags):
         # run through the model
         scores_sentences = []
-        question = self.parse(question)
+        question = self.parse(question, flags)
         term_idfs = json.loads(idf_json)
         term_idfs = dict((k, float(v)) for k, v in term_idfs.items())
 
@@ -121,7 +121,7 @@ class SMModelBridge(object):
                 term_idfs[term] = 0.0
 
         for answer in answers:
-            answer = self.parse(answer)
+            answer = self.parse(answer, flags)
             for term in answer.split():
                 if term not in term_idfs:
                     term_idfs[term] = 0.0
@@ -156,17 +156,20 @@ def get_term_idf_json_list(index_path, sent_list):
     json_object = pyserini.getTermIdfJSONs(java_list)
     return json_object
 
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Bridge Demo. Produces scores in trec_eval format",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     ap.add_argument('model', help="the path to the saved model file")
     ap.add_argument('--word-embeddings-cache', help="the embeddings 'cache' file",\
-        default='../data/word2vec/aquaint+wiki.txt.gz.ndim=50.cache')
+        default='../../data/word2vec/aquaint+wiki.txt.gz.ndim=50.cache')
     ap.add_argument('index_path', help="the path to the source corpus index")
     # ap.add_argument('--paper-ext-feats', action="store_true", \
     #     help="external features as per the paper")
     ap.add_argument('--dataset-folder', help="the QA dataset folder {TrecQA|WikiQA}",
-                    default='../data/TrecQA/')
+                    default='../../data/TrecQA/')
+    ap.add_argument("--punctuation", choices=["keep", "remove"], default="keep")
+    ap.add_argument("--dash-words", choices=["keep", "split"], default="keep")
 
     args = ap.parse_args()
 
@@ -180,7 +183,10 @@ if __name__ == "__main__":
     if 'TrecQA' in args.dataset_folder:
         train_set, dev_set, test_set = 'train-all', 'raw-dev', 'raw-test'
 
-
+    flags = {
+        "punctuation": args.punctuation,
+        "dash_words": args.dash_words
+    }
 
     for split in [dev_set, test_set]:
         outfile = open('bridge.{}.scores'.format(split), 'w')
@@ -207,7 +213,7 @@ if __name__ == "__main__":
             num_answers = q_counts[question]
             q_answers = answers[answers_offset: answers_offset + num_answers]
             answers_offset += num_answers
-            sentence_scores = smmodel.rerank_candidate_answers(question, q_answers, idf_json)
+            sentence_scores = smmodel.rerank_candidate_answers(question, q_answers, idf_json, flags)
 
             for score, sentence in sentence_scores:
                 print('{} Q0 {} 0 {} sm_cnn_bridge.{}.run'.format(
