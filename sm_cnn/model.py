@@ -27,7 +27,7 @@ class QAModel(nn.Module):
 
 
     def __init__(self, input_n_dim, filter_width, \
-            conv_filters=100, no_ext_feats=False, ext_feats_size=4, n_classes=2):
+            conv_filters=100, no_ext_feats=False, ext_feats_size=4, n_classes=2, cuda=False):
         super(QAModel, self).__init__()
 
         self.no_ext_feats = no_ext_feats
@@ -53,6 +53,11 @@ class QAModel(nn.Module):
         self.hidden = nn.Linear(n_hidden, n_classes)
         self.logsoftmax = nn.LogSoftmax()
 
+        if cuda and torch.cuda.is_available():
+            self.conv_q, self.conv_a = self.conv_q.cuda(), self.conv_a.cuda()
+            self.combined_feature_vector = self.combined_feature_vector.cuda()
+            self.combined_features_activation = self.combined_features_activation.cuda()
+            self.dropout, self.hidden, self.logsoftmax = self.dropout.cuda(), self.hidden.cuda(), self.logsoftmax.cuda()
 
     def forward(self, question, answer, ext_feats):
 

@@ -91,7 +91,7 @@ if __name__ == "__main__":
     ap.add_argument('--paper-ext-feats-stem', action="store_true", \
         help="external features as per the paper")
     # system arguments
-    # TODO: add arguments for CUDA
+    ap.add_argument('--cuda', action='store_true', help='use CUDA if available')
     ap.add_argument('--num_threads', help="the number of simultaneous processes to run", \
         type=int, default=4)
     # training arguments
@@ -136,10 +136,10 @@ if __name__ == "__main__":
     vocab_size, vec_dim = utils.load_embedding_dimensions(cache_file)
 
     # instantiate model
-    net = QAModel(vec_dim, args.filter_width, args.num_conv_filters, args.no_ext_feats)
+    net = QAModel(vec_dim, args.filter_width, args.num_conv_filters, args.no_ext_feats, cuda=args.cuda)
 
     # initialize the trainer
-    trainer = Trainer(net, args.eta, args.mom, args.no_loss_reg, vec_dim)
+    trainer = Trainer(net, args.eta, args.mom, args.no_loss_reg, vec_dim, args.cuda)
     logger.info("Loading input data...")
     # load input data
     trainer.load_input_data(args.dataset_folder, cache_file, train_set, dev_set, test_set)
@@ -156,7 +156,7 @@ if __name__ == "__main__":
         ext_feats_for_splits = \
             set_external_features_as_per_paper_and_stem(trainer, args.index_for_corpusIDF)
 
-    
+
     if not args.skip_training:
         best_map = 0.0
         best_model = 0
@@ -192,7 +192,7 @@ if __name__ == "__main__":
         logger.info('Best dev MAP in training phase = {:.4f}'.format(best_map))
 
     trained_model = QAModel.load(args.model_outfile)
-    evaluator = Trainer(trained_model, args.eta, args.mom, args.no_loss_reg, vec_dim)
+    evaluator = Trainer(trained_model, args.eta, args.mom, args.no_loss_reg, vec_dim, args.cuda)
 
     for split in [test_set, dev_set]:
         evaluator.load_input_data(args.dataset_folder, cache_file, None, None, split)

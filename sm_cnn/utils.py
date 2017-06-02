@@ -1,11 +1,12 @@
 # file input output
-
 import os
-import sys
+import re
+import string
 
-import numpy as np
-import torch
 from gensim.models.keyedvectors import KeyedVectors
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+import numpy as np
 
 # logging setup
 import logging
@@ -155,7 +156,7 @@ def read_in_dataset(dataset_folder, set_folder, stop_punct=False, dash_split=Fal
         for term in sentence.split():
             vocab_set.add(term)
     vocab = list(vocab_set)
-    
+
     return [questions, sentences, labels, max(len_q_list), max(len_s_list), vocab]
 
 

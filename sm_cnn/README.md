@@ -1,4 +1,4 @@
-## SM model 
+## SM model
 
 #### References:
 1. Aliaksei _S_everyn and Alessandro _M_oschitti. 2015. Learning to Rank Short Text Pairs with Convolutional Deep Neural Networks. In Proceedings of the 38th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '15). ACM, New York, NY, USA, 373-382. DOI: http://dx.doi.org/10.1145/2766462.2767738
@@ -20,9 +20,9 @@ Please install the requirements. See [Castor/README.md](../README.md) for pytorc
 ```
 mkdir castorini
 cd castorini
-git clone https://github.com/castorini/data.git 
-git clone https://github.com/castorini/models.git 
-git clone https://github.com/castorini/Castor.git 
+git clone https://github.com/castorini/data.git
+git clone https://github.com/castorini/models.git
+git clone https://github.com/castorini/Castor.git
 ```
 
 This should generate:
@@ -67,11 +67,13 @@ cd ..
 
 To train the S&M model on TrecQA
 ```
-python main.py ../../models/sm_model/sm_model.TrecQA.TRAIN-ALL.2017-04-02.castor --paper-ext-features
+python main.py ../../models/sm_model/sm_model.TrecQA.TRAIN-ALL.2017-04-02.castor --paper-ext-feats
 ```
+**To use the GPU, add `--cuda`.**
+
 The final model will be saved to ```../../models/sm_model/sm_model.TrecQA.TRAIN-ALL.2017-04-02.castor```
 
-_NOTE:_ On first run, the program will create a memory-mapped cache for word e  mbeddings (943MB) in ``data/word2vec``. 
+_NOTE:_ On first run, the program will create a memory-mapped cache for word e  mbeddings (943MB) in ``data/word2vec``.
 The cache allows for faster loading of data in future runs.
 
 Run ```python main.py -h``` for more default options.

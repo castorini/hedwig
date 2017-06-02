@@ -22,11 +22,12 @@ logger.addHandler(ch)
 
 class Trainer(object):
 
-    def __init__(self, model, eta, mom, no_loss_reg, vec_dim):
+    def __init__(self, model, eta, mom, no_loss_reg, vec_dim, cuda=False):
         # set the random seeds for every instance of trainer.
         # needed to ensure reproduction of random word vectors for out of vocab terms
         torch.manual_seed(1234)
         np.random.seed(1234)
+        self.cuda = cuda
         self.unk_term = np.random.uniform(-0.25, 0.25, vec_dim)
 
         self.reg = 1e-5
@@ -56,7 +57,7 @@ class Trainer(object):
 
                 utils.load_cached_embeddings(word_vectors_cache_file, vocab, self.embeddings,
                                              [] if "train" in set_folder else self.unk_term)
-        
+
 
     def regularize_loss(self, loss):
 
@@ -141,7 +142,7 @@ class Trainer(object):
                 labels[batch_start:batch_end],
                 ext_feats[batch_start:batch_end],
                 word_vectors, vec_dim
-                )
+            )
 
             xq, xa, x_ext_feats = batch_inputs[0]
             y = batch_labels[0]
@@ -189,7 +190,7 @@ class Trainer(object):
                 labels[batch_start:batch_end],
                 ext_feats[batch_start:batch_end],
                 word_vectors, vec_dim
-                )
+            )
 
             xq, xa, x_ext_feats = batch_inputs[0]
 
@@ -200,7 +201,7 @@ class Trainer(object):
             # logger.debug('batch_loss {}, batch_correct {}'.format(batch_loss, batch_correct))
             train_loss += batch_loss
             # train_correct += batch_correct
-            if debug_single_batch: 
+            if debug_single_batch:
                 break
 
         # logger.info('train_correct {}'.format(train_correct))
@@ -225,6 +226,8 @@ class Trainer(object):
 
         input_tensor = torch.zeros(1, vec_dim, len(terms))
         input_tensor[0] = torch.transpose(word_embeddings, 0, 1)
+        if self.cuda and torch.cuda.is_available():
+            input_tensor = input_tensor.cuda()
         return input_tensor
 
 
@@ -240,12 +243,17 @@ class Trainer(object):
         #   - would zero endings work for other smaller sentences?
 
         y = torch.LongTensor(batch_size).type(torch.LongTensor)
+        if self.cuda and torch.cuda.is_available():
+            y = y.cuda()
 
         tensorized_inputs = []
         for i in range(len(batch_ques)):
             xq = Variable(self.make_input_matrix(batch_ques[i], word_vectors, vec_dim))
             xs = Variable(self.make_input_matrix(batch_sents[i], word_vectors, vec_dim))
-            ext_feats = Variable(torch.FloatTensor(batch_ext_feats[i]))
+            ext_feats = torch.FloatTensor(batch_ext_feats[i])
+            if self.cuda and torch.cuda.is_available():
+                ext_feats = ext_feats.cuda()
+            ext_feats = Variable(ext_feats)
             ext_feats = torch.unsqueeze(ext_feats, 0)
             y[i] = batch_labels[i]
             tensorized_inputs.append((xq, xs, ext_feats))
