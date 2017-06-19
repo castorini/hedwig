@@ -47,7 +47,7 @@ def cache_word_embeddings(word_embeddings_file, cache_file):
         with open(cache_file + '.vocab', 'w') as f:
             logger.info('writing out vocab for {}'.format(word_embeddings_file))
             for _, w in sorted((voc.index, word) for word, voc in wv.vocab.items()):
-                print(w.encode('utf-8'), file=f)
+                print(w, file=f)
         with open(cache_file + '.dimensions', 'w') as f:
             logger.info('writing out dimensions for {}'.format(word_embeddings_file))
             print(wv.syn0.shape[0], wv.syn0.shape[1], file=f)
