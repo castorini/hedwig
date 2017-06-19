@@ -1,2 +1,4 @@
 *pyc
 trec_eval-8.0/trec_eval
+data/
+trained_models/
