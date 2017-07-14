@@ -10,8 +10,8 @@ for id in range(count):
     dropout = uniform(0.5, 0.6)
     clip = uniform(0.6, 0.7)
 
-    command = "python train.py --cuda --device 1 --dev_every 500 --log_every 250 --batch_size 128 " \
-                "--epochs {} --lr {} --d_hidden {} --n_layers {} --dropout_prob {} --clip {} >> " \
+    command = "python train.py --dev_every 500 --log_every 250 --batch_size 32 " \
+                "--epochs {} --lr {} --d_hidden {} --n_layers {} --dropout_prob {} --clip_gradient {} >> " \
                     "results.txt".format(epochs, learning_rate, d_hidden, n_layers, dropout, clip)
 
     print("Running: " + command)

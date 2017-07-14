@@ -1,4 +1,6 @@
-data/
+data/*
+data/glove/
 resources/
 saved_checkpoints/
 __pycache__/
+relation_prediction/*cache*/*

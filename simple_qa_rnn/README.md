@@ -1,14 +1,21 @@
-Directions:
-1. Download SimpleQuestions data from this [link](https://www.dropbox.com/s/tohrsllcfy7rch4/SimpleQuestions_v2.tgz) and put it in directory "data/SimpleQuestions_v2/"
-2. Run this script to download GloVe word embeddings and do some preprocessing.
+## Relation Prediction Model
+
+- Download and extract SimpleQuestions dataset by running the script:
 ```
-bash fetch_and_preprocess.sh
+bash fetch_dataset.sh 
 ```
-3. Run this command to train the model. Make sure you have PyTorch and other Python dependencies installed.
+
+- You will also require the package - [torchtext](https://github.com/pytorch/text).
 ```
-python train_relation_model.py 
+git clone https://github.com/pytorch/text.git
+cd path/to/torchtext
+python setup.py install
 ```
-For GPU, use:
+
+- Run the training script with the following commands. Please check out args.py file to see the different commands available:
 ```
-python train_relation_model.py --cuda
+cd relation_prediction
+python train.py
+python train.py --no_cuda
+python train.py --rnn_type gru
 ```
