@@ -155,7 +155,7 @@ def read_in_dataset(dataset_folder, set_folder, stop_punct=False, dash_split=Fal
     for sentence in all_data:
         for term in sentence.split():
             vocab_set.add(term)
-    vocab = list(vocab_set)
+    vocab = sorted(list(vocab_set))
 
     return [questions, sentences, labels, max(len_q_list), max(len_s_list), vocab]
 
