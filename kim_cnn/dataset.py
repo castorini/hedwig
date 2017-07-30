@@ -21,7 +21,7 @@ class Dataset(Configurable):
     super(Dataset, self).__init__(*args, **kwargs)
     self._train = (filename == self.train_file)
     self.vocabs = vocabs
-    self.buckets = [Bucket(self._config, name='Sents-%d' % i) for i in xrange(self.n_bkts)]
+    self.buckets = [Bucket(self._config, name='Sents-%d' % i) for i in range(self.n_bkts)]
     self.id2position = []
     self.len2bkts = {}
     self.vocabs = vocabs

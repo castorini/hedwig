@@ -148,7 +148,7 @@ class Vocab(Configurable):
 
 
   def __getitem__(self, key):
-    if isinstance(key, basestring):
+    if isinstance(key, str):
       # Convert the lower case
       if self.lower_case:
         key = key.lower()

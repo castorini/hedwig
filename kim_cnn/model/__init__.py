@@ -1,1 +1,1 @@
-from cnnText import *
+from model.cnnText import *

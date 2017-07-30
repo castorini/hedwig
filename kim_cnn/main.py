@@ -26,7 +26,7 @@ if __name__=='__main__':
   args, extra_args = argparser.parse_known_args()
   # args.train = True/False ...
   # extra_args['--some': "xxxx"]
-  cargs = {k: v for (k, v) in vars(Configurable.argparser.parse_args(extra_args)).iteritems() if v is not None}
+  cargs = {k: v for (k, v) in vars(Configurable.argparser.parse_args(extra_args)).items() if v is not None}
 
   if 'model_type' not in cargs:
     print("You need to specify the model_type")

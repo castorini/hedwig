@@ -8,7 +8,7 @@ from __future__ import print_function
 import os
 import argparse
 
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 
 
 class Configurable(object):
@@ -37,7 +37,7 @@ class Configurable(object):
     config_file = kwargs.pop("config_file", "")
     config.read(config_file)
     # Override the config setting if the (k,v) specified in command line
-    for option, value in kwargs.iteritems():
+    for option, value in kwargs.items():
       assigned = False
       for section in config.sections():
         if option in config.options(section):

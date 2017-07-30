@@ -6,7 +6,6 @@ import torch.nn as nn
 
 import torch.nn.functional as F
 
-from configurable import Configurable
 
 class CNNText(nn.Module):
   """

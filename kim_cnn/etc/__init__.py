@@ -1,2 +1,2 @@
-from kmeans import KMeans
-from utils import clean_str, clean_str_sst
+from etc.kmeans import KMeans
+from etc.utils import clean_str, clean_str_sst
