@@ -44,11 +44,11 @@ def cache_word_embeddings(word_embeddings_file, cache_file):
         # print len(wv.syn0norm) if wv.syn0norm else None
         fp = np.memmap(cache_file, dtype=np.double, mode='w+', shape=wv.syn0.shape)
         fp[:] = wv.syn0[:]
-        with open(cache_file + '.vocab', 'w') as f:
+        with open(cache_file + '.vocab', 'w', encoding='utf-8') as f:
             logger.info('writing out vocab for {}'.format(word_embeddings_file))
             for _, w in sorted((voc.index, word) for word, voc in wv.vocab.items()):
                 print(w, file=f)
-        with open(cache_file + '.dimensions', 'w') as f:
+        with open(cache_file + '.dimensions', 'w', encoding='utf-8') as f:
             logger.info('writing out dimensions for {}'.format(word_embeddings_file))
             print(wv.syn0.shape[0], wv.syn0.shape[1], file=f)
         vocab_size, vec_dim = wv.syn0.shape
@@ -60,7 +60,7 @@ def cache_word_embeddings(word_embeddings_file, cache_file):
 
 def load_embedding_dimensions(cache_file):
     vocab_size, vec_dim = 0, 0
-    with open(cache_file + '.dimensions') as d:
+    with open(cache_file + '.dimensions', encoding='utf-8') as d:
         vocab_size, vec_dim = [int(e) for e in d.read().strip().split()]
     return vocab_size, vec_dim
 
@@ -71,12 +71,12 @@ def load_cached_embeddings(cache_file, vocab_list, w2v_dict, oov_vec=[]):
     """
     logger.debug('loading cached embeddings ')
 
-    with open(cache_file + '.dimensions') as d:
+    with open(cache_file + '.dimensions', encoding='utf-8') as d:
         vocab_size, vec_dim = [int(e) for e in d.read().strip().split()]
 
     W = np.memmap(cache_file, dtype=np.double, shape=(vocab_size, vec_dim))
 
-    with open(cache_file + '.vocab') as f:
+    with open(cache_file + '.vocab', encoding='utf-8') as f:
         logger.debug('loading vocab')
         w2v_vocab_list = map(str.strip, f.readlines())
 
@@ -95,7 +95,7 @@ def load_cached_embeddings(cache_file, vocab_list, w2v_dict, oov_vec=[]):
 
 def read_in_data(datapath, set_name, file, stop_and_stem=False, stop_punct=False, dash_split=False):
     data = []
-    with open(os.path.join(datapath, set_name, file)) as inf:
+    with open(os.path.join(datapath, set_name, file), encoding='utf-8') as inf:
         data = [line.strip() for line in inf.readlines()]
 
         if dash_split:
@@ -162,8 +162,8 @@ def read_in_dataset(dataset_folder, set_folder, stop_punct=False, dash_split=Fal
 
 def get_test_qids_labels(dataset_folder, set_folder):
     set_path = os.path.join(dataset_folder, set_folder)
-    qids = [line.strip() for line in open(os.path.join(set_path, 'id.txt')).readlines()]
-    labels = np.array([int(line.strip()) for line in open(os.path.join(set_path, 'sim.txt')).readlines()])
+    qids = [line.strip() for line in open(os.path.join(set_path, 'id.txt'), encoding='utf-8').readlines()]
+    labels = np.array([int(line.strip()) for line in open(os.path.join(set_path, 'sim.txt'), encoding='utf-8').readlines()])
     return qids, labels
 
 
