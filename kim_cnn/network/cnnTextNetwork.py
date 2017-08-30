@@ -103,6 +103,9 @@ class cnnTextNetwork(Configurable):
     acc_sents = 0 # count sents number for one log_interval
 
     epoch = 0
+    best_accuracy = 0
+    best_model = 0
+
     while True:
       for batch in self.train_minibatch():
         self.model.train()
@@ -152,7 +155,19 @@ class cnnTextNetwork(Configurable):
 
       epoch += 1
       accuracy = float(acc_corrects) / float(acc_sents) * 100
+
+      # if the new accuracy is better than the old accuracy by 0.1%
+      if accuracy - best_accuracy > 0.1:
+        best_accuracy = accuracy
+        best_model = epoch
+
       print("[EPOCH] %d Accuracy: %5.2f" % (epoch, accuracy))
+
+      # stop training if the accuracy remains the same over 5 epochs
+      if (epoch - best_model) >= 5:
+        print('No improvement since the last {} epochs. Stopping training'.format(epoch - best_model))
+        break
+
       acc_corrects = 0
       acc_sents = 0
       if (epoch % self.epoch_decay == 0):

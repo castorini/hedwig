@@ -4,7 +4,7 @@ Implementation for Convolutional Neural Networks for Sentence Classification of 
 ## Project Structure
 
 ```
-text-classification-cnn
+kim-cnn
   ├── config
   │   └── classification.cfg
   ├── etc
