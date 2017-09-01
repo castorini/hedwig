@@ -11,10 +11,6 @@ import os
 if __name__=='__main__':
 
   import argparse
-  torch.manual_seed(3435)
-  np.random.seed(3435)
-  if torch.cuda.is_available():
-    torch.cuda.manual_seed(3435)
 
 
   argparser = argparse.ArgumentParser()
@@ -22,11 +18,19 @@ if __name__=='__main__':
   argparser.add_argument('--validate', action='store_true')
   argparser.add_argument('--test', action='store_true')
   argparser.add_argument('--load', action='store_true')
+  argparser.add_argument('--seed', help='Random seed', type=int, default=3435)
+  argparser.add_argument('--num_threads', help='The number of threads to use', type=int, default=4)
 
   args, extra_args = argparser.parse_known_args()
   # args.train = True/False ...
   # extra_args['--some': "xxxx"]
   cargs = {k: v for (k, v) in vars(Configurable.argparser.parse_args(extra_args)).items() if v is not None}
+
+  torch.manual_seed(args.seed)
+  np.random.seed(args.seed)
+  if torch.cuda.is_available():
+    torch.cuda.manual_seed(args.seed)
+  torch.set_num_threads(args.num_threads)
 
   if 'model_type' not in cargs:
     print("You need to specify the model_type")

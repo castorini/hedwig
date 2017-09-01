@@ -118,11 +118,12 @@ if __name__ == "__main__":
     ap.add_argument("--dash-split", help="split words containing hyphens", action="store_true")
     ap.add_argument("--index-for-corpusIDF", help="fetches idf from Index. provide index path. will\
     generate a vocabFile")
+    ap.add_argument('--seed', help='Random seed', type=int, default=1234)
 
     args = ap.parse_args()
 
-    torch.manual_seed(1234)
-    np.random.seed(1234)
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
     torch.set_num_threads(args.num_threads)
 
     train_set, dev_set, test_set = 'train-all', 'raw-dev', 'raw-test'
