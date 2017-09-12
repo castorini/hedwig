@@ -124,6 +124,9 @@ if __name__ == "__main__":
 
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
+    if args.cuda and torch.cuda.is_available():
+        torch.cuda.manual_seed(args.seed)
+
     torch.set_num_threads(args.num_threads)
 
     train_set, dev_set, test_set = 'train-all', 'raw-dev', 'raw-test'
