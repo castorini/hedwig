@@ -85,6 +85,8 @@ class MPCNNDataset(data.Dataset):
 
         self.cuda = cuda
         self.max_length = -10000
+        self.unk = torch.Tensor(300)
+        self.unk.normal_(0, 0.01)
 
     def initialize(self, word_index, embedding):
         """
@@ -127,6 +129,8 @@ class MPCNNDataset(data.Dataset):
             if token in word_index:
                 found_pos.append(i)
                 found_emb_idx.append(word_index[token])
+            else:
+                sentence_embedding[:, i] = self.unk
 
         found_word_vecs = embedding(Variable(torch.LongTensor(found_emb_idx)))
         for i, v in enumerate(found_pos):

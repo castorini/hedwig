@@ -68,6 +68,8 @@ class SICKEvaluator(Evaluator):
             true_labels.append((predict_classes * labels.data).sum(dim=1))
             predictions.append((predict_classes * output.data.exp()).sum(dim=1))
 
+            del output
+
         predictions = torch.cat(predictions).cpu().numpy()
         true_labels = torch.cat(true_labels).cpu().numpy()
         test_kl_div_loss /= len(self.data_loader.dataset)
@@ -102,6 +104,8 @@ class MSRVIDEvaluator(Evaluator):
                     predict_classes = predict_classes.cuda()
             true_labels.append((predict_classes * labels.data).sum(dim=1))
             predictions.append((predict_classes * output.data.exp()).sum(dim=1))
+
+            del output
 
         predictions = torch.cat(predictions).cpu().numpy()
         true_labels = torch.cat(true_labels).cpu().numpy()
