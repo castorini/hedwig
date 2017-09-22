@@ -119,6 +119,7 @@ if __name__ == "__main__":
     ap.add_argument("--index-for-corpusIDF", help="fetches idf from Index. provide index path. will\
     generate a vocabFile")
     ap.add_argument('--seed', help='Random seed', type=int, default=1234)
+    ap.add_argument('--nocudnn', help='Disable the CuDNN backend' action="store_true")
 
     args = ap.parse_args()
 
@@ -126,6 +127,8 @@ if __name__ == "__main__":
     np.random.seed(args.seed)
     if args.cuda and torch.cuda.is_available():
         torch.cuda.manual_seed(args.seed)
+        if args.nocudnn:
+            torch.backends.cudnn.enabled = False
 
     torch.set_num_threads(args.num_threads)
 
