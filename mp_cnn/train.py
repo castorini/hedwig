@@ -77,9 +77,10 @@ class SICKTrainer(Trainer):
         total_loss = 0
         for batch_idx, (sentences, labels) in enumerate(self.train_loader):
             sent_a, sent_b = Variable(sentences['a']), Variable(sentences['b'])
+            ext_feats = Variable(sentences['ext_feats'])
             labels = Variable(labels)
             self.optimizer.zero_grad()
-            output = self.model(sent_a, sent_b)
+            output = self.model(sent_a, sent_b, ext_feats)
             loss = F.kl_div(output, labels)
             total_loss += loss.data[0]
             loss.backward()
@@ -130,10 +131,12 @@ class MSRVIDTrainer(Trainer):
         batches = math.ceil(len(self.train_loader.dataset) / self.batch_size)
         start_val_batch = math.floor(0.8 * batches)
         left_out_val_a, left_out_val_b = [], []
+        left_out_ext_feats = []
         left_out_val_labels = []
 
         for batch_idx, (sentences, labels) in enumerate(self.train_loader):
             sent_a, sent_b = Variable(sentences['a']), Variable(sentences['b'])
+            ext_feats = Variable(sentences['ext_feats'])
             labels = Variable(labels)
             if batch_idx >= start_val_batch:
                 left_out_val_a.append(sent_a)
@@ -141,7 +144,7 @@ class MSRVIDTrainer(Trainer):
                 left_out_val_labels.append(labels)
                 continue
             self.optimizer.zero_grad()
-            output = self.model(sent_a, sent_b)
+            output = self.model(sent_a, sent_b, ext_feats)
             loss = F.kl_div(output, labels)
             loss.backward()
             self.optimizer.step()
@@ -155,7 +158,7 @@ class MSRVIDTrainer(Trainer):
             del loss, output
 
         self.evaluate(self.train_evaluator, 'train')
-        return left_out_val_a, left_out_val_b, left_out_val_labels
+        return left_out_val_a, left_out_val_b, left_out_ext_feats, left_out_val_labels
 
     def train(self, epochs):
         scheduler = ReduceLROnPlateau(self.optimizer, mode='max', factor=self.lr_reduce_factor, patience=self.patience)
@@ -164,13 +167,14 @@ class MSRVIDTrainer(Trainer):
         for epoch in range(1, epochs + 1):
             start = time.time()
             logger.info('Epoch {} started...'.format(epoch))
-            left_out_a, left_out_b, left_out_label = self.train_epoch(epoch)
+            left_out_a, left_out_b, left_out_ext_feats, left_out_label = self.train_epoch(epoch)
 
             # manually evaluating the validating set
             left_out_a = torch.cat(left_out_a)
             left_out_b = torch.cat(left_out_b)
+            left_out_ext_feats = torch.cat(left_out_ext_feats)
             left_out_label = torch.cat(left_out_label)
-            output = self.model(left_out_a, left_out_b)
+            output = self.model(left_out_a, left_out_b, left_out_ext_feats)
             predict_classes = torch.arange(0, 6).expand(len(left_out_a), 6).cuda()
             true_labels = (predict_classes * left_out_label.data).sum(dim=1)
             predictions = (predict_classes * output.data.exp()).sum(dim=1)

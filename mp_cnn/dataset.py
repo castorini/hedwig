@@ -1,13 +1,18 @@
+from collections import defaultdict
 from enum import Enum
 import math
 import os
 
+import nltk
+import numpy as np
 import torch
 from torch.autograd import Variable
-import torch.nn.functional as F
 import torch.utils.data as data
 
 import preprocessing
+
+nltk.download('stopwords', quiet=True)
+from nltk.corpus import stopwords
 
 # logging setup
 import logging
@@ -94,6 +99,7 @@ class MPCNNDataset(data.Dataset):
         """
         sent_a = self._load(self.dataset_dir, 'a.txt')
         sent_b = self._load(self.dataset_dir, 'b.txt')
+        word_to_doc_cnt = defaultdict(int)
 
         # obtain max sentence length to use as dimension for padding to support batching
         sent_a_tokens, sent_b_tokens = [], []
@@ -104,12 +110,36 @@ class MPCNNDataset(data.Dataset):
             sent_a_tokens.append(sa_tokens)
             sent_b_tokens.append(sb_tokens)
 
+            unique_tokens = set(sa_tokens) | set(sb_tokens)
+            for t in unique_tokens:
+                word_to_doc_cnt[t] += 1
+
         self.sentences = []
+        stoplist = set(stopwords.words('english'))
+        num_docs = len(word_to_doc_cnt)
         for i in range(len(sent_a)):
             sent_pair = {}
             sent_pair['a'] = self._get_sentence_embeddings(sent_a_tokens[i], word_index, embedding)
             sent_pair['b'] = self._get_sentence_embeddings(sent_b_tokens[i], word_index, embedding)
+
+            tokens_a_set, tokens_b_set = set(sent_a_tokens[i]), set(sent_b_tokens[i])
+            intersect = tokens_a_set & tokens_b_set
+            overlap = len(intersect) / (len(tokens_a_set) + len(tokens_b_set))
+            idf_intersect = sum(np.math.log(num_docs / word_to_doc_cnt[w]) for w in intersect)
+            idf_weighted_overlap = idf_intersect / (len(tokens_a_set) + len(tokens_b_set))
+
+            tokens_a_set_no_stop = set(w for w in sent_a_tokens[i] if w not in stoplist)
+            tokens_b_set_no_stop = set(w for w in sent_b_tokens[i] if w not in stoplist)
+            intersect_no_stop = tokens_a_set_no_stop & tokens_b_set_no_stop
+            overlap_no_stop = len(intersect_no_stop) / (len(tokens_a_set_no_stop) + len(tokens_b_set_no_stop))
+            idf_intersect_no_stop = sum(np.math.log(num_docs / word_to_doc_cnt[w]) for w in intersect_no_stop)
+            idf_weighted_overlap_no_stop = idf_intersect_no_stop / (len(tokens_a_set_no_stop) + len(tokens_b_set_no_stop))
+            ext_feats = torch.Tensor([overlap, idf_weighted_overlap, overlap_no_stop, idf_weighted_overlap_no_stop])
+            ext_feats = ext_feats.cuda() if self.cuda else ext_feats
+            sent_pair['ext_feats'] = ext_feats
+
             self.sentences.append(sent_pair)
+
         self.labels = self._load(self.dataset_dir, 'sim.txt', float)
 
     def _load(self, dataset_dir, fname, type_converter=str):
