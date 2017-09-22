@@ -119,7 +119,7 @@ if __name__ == "__main__":
     ap.add_argument("--index-for-corpusIDF", help="fetches idf from Index. provide index path. will\
     generate a vocabFile")
     ap.add_argument('--seed', help='Random seed', type=int, default=1234)
-    ap.add_argument('--nocudnn', help='Disable the CuDNN backend' action="store_true")
+    ap.add_argument('--nocudnn', help='Disable the CuDNN backend', action="store_true")
 
     args = ap.parse_args()
 
