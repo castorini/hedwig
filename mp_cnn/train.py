@@ -99,6 +99,7 @@ class SICKTrainer(Trainer):
     def train(self, epochs):
         scheduler = ReduceLROnPlateau(self.optimizer, mode='max', factor=self.lr_reduce_factor, patience=self.patience)
         epoch_times = []
+        prev_loss = -1
         best_dev_score = -1
         for epoch in range(1, epochs + 1):
             start = time.time()
@@ -106,6 +107,7 @@ class SICKTrainer(Trainer):
             self.train_epoch(epoch)
 
             dev_scores = self.evaluate(self.dev_evaluator, 'dev')
+            new_loss = dev_scores[2]
             end = time.time()
             duration = end - start
             logger.info('Epoch {} finished in {:.2f} minutes'.format(epoch, duration / 60))
@@ -114,6 +116,12 @@ class SICKTrainer(Trainer):
             if dev_scores[0] > best_dev_score:
                 best_dev_score = dev_scores[0]
                 torch.save(self.model, self.model_outfile)
+
+            if abs(prev_loss - new_loss) <= 0.0002:
+                logger.info('Early stopping. Loss changed by less than 0.0002.')
+                break
+
+            prev_loss = new_loss
             scheduler.step(dev_scores[0])
 
         logger.info('Training took {:.2f} minutes overall...'.format(sum(epoch_times) / 60))
@@ -163,6 +171,7 @@ class MSRVIDTrainer(Trainer):
     def train(self, epochs):
         scheduler = ReduceLROnPlateau(self.optimizer, mode='max', factor=self.lr_reduce_factor, patience=self.patience)
         epoch_times = []
+        prev_loss = -1
         best_dev_score = -1
         for epoch in range(1, epochs + 1):
             start = time.time()
@@ -175,6 +184,7 @@ class MSRVIDTrainer(Trainer):
             left_out_ext_feats = torch.cat(left_out_ext_feats)
             left_out_label = torch.cat(left_out_label)
             output = self.model(left_out_a, left_out_b, left_out_ext_feats)
+            val_kl_div_loss = F.kl_div(output, left_out_label).data[0]
             predict_classes = torch.arange(0, 6).expand(len(left_out_a), 6).cuda()
             true_labels = (predict_classes * left_out_label.data).sum(dim=1)
             predictions = (predict_classes * output.data.exp()).sum(dim=1)
@@ -196,6 +206,11 @@ class MSRVIDTrainer(Trainer):
                 best_dev_score = pearson_r
                 torch.save(self.model, self.model_outfile)
 
+            if abs(prev_loss - val_kl_div_loss) <= 0.0005:
+                logger.info('Early stopping. Loss changed by less than 0.0005.')
+                break
+
+            prev_loss = val_kl_div_loss
             self.evaluate(self.test_evaluator, 'test')
 
         logger.info('Training took {:.2f} minutes overall...'.format(sum(epoch_times) / 60))
