@@ -5,3 +5,6 @@ __pycache__
 .idea/
 *idfsim
 *.swp
+trec_eval.9.0/
+*.pt
+text/
