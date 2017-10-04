@@ -7,6 +7,7 @@ from torchtext import data
 
 from args import get_args
 from trec_dataset import TrecDataset
+from wiki_dataset import WikiDataset
 from evaluate import evaluate
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,13 @@ LABEL = data.Field(sequential=False)
 EXTERNAL = data.Field(sequential=False, tensor_type=torch.FloatTensor, batch_first=True, use_vocab=False,
                       preprocessing=data.Pipeline(lambda x: x.split()),
                       postprocessing=data.Pipeline(lambda x, train: [float(y) for y in x]))
-train, dev, test = TrecDataset.splits(QID, QUESTION, ANSWER, EXTERNAL, LABEL)
+if config.dataset == 'trec':
+    train, dev, test = TrecDataset.splits(QID, QUESTION, ANSWER, EXTERNAL, LABEL)
+elif config.dataset == 'wiki':
+    train, dev, test = WikiDataset.splits(QID, QUESTION, ANSWER, EXTERNAL, LABEL)
+else:
+    print("Unsupported dataset")
+    exit()
 
 QID.build_vocab(train, dev, test)
 QUESTION.build_vocab(train, dev, test)
@@ -68,7 +75,7 @@ else:
 index2label = np.array(LABEL.vocab.itos)
 index2qid = np.array(QID.vocab.itos)
 
-def predict(test_mode, dataset_iter):
+def predict(dataset, test_mode, dataset_iter):
     model.eval()
     dataset_iter.init_epoch()
 
@@ -88,11 +95,11 @@ def predict(test_mode, dataset_iter):
                                                            true_label_array[i]
             instance.append((this_qid, predicted_label, score, gold_label))
 
-    dev_map, dev_mrr = evaluate(instance, test_mode, config.mode)
+    dev_map, dev_mrr = evaluate(instance, dataset, test_mode, config.mode)
     print(dev_map, dev_mrr)
 
 # Run the model on the dev set
-predict('dev', dataset_iter=dev_iter)
+predict(config.dataset, 'dev', dataset_iter=dev_iter)
 
 # Run the model on the test set
-predict('test', dataset_iter=test_iter)
+predict(config.dataset, 'test', dataset_iter=test_iter)

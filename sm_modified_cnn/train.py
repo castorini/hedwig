@@ -3,7 +3,6 @@ import os
 import numpy as np
 import random
 
-import logging
 import torch
 import torch.nn as nn
 from torchtext import data
@@ -11,6 +10,7 @@ from torchtext import data
 from args import get_args
 from model import SmPlusPlus
 from trec_dataset import TrecDataset
+from wiki_dataset import WikiDataset
 from evaluate import evaluate
 
 args = get_args()
@@ -73,7 +73,13 @@ LABEL = data.Field(sequential=False)
 EXTERNAL = data.Field(sequential=False, tensor_type=torch.FloatTensor, batch_first=True, use_vocab=False,
                       preprocessing=data.Pipeline(lambda x: x.split()),
                       postprocessing=data.Pipeline(lambda x, train: [float(y) for y in x]))
-train, dev, test = TrecDataset.splits(QID, QUESTION, ANSWER, EXTERNAL, LABEL)
+if config.dataset == 'TREC':
+    train, dev, test = TrecDataset.splits(QID, QUESTION, ANSWER, EXTERNAL, LABEL)
+elif config.dataset == 'wiki':
+    train, dev, test = WikiDataset.splits(QID, QUESTION, ANSWER, EXTERNAL, LABEL)
+else:
+    print("Unsupported dataset")
+    exit()
 
 QID.build_vocab(train, dev, test)
 QUESTION.build_vocab(train, dev, test)
@@ -188,7 +194,7 @@ while True:
                     instance.append((this_qid, predicted_label, score, gold_label))
 
 
-            dev_map, dev_mrr = evaluate(instance, 'valid', config.mode)
+            dev_map, dev_mrr = evaluate(instance, config.dataset, 'valid', config.mode)
             print(dev_log_template.format(time.time() - start,
                                           epoch, iterations, 1 + batch_idx, len(train_iter),
                                           100. * (1 + batch_idx) / len(train_iter), loss.data[0],
