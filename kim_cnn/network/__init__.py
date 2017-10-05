@@ -1,1 +1,0 @@
-from network.cnnTextNetwork import cnnTextNetwork

@@ -18,7 +18,7 @@ def clean_str(string):
   string = re.sub(r"\)", " ) ", string)
   string = re.sub(r"\?", " ? ", string)
   string = re.sub(r"\s{2,}", " ", string)
-  return string.strip()
+  return string.lower().strip().split()
 
 
 def clean_str_sst(string):
@@ -27,4 +27,4 @@ def clean_str_sst(string):
   """
   string = re.sub(r"[^A-Za-z0-9(),!?\'\`]", " ", string)
   string = re.sub(r"\s{2,}", " ", string)
-  return string.strip()
+  return string.lower().strip().split()

@@ -1,1 +1,0 @@
-from model.cnnText import *

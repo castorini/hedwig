@@ -1,85 +1,74 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-import model
-from network import cnnTextNetwork
-from configurable import Configurable
-import torch
+import sys
+import random
 import numpy as np
-import os
+import torch
+from torchtext import data
+from args import get_args
+from SST1 import SST1Dataset
+from utils import clean_str_sst
 
-if __name__=='__main__':
 
-  import argparse
-
-
-  argparser = argparse.ArgumentParser()
-  argparser.add_argument('--train', action='store_true')
-  argparser.add_argument('--validate', action='store_true')
-  argparser.add_argument('--test', action='store_true')
-  argparser.add_argument('--load', action='store_true')
-  argparser.add_argument('--seed', help='Random seed', type=int, default=3435)
-  argparser.add_argument('--num_threads', help='The number of threads to use', type=int, default=4)
-
-  args, extra_args = argparser.parse_known_args()
-  # args.train = True/False ...
-  # extra_args['--some': "xxxx"]
-  cargs = {k: v for (k, v) in vars(Configurable.argparser.parse_args(extra_args)).items() if v is not None}
-
-  torch.manual_seed(args.seed)
-  np.random.seed(args.seed)
-  if torch.cuda.is_available():
+args = get_args()
+torch.manual_seed(args.seed)
+if not args.cuda:
+    args.gpu = -1
+if torch.cuda.is_available() and args.cuda:
+    print("Note: You are using GPU for training")
+    torch.cuda.set_device(args.gpu)
     torch.cuda.manual_seed(args.seed)
-  torch.set_num_threads(args.num_threads)
+if torch.cuda.is_available() and not args.cuda:
+    print("Warning: You have Cuda but do not use it. You are using CPU for training")
+np.random.seed(args.seed)
+random.seed(args.seed)
 
-  if 'model_type' not in cargs:
-    print("You need to specify the model_type")
-    exit()
-  print('*** '+cargs['model_type']+" ***")
+if not args.trained_model:
+    print("Error: You need to provide a option 'trained_model' to load the model")
+    sys.exit(1)
 
-  if args.load and 'restore_from' in cargs:
-    print("Loading model from [%s]..." % (cargs['restore_from']))
-    try:
-      m = torch.load(cargs['restore_from'])
-      cargs.pop(cargs['restore_from'], "")
-    except:
-      print("The model doesn't exist")
-      exit()
-  elif args.validate or args.test:
-    print("Loading model from [%s]..." % (cargs['restore_from']))
-    try:
-      m = torch.load(cargs['restore_from'])
-      cargs.pop(cargs['restore_from'], "")
-    except:
-      print("The model doesn't exist")
-      exit()
-  else:
-    m = getattr(model, cargs['model_type'])
+if args.dataset == 'SST-1':
+    TEXT = data.Field(batch_first=True, lower=True, tokenize=clean_str_sst)
+    LABEL = data.Field(sequential=False)
+    train, dev, test = SST1Dataset.splits(TEXT, LABEL)
 
+TEXT.build_vocab(train, min_freq=2)
+LABEL.build_vocab(train)
 
-  network = None
+train_iter = data.Iterator(train, batch_size=args.batch_size, device=args.gpu, train=True, repeat=False,
+                                   sort=False, shuffle=True)
+dev_iter = data.Iterator(dev, batch_size=args.batch_size, device=args.gpu, train=False, repeat=False,
+                                   sort=False, shuffle=False)
+test_iter = data.Iterator(test, batch_size=args.batch_size, device=args.gpu, train=False, repeat=False,
+                                   sort=False, shuffle=False)
 
-  if cargs['model_type'] == "CNNText":
-    cargs.pop("model_type", "")
-    network = cnnTextNetwork(args, m, **cargs)
-  else:
-    print("The model type is not supported")
-    exit()
+config = args
+config.target_class = len(LABEL.vocab)
+config.words_num = len(TEXT.vocab)
+config.embed_num = len(TEXT.vocab)
 
-  if not os.path.exists(network.save_dir):
-    os.mkdir(network.save_dir)
+print("Label dict:", LABEL.vocab.itos)
+
+if args.cuda:
+    model = torch.load(args.trained_model, map_location=lambda storage, location: storage.cuda(args.gpu))
+else:
+    model = torch.load(args.trained_model, map_location=lambda storage,location: storage)
 
 
-  # if torch.cuda.is_available():
-  #   torch.cuda.manual_seed_all(1)
+def predict(dataset_iter, dataset, dataset_name):
+    print("Dataset: {}".format(dataset_name))
+    model.eval()
+    dataset_iter.init_epoch()
 
+    n_correct = 0
+    for data_batch_idx, data_batch in enumerate(dataset_iter):
+        scores = model(data_batch)
+        n_correct += (torch.max(scores, 1)[1].view(data_batch.label.size()).data == data_batch.label.data).sum()
 
+    print("no. correct {} out of {}".format(n_correct, len(dataset)))
+    accuracy = 100. * n_correct / len(dataset)
+    print("{} accuracy: {:8.6f}%".format(dataset_name, accuracy))
 
-  if args.train:
-    network.train()
-  elif args.validate:
-    print("### The accuracy for validate set: ")
-    print(network.test(validate=True))
-  elif args.test:
-    print("### The accuracy for test set: ")
-    print(network.test(validate=False))
+# Run the model on the dev set
+predict(dataset_iter=dev_iter, dataset=dev, dataset_name="valid")
+
+# Run the model on the test set
+predict(dataset_iter=test_iter, dataset=test, dataset_name="test")
