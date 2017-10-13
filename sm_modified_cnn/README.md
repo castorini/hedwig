@@ -11,12 +11,16 @@ Retrieval (SIGIR '15). ACM, New York, NY, USA, 373-382. DOI: http://dx.doi.org/1
 nltk==3.2.2
 numpy==1.11.3
 pytorch==0.1.12
+gensim==1.0.1 
 ```
 
 The code uses torchtext for text processing. Set torchtext:
 ```bash
 git clone https://github.com/pytorch/text.git
 cd text
+
+#use this commit number
+git reset --hard 2980f1bc39ba6af332c5c2783da8bee109796d4c
 python setup.py install
 ```
 
@@ -25,8 +29,9 @@ We use `trec_eval` for evaluation:
 ```bash
 cd eval
 tar -xvf trec_eval.9.0.tar.gz
+cd trec_eval.9.0 
 make
-cd ..
+cd ../..
 ```
 
 
@@ -132,3 +137,13 @@ MAP    |0.6313 |0.6378|0.6455    |0.6476
 MRR    |0.6522 |0.6542|0.6689    |0.6646
 
 NB: The results on WikiQA are based on the SM model hyperparameters.  
+
+
+### To create your own word2vec.pt file
+
++ Download word2vec from [here](https://drive.google.com/drive/u/0/folders/0B-yipfgecoSBfkZlY2FFWEpDR3M4Qkw5U055MWJrenE5MTBFVXlpRnd0QjZaMDQxejh1cWs)
+to the `data/` folder
+
+```bash
+python utils.py --input data/aquaint+wiki.txt.gz.ndim=50.bin
+```

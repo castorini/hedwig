@@ -32,22 +32,8 @@ def set_vectors(field, vector_path):
                 field.vocab.vectors[i] = torch.FloatTensor(dim).uniform_(-0.25, 0.25)
     else:
         print("Error: Need word embedding pt file")
-        print("Error: Need word embedding pt file")
         exit(1)
     return field
-
-
-def regularize_loss(model, loss):
-    flattened_params = []
-    reg = args.weight_decay
-
-    for p in model.parameters():
-        f = p.data.clone()
-        flattened_params.append(f.view(-1))
-
-    fp = torch.cat(flattened_params)
-    loss = loss + 0.5 * reg * fp.norm() * fp.norm()
-    return loss
 
 # Set default configuration in : args.py
 args = get_args()
@@ -165,7 +151,6 @@ while True:
         train_acc = 100. * n_correct / n_total
 
         loss = criterion(scores, batch.label)
-        loss = regularize_loss(model, loss)
         loss.backward()
         optimizer.step()
 
