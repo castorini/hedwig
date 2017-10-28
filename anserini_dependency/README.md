@@ -22,7 +22,7 @@ mvn package
 This creates `anserini-0.0.1-SNAPSHOT.jar` at `Anserini/target`
 
 #### 3. Download Dependencies
-- Download the index from [here](https://drive.google.com/open?id=0B2u_nClt6NbzcllGZTVtX2Q4bkk)
+- Download the TrecQA lucene index
 - Download the Google word2vec file from [here](https://drive.google.com/drive/folders/0B2u_nClt6NbzNWJkWExmaklYNTA?usp=sharing)
 
 #### 4. Run the following command
