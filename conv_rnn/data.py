@@ -5,13 +5,7 @@ import numpy as np
 import torch.utils.data as data
 
 def sst_tokenize(sentence):
-    extraneous_pattern = re.compile(r"^(--lrb--|--rrb--|``|''|--|\.)$")
-    words = []
-    for word in sentence.split():
-        if re.match(extraneous_pattern, word):
-            continue
-        words.append(word)
-    return words
+    return sentence.split()
 
 class SSTEmbeddingLoader(object):
     def __init__(self, dirname, fmt="stsa.fine.{}", word2vec_file="word2vec.sst-1"):
@@ -26,7 +20,6 @@ class SSTEmbeddingLoader(object):
         with open(os.path.join(self.dirname, self.word2vec_file)) as f:
             for i, line in enumerate(f.readlines()):
                 word, vec = line.replace("\n", "").split(" ", 1)
-                word = word.replace("#", "")
                 vec = np.array([float(v) for v in vec.split(" ")])
                 weights.append(vec)
                 id_dict[word] = i
