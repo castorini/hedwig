@@ -16,6 +16,7 @@ args = get_args()
 # Set random seed for reproducibility
 
 torch.manual_seed(args.seed)
+torch.backends.cudnn.deterministic = True
 if not args.cuda:
     args.gpu = -1
 if torch.cuda.is_available() and args.cuda:

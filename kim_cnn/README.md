@@ -10,11 +10,47 @@ Implementation for Convolutional Neural Networks for Sentence Classification of 
 - multichannel: A model with two sets of word vectors. Each set of vectors is treated as a 'channel' and each filter is applied to both channels, but gradients are back-propagated only through one of the channels. Hence the model is able to fine-tune one set of vectors while keeping the other static. Both channels are initialized with word2vec.# text-classification-cnn
 Implementation for Convolutional Neural Networks for Sentence Classification of [Kim (2014)](https://arxiv.org/abs/1408.5882) with PyTorch.
 
+## Requirement
+
+- Install the latest version of pytorch
+- Install the version of torchtext
+```
+git clone https://github.com/pytorch/text.git 
+cd text  
+#use this commit number 
+git reset --hard 6f930eb8de936482f321ac123e020fd08dd07a4b
+python setup.py install
+```
+
 
 ## Quick Start
 
+Clone and create the dataset.
+```
+git clone https://github.com/castorini/Castor.git
+```
 
-To run the model on [SST-1] dataset on [multichannel](Model Type), just run the following code.
+```
+. 
+├── Castor
+    ├── README.md 
+    ├── baseline_results.tsv 
+    ├── idf_baseline 
+    ├── kim_cnn 
+    ├── mp_cnn 
+    ├── setup.py 
+    ├── sm_cnn 
+    └── sm_modified_cnn 
+```
+
+To get the dataset, you can run this.
+```
+cd kim_cnn
+bash get_data.sh
+```
+
+
+To run the model on SST-1 dataset on multichannel, just run the following code.
 
 ```
 python train.py --mode multichannel
@@ -40,19 +76,51 @@ We experiment the model on the following three datasets.
 
 - SST-1: Keep the original splits and train with phrase level dataset and test on sentence level dataset.
 
+**word2vec.sst-1.pt** is a subset of word2vector. We just select the word appearing in the SST-1 dataset and generate this file with the **vector_preprocess.py**(you will get this after you run get_data.sh or you can download [here](https://raw.githubusercontent.com/Impavidity/kim_cnn/master/vector_preprocess.py)) You can select these from any kind of word embedding text file and generate in following format.
+``` 
+word vector_in_one_line 
+```
+and then run 
+``` 
+python vector_preprocess.py file_in embed.pt 
+``` 
+Here you can get *embed.pt* for the embedding file. Remember change the argument in *args.py* file with your own embedding.
+
+## Settings
+Adadelta is used for training. 
+
+## Training Time
+
+For training time, when
+
+```
+torch.backends.cudnn.deterministic = True
+```
+
+is specified, the training will be ~3h because deterministic cnn algorithm is used (accuracy v.s. speed).
+
+Other option is that
+
+```
+torch.backends.cudnn.enabled = False
+```
+but this will take ~6-7x training time.
 
 ## Results
 
-### best dev 
-|dataset|rand|static|non-static|multichannel|
-|---|---|---|---|---|
-|SST-1|43.142598|48.773842|49.137148|49.318801|
+Deterministic Algorithm for CNN.  
 
+| Dev Accuracy on SST-1 |     rand      |    static    |   non-static  |  multichannel | 
+|:--------------------------:|:-----------:|:-----------:|:-------------:|:---------------:| 
+| My-Implementation      | 42.597639| 48.773842| 48.864668   | 49.046322  |  
 
-### test
-|dataset|rand|static|non-static|multichannel|
-|---|---|---|---|---|
-|SST-1|39.909502|46.380090|45.294118|48.416290|
+| Test Accuracy on SST-1|      rand      |    static    |    non-static |  multichannel | 
+|:--------------------------:|:-----------:|:-----------:|:-------------:|:---------------:| 
+| Kim-Implementation    | 45.0            | 45.5        | 48.0             | 47.4                 | 
+| My- Implementation    | 39.683258  | 45.972851| 48.914027|  47.330317       |
 
-We do not tune the parameters for each dataset. And the implementation is simplified from the original version on regularization.
+## TODO
+
+- More experiments on SST-2 and subjectivity
+- Parameters tuning
 
