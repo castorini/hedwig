@@ -1,5 +1,6 @@
 import argparse
 import os
+import random
 
 import numpy as np
 import torch
@@ -26,9 +27,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch implementation of Multi-Perspective CNN')
     parser.add_argument('model_outfile', help='file to save final model')
     parser.add_argument('--dataset', help='dataset to use, one of [sick, msrvid]', default='sick')
-    parser.add_argument('--word-vectors-file', help='word vectors file', default=os.path.join(os.pardir, os.pardir, 'data', 'GloVe', 'glove.840B.300d.txt'))
+    parser.add_argument('--word-vectors-dir', help='word vectors directory', default=os.path.join(os.pardir, os.pardir, 'data', 'GloVe'))
+    parser.add_argument('--word-vectors-file', help='word vectors filename', default='glove.840B.300d.txt')
     parser.add_argument('--skip-training', help='will load pre-trained model', action='store_true')
-    parser.add_argument('--no-cuda', action='store_true', default=False, help='disables CUDA training (default: false)')
+    parser.add_argument('--device', type=int, default=0, help='GPU device, -1 for CPU (default: 0)')
     parser.add_argument('--sparse-features', action='store_true', default=False, help='use sparse features (default: false)')
     parser.add_argument('--batch-size', type=int, default=64, help='input batch size for training (default: 64)')
     parser.add_argument('--epochs', type=int, default=10, help='number of epochs to train (default: 10)')
@@ -39,7 +41,6 @@ if __name__ == '__main__':
     parser.add_argument('--momentum', type=float, default=0, help='momentum (default: 0)')
     parser.add_argument('--epsilon', type=float, default=1e-8, help='Adam epsilon (default: 1e-8)')
     parser.add_argument('--log-interval', type=int, default=10, help='how many batches to wait before logging training status (default: 10)')
-    parser.add_argument('--sample', type=int, default=0, help='how many examples to take from each dataset, meant for quickly testing entire end-to-end pipeline (default: all)')
     parser.add_argument('--regularization', type=float, default=0.0001, help='Regularization for the optimizer (default: 0.0001)')
     parser.add_argument('--max-window-size', type=int, default=3, help='windows sizes will be [1,max_window_size] and infinity (default: 300)')
     parser.add_argument('--holistic-filters', type=int, default=300, help='number of holistic filters (default: 300)')
@@ -50,20 +51,24 @@ if __name__ == '__main__':
     parser.add_argument('--tensorboard', action='store_true', default=False, help='use TensorBoard to visualize training (default: false)')
     parser.add_argument('--run-label', type=str, help='label to describe run')
     args = parser.parse_args()
-    args.cuda = not args.no_cuda and torch.cuda.is_available()
 
+    random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
-    if args.cuda:
+    if args.device != -1:
         torch.cuda.manual_seed(args.seed)
 
-    train_loader, test_loader, dev_loader = MPCNNDatasetFactory.get_dataset(args.dataset, args.word_vectors_file, args.batch_size, args.cuda, args.sample)
+    dataset_cls, embedding, train_loader, test_loader, dev_loader \
+        = MPCNNDatasetFactory.get_dataset(args.dataset, args.word_vectors_dir, args.word_vectors_file, args.batch_size, args.device)
 
     filter_widths = list(range(1, args.max_window_size + 1)) + [np.inf]
-    input_channels = 300
-    model = MPCNN(input_channels, args.holistic_filters, args.per_dim_filters, filter_widths, args.hidden_units, train_loader.dataset.num_classes, args.dropout, args.sparse_features)
-    if args.cuda:
-        model.cuda()
+    model = MPCNN(embedding, args.holistic_filters, args.per_dim_filters, filter_widths,
+                    args.hidden_units, dataset_cls.NUM_CLASSES, args.dropout, args.sparse_features)
+
+    if args.device != -1:
+        with torch.cuda.device(args.device):
+            model.cuda()
+
     optimizer = None
     if args.optimizer == 'adam':
         optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.regularization, eps=args.epsilon)
@@ -71,14 +76,14 @@ if __name__ == '__main__':
         optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.regularization)
     else:
         raise ValueError('optimizer not recognized: it should be either adam or sgd')
-    train_evaluator = MPCNNEvaluatorFactory.get_evaluator(args.dataset, model, train_loader, args.batch_size, args.cuda)
-    test_evaluator = MPCNNEvaluatorFactory.get_evaluator(args.dataset, model, test_loader, args.batch_size, args.cuda)
-    dev_evaluator = MPCNNEvaluatorFactory.get_evaluator(args.dataset, model, dev_loader, args.batch_size, args.cuda)
+
+    train_evaluator = MPCNNEvaluatorFactory.get_evaluator(dataset_cls, model, train_loader, args.batch_size, args.device)
+    test_evaluator = MPCNNEvaluatorFactory.get_evaluator(dataset_cls, model, test_loader, args.batch_size, args.device)
+    dev_evaluator = MPCNNEvaluatorFactory.get_evaluator(dataset_cls, model, dev_loader, args.batch_size, args.device)
 
     trainer_config = {
         'optimizer': optimizer,
         'batch_size': args.batch_size,
-        'sample': args.sample,
         'log_interval': args.log_interval,
         'model_outfile': args.model_outfile,
         'lr_reduce_factor': args.lr_reduce_factor,
@@ -97,8 +102,8 @@ if __name__ == '__main__':
         trainer.train(args.epochs)
 
     model = torch.load(args.model_outfile)
-    test_evaluator = MPCNNEvaluatorFactory.get_evaluator(args.dataset, model, test_loader, args.batch_size, args.cuda)
-    scores, metric_names = test_evaluator.get_scores()
+    saved_model_evaluator = MPCNNEvaluatorFactory.get_evaluator(dataset_cls, model, test_loader, args.batch_size, args.device)
+    scores, metric_names = saved_model_evaluator.get_scores()
     logger.info('Evaluation metrics for test')
     logger.info('\t'.join([' '] + metric_names))
     logger.info('\t'.join(['test'] + list(map(str, scores))))

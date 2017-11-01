@@ -20,7 +20,7 @@ Directory layout should be like this:
 │   └── GloVe/
 ```
 
-To run MP-CNN on the SICK dataset, use the following command. `--dropout 0` is for mimicking the original paper, although adding dropout can improve performance.
+To run MP-CNN on the SICK dataset, use the following command. `--dropout 0` is for mimicking the original paper, although adding dropout can improve performance. If you have any problems running it check the Troubleshooting section below.
 
 ```
 python main.py mpcnn.sick.model.castor --dataset sick --epochs 19 --epsilon 1e-7 --dropout 0
@@ -47,6 +47,20 @@ To see all options available, use
 ```
 python main.py --help
 ```
+
+## Troubleshooting
+
+### ModuleNotFoundError: datasets
+```
+Traceback (most recent call last):
+  File "main.py", line 9, in <module>
+    from dataset import MPCNNDatasetFactory
+  File "/u/z3tu/castorini/Castor/mp_cnn/dataset.py", line 12, in <module>
+    from datasets.sick import SICK
+ModuleNotFoundError: No module named 'datasets'
+```
+
+You need to make sure the repository root is in your `PYTHONPATH` environment variable. One way to do this is while you are in the repo root (Castor) as your current working directory, run `export PYTHONPATH=$(pwd)`.
 
 ## Optional Dependencies
 

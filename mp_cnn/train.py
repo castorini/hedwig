@@ -44,7 +44,6 @@ class Trainer(object):
         self.optimizer = trainer_config['optimizer']
         self.train_loader = train_loader
         self.batch_size = trainer_config['batch_size']
-        self.sample = trainer_config['sample']
         self.log_interval = trainer_config['log_interval']
         self.model_outfile = trainer_config['model_outfile']
         self.lr_reduce_factor = trainer_config['lr_reduce_factor']
@@ -80,21 +79,18 @@ class SICKTrainer(Trainer):
     def train_epoch(self, epoch):
         self.model.train()
         total_loss = 0
-        for batch_idx, (sentences, labels) in enumerate(self.train_loader):
-            sent_a, sent_b = Variable(sentences['a']), Variable(sentences['b'])
-            ext_feats = Variable(sentences['ext_feats'])
-            labels = Variable(labels)
+        for batch_idx, batch in enumerate(self.train_loader):
             self.optimizer.zero_grad()
-            output = self.model(sent_a, sent_b, ext_feats)
-            loss = F.kl_div(output, labels)
+            output = self.model(batch.a, batch.b, batch.ext_feats)
+            loss = F.kl_div(output, batch.label)
             total_loss += loss.data[0]
             loss.backward()
             self.optimizer.step()
             if batch_idx % self.log_interval == 0:
                 logger.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                    epoch, min(batch_idx * self.batch_size, len(self.train_loader.dataset)),
-                    len(self.train_loader.dataset) if not self.sample else self.sample,
-                    100. * batch_idx / (len(self.train_loader) if not self.sample else math.ceil(self.sample / self.batch_size)), loss.data[0])
+                    epoch, min(batch_idx * self.batch_size, len(batch.dataset.examples)),
+                    len(batch.dataset.examples),
+                    100. * batch_idx / (len(self.train_loader)), loss.data[0])
                 )
 
         if self.use_tensorboard:
@@ -146,34 +142,33 @@ class MSRVIDTrainer(Trainer):
 
     def train_epoch(self, epoch):
         self.model.train()
+        total_loss = 0
 
         # since MSRVID doesn't have validation set, we manually leave-out some training data for validation
-        batches = math.ceil(len(self.train_loader.dataset) / self.batch_size)
+        batches = math.ceil(len(self.train_loader.dataset.examples) / self.batch_size)
         start_val_batch = math.floor(0.8 * batches)
         left_out_val_a, left_out_val_b = [], []
-        left_out_ext_feats = []
+        left_out_val_ext_feats = []
         left_out_val_labels = []
-        total_loss = 0
-        for batch_idx, (sentences, labels) in enumerate(self.train_loader):
-            sent_a, sent_b = Variable(sentences['a']), Variable(sentences['b'])
-            ext_feats = Variable(sentences['ext_feats'])
-            labels = Variable(labels)
+
+        for batch_idx, batch in enumerate(self.train_loader):
             if batch_idx >= start_val_batch:
-                left_out_val_a.append(sent_a)
-                left_out_val_b.append(sent_b)
-                left_out_val_labels.append(labels)
+                left_out_val_a.append(batch.a)
+                left_out_val_b.append(batch.b)
+                left_out_val_ext_feats.append(batch.ext_feats)
+                left_out_val_labels.append(batch.label)
                 continue
             self.optimizer.zero_grad()
-            output = self.model(sent_a, sent_b, ext_feats)
-            loss = F.kl_div(output, labels)
+            output = self.model(batch.a, batch.b, batch.ext_feats)
+            loss = F.kl_div(output, batch.label)
             total_loss += loss.data[0]
             loss.backward()
             self.optimizer.step()
             if batch_idx % self.log_interval == 0:
                 logger.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                    epoch, min(batch_idx * self.batch_size, len(self.train_loader.dataset)),
-                    len(self.train_loader.dataset) if not self.sample else self.sample,
-                    100. * batch_idx / (len(self.train_loader) if not self.sample else math.ceil(self.sample / self.batch_size)), loss.data[0])
+                    epoch, min(batch_idx * self.batch_size, len(batch.dataset.examples)),
+                    len(batch.dataset.examples),
+                    100. * batch_idx / (len(self.train_loader)), loss.data[0])
                 )
 
         self.evaluate(self.train_evaluator, 'train')
@@ -181,7 +176,7 @@ class MSRVIDTrainer(Trainer):
         if self.use_tensorboard:
             self.writer.add_scalar('msrvid/train/kl_div_loss', total_loss, epoch)
 
-        return left_out_val_a, left_out_val_b, left_out_ext_feats, left_out_val_labels
+        return left_out_val_a, left_out_val_b, left_out_val_ext_feats, left_out_val_labels
 
     def train(self, epochs):
         scheduler = ReduceLROnPlateau(self.optimizer, mode='max', factor=self.lr_reduce_factor, patience=self.patience)
@@ -194,18 +189,25 @@ class MSRVIDTrainer(Trainer):
             left_out_a, left_out_b, left_out_ext_feats, left_out_label = self.train_epoch(epoch)
 
             # manually evaluating the validating set
-            left_out_a = torch.cat(left_out_a)
-            left_out_b = torch.cat(left_out_b)
-            left_out_ext_feats = torch.cat(left_out_ext_feats)
-            left_out_label = torch.cat(left_out_label)
-            output = self.model(left_out_a, left_out_b, left_out_ext_feats)
-            val_kl_div_loss = F.kl_div(output, left_out_label).data[0]
-            predict_classes = torch.arange(0, 6).expand(len(left_out_a), 6).cuda()
-            true_labels = (predict_classes * left_out_label.data).sum(dim=1)
-            predictions = (predict_classes * output.data.exp()).sum(dim=1)
-            predictions = predictions.cpu().numpy()
-            true_labels = true_labels.cpu().numpy()
+            all_predictions, all_true_labels = [], []
+            val_kl_div_loss = 0
+            for i in range(len(left_out_a)):
+                output = self.model(left_out_a[i], left_out_b[i], left_out_ext_feats[i])
+                val_kl_div_loss += F.kl_div(output, left_out_label[i], size_average=False).data[0]
+                predict_classes = torch.arange(0, self.train_loader.dataset.NUM_CLASSES).expand(len(left_out_a[i]), self.train_loader.dataset.NUM_CLASSES)
+                if self.train_loader.device != -1:
+                    with torch.cuda.device(self.train_loader.device):
+                        predict_classes = predict_classes.cuda()
+
+                predictions = (predict_classes * output.data.exp()).sum(dim=1)
+                true_labels = (predict_classes * left_out_label[i].data).sum(dim=1)
+                all_predictions.append(predictions)
+                all_true_labels.append(true_labels)
+
+            predictions = torch.cat(all_predictions).cpu().numpy()
+            true_labels = torch.cat(all_true_labels).cpu().numpy()
             pearson_r = pearsonr(predictions, true_labels)[0]
+            val_kl_div_loss /= len(predictions)
 
             if self.use_tensorboard:
                 self.writer.add_scalar('msrvid/dev/pearson_r', pearson_r, epoch)

@@ -6,10 +6,10 @@ import torch.nn.functional as F
 
 class MPCNN(nn.Module):
 
-    def __init__(self, n_word_dim, n_holistic_filters, n_per_dim_filters, filter_widths, hidden_layer_units, num_classes, dropout, ext_feats):
+    def __init__(self, embedding, n_holistic_filters, n_per_dim_filters, filter_widths, hidden_layer_units, num_classes, dropout, ext_feats):
         super(MPCNN, self).__init__()
-
-        self.n_word_dim = n_word_dim
+        self.embedding = embedding
+        self.n_word_dim = embedding.weight.size(1)
         self.n_holistic_filters = n_holistic_filters
         self.n_per_dim_filters = n_per_dim_filters
         self.filter_widths = filter_widths
@@ -22,12 +22,12 @@ class MPCNN(nn.Module):
                 continue
 
             holistic_conv_layers.append(nn.Sequential(
-                nn.Conv1d(n_word_dim, n_holistic_filters, ws),
+                nn.Conv1d(self.n_word_dim, n_holistic_filters, ws),
                 nn.Tanh()
             ))
 
             per_dim_conv_layers.append(nn.Sequential(
-                nn.Conv1d(n_word_dim, n_word_dim * n_per_dim_filters, ws, groups=n_word_dim),
+                nn.Conv1d(self.n_word_dim, self.n_word_dim * n_per_dim_filters, ws, groups=self.n_word_dim),
                 nn.Tanh()
             ))
 
@@ -35,7 +35,7 @@ class MPCNN(nn.Module):
         self.per_dim_conv_layers = nn.ModuleList(per_dim_conv_layers)
 
         # compute number of inputs to first hidden layer
-        COMP_1_COMPONENTS_HOLISTIC, COMP_1_COMPONENTS_PER_DIM, COMP_2_COMPONENTS = 2 + n_holistic_filters, 2 + n_word_dim, 2
+        COMP_1_COMPONENTS_HOLISTIC, COMP_1_COMPONENTS_PER_DIM, COMP_2_COMPONENTS = 2 + n_holistic_filters, 2 + self.n_word_dim, 2
         EXT_FEATS = 4 if ext_feats else 0
         n_feat_h = 3 * len(self.filter_widths) * COMP_2_COMPONENTS
         n_feat_v = (
@@ -61,24 +61,25 @@ class MPCNN(nn.Module):
         block_b = {}
         for ws in self.filter_widths:
             if np.isinf(ws):
+                sent_flattened, sent_flattened_size = sent.contiguous().view(sent.size(0), 1, -1), sent.size(1) * sent.size(2)
                 block_a[ws] = {
-                    'max': F.max_pool1d(sent.view(sent.size(0), 1, -1), sent.size(1) * sent.size(2)).view(sent.size(0), -1),
-                    'min': F.max_pool1d(-1 * sent.view(sent.size(0), 1, -1), sent.size(1) * sent.size(2)).view(sent.size(0), -1),
-                    'mean': F.avg_pool1d(sent.view(sent.size(0), 1, -1), sent.size(1) * sent.size(2)).view(sent.size(0), -1)
+                    'max': F.max_pool1d(sent_flattened, sent_flattened_size).view(sent.size(0), -1),
+                    'min': F.max_pool1d(-1 * sent_flattened, sent_flattened_size).view(sent.size(0), -1),
+                    'mean': F.avg_pool1d(sent_flattened, sent_flattened_size).view(sent.size(0), -1)
                 }
                 continue
 
             holistic_conv_out = self.holistic_conv_layers[ws - 1](sent)
             block_a[ws] = {
-                'max': F.max_pool1d(holistic_conv_out, holistic_conv_out.size(2)).view(-1, self.n_holistic_filters),
-                'min': F.max_pool1d(-1 * holistic_conv_out, holistic_conv_out.size(2)).view(-1, self.n_holistic_filters),
-                'mean': F.avg_pool1d(holistic_conv_out, holistic_conv_out.size(2)).view(-1, self.n_holistic_filters)
+                'max': F.max_pool1d(holistic_conv_out, holistic_conv_out.size(2)).contiguous().view(-1, self.n_holistic_filters),
+                'min': F.max_pool1d(-1 * holistic_conv_out, holistic_conv_out.size(2)).contiguous().view(-1, self.n_holistic_filters),
+                'mean': F.avg_pool1d(holistic_conv_out, holistic_conv_out.size(2)).contiguous().view(-1, self.n_holistic_filters)
             }
 
             per_dim_conv_out = self.per_dim_conv_layers[ws - 1](sent)
             block_b[ws] = {
-                'max': F.max_pool1d(per_dim_conv_out, per_dim_conv_out.size(2)).view(-1, self.n_word_dim, self.n_per_dim_filters),
-                'min': F.max_pool1d(-1 * per_dim_conv_out, per_dim_conv_out.size(2)).view(-1, self.n_word_dim, self.n_per_dim_filters)
+                'max': F.max_pool1d(per_dim_conv_out, per_dim_conv_out.size(2)).contiguous().view(-1, self.n_word_dim, self.n_per_dim_filters),
+                'min': F.max_pool1d(-1 * per_dim_conv_out, per_dim_conv_out.size(2)).contiguous().view(-1, self.n_word_dim, self.n_per_dim_filters)
             }
         return block_a, block_b
 
@@ -89,7 +90,7 @@ class MPCNN(nn.Module):
                 x1 = sent1_block_a[ws][pool]
                 x2 = sent2_block_a[ws][pool]
                 batch_size = x1.size()[0]
-                comparison_feats.append(F.cosine_similarity(x1, x2).view(batch_size, 1))
+                comparison_feats.append(F.cosine_similarity(x1, x2).contiguous().view(batch_size, 1))
                 comparison_feats.append(F.pairwise_distance(x1, x2))
         return torch.cat(comparison_feats, dim=1)
 
@@ -103,7 +104,7 @@ class MPCNN(nn.Module):
                 for ws2 in self.filter_widths:
                     x2 = sent2_block_a[ws2][pool]
                     if (not np.isinf(ws1) and not np.isinf(ws2)) or (np.isinf(ws1) and np.isinf(ws2)):
-                        comparison_feats.append(F.cosine_similarity(x1, x2).view(batch_size, 1))
+                        comparison_feats.append(F.cosine_similarity(x1, x2).contiguous().view(batch_size, 1))
                         comparison_feats.append(F.pairwise_distance(x1, x2))
                         comparison_feats.append(torch.abs(x1 - x2))
 
@@ -115,13 +116,17 @@ class MPCNN(nn.Module):
                     x1 = oG_1B[:, :, i]
                     x2 = oG_2B[:, :, i]
                     batch_size = x1.size()[0]
-                    comparison_feats.append(F.cosine_similarity(x1, x2).view(batch_size, 1))
+                    comparison_feats.append(F.cosine_similarity(x1, x2).contiguous().view(batch_size, 1))
                     comparison_feats.append(F.pairwise_distance(x1, x2))
                     comparison_feats.append(torch.abs(x1 - x2))
 
         return torch.cat(comparison_feats, dim=1)
 
-    def forward(self, sent1, sent2, ext_feats):
+    def forward(self, sent1_idx, sent2_idx, ext_feats=None):
+        # Select embedding
+        sent1 = self.embedding(sent1_idx).transpose(1, 2)
+        sent2 = self.embedding(sent2_idx).transpose(1, 2)
+
         # Sentence modeling module
         sent1_block_a, sent1_block_b = self._get_blocks_for_sentence(sent1)
         sent2_block_a, sent2_block_b = self._get_blocks_for_sentence(sent2)
