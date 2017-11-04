@@ -1,32 +1,23 @@
 import argparse
+import logging
 import os
+import pprint
 import random
 
 import numpy as np
 import torch
 import torch.optim as optim
 
-from dataset import MPCNNDatasetFactory
-from evaluation import MPCNNEvaluatorFactory
-from model import MPCNN
-from train import MPCNNTrainerFactory
-
-# logging setup
-import logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+from mp_cnn.dataset import MPCNNDatasetFactory
+from mp_cnn.evaluation import MPCNNEvaluatorFactory
+from mp_cnn.model import MPCNN
+from mp_cnn.train import MPCNNTrainerFactory
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch implementation of Multi-Perspective CNN')
     parser.add_argument('model_outfile', help='file to save final model')
-    parser.add_argument('--dataset', help='dataset to use, one of [sick, msrvid]', default='sick')
+    parser.add_argument('--dataset', help='dataset to use, one of [sick, msrvid, trecqa]', default='sick')
     parser.add_argument('--word-vectors-dir', help='word vectors directory', default=os.path.join(os.pardir, os.pardir, 'data', 'GloVe'))
     parser.add_argument('--word-vectors-file', help='word vectors filename', default='glove.840B.300d.txt')
     parser.add_argument('--skip-training', help='will load pre-trained model', action='store_true')
@@ -57,6 +48,18 @@ if __name__ == '__main__':
     torch.manual_seed(args.seed)
     if args.device != -1:
         torch.cuda.manual_seed(args.seed)
+
+    # logging setup
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(levelname)s - %(message)s')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+
+    logger.info(pprint.pformat(vars(args)))
 
     dataset_cls, embedding, train_loader, test_loader, dev_loader \
         = MPCNNDatasetFactory.get_dataset(args.dataset, args.word_vectors_dir, args.word_vectors_file, args.batch_size, args.device)
@@ -89,7 +92,8 @@ if __name__ == '__main__':
         'lr_reduce_factor': args.lr_reduce_factor,
         'patience': args.patience,
         'tensorboard': args.tensorboard,
-        'run_label': args.run_label
+        'run_label': args.run_label,
+        'logger': logger
     }
     trainer = MPCNNTrainerFactory.get_trainer(args.dataset, model, train_loader, trainer_config, train_evaluator, test_evaluator, dev_evaluator)
 

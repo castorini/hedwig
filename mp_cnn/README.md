@@ -20,6 +20,8 @@ Directory layout should be like this:
 │   └── GloVe/
 ```
 
+## SICK Dataset
+
 To run MP-CNN on the SICK dataset, use the following command. `--dropout 0` is for mimicking the original paper, although adding dropout can improve performance. If you have any problems running it check the Troubleshooting section below.
 
 ```
@@ -29,7 +31,9 @@ python main.py mpcnn.sick.model.castor --dataset sick --epochs 19 --epsilon 1e-7
 | Implementation and config        | Pearson's r   | Spearman's p  |
 | -------------------------------- |:-------------:|:-------------:|
 | Paper                            | 0.8686        |   0.8047      |
-| PyTorch using above config       | 0.8763        |   0.8215      |
+| PyTorch using above config       | 0.8684        |   0.8083      |
+
+## MSRVID Dataset
 
 To run MP-CNN on the MSRVID dataset, use the following command:
 ```
@@ -39,7 +43,23 @@ python main.py mpcnn.msrvid.model.castor --dataset msrvid --batch-size 16 --epsi
 | Implementation and config        | Pearson's r   |
 | -------------------------------- |:-------------:|
 | Paper                            | 0.9090        |
-| PyTorch using above config       | 0.9050        |
+| PyTorch using above config       | 0.8911        |
+
+## TrecQA Dataset
+
+To run MP-CNN on (Raw) TrecQA, you first need to run `./get_trec_eval.sh` in `utils` under the repo root while inside the `utils` directory. This will download and compile the official `trec_eval` tool used for evaluation.
+
+Then, you can run:
+```
+python main.py mpcnn.trecqa.model --dataset trecqa --epochs 5 --regularization 0.0005 --dropout 0.5 --eps 0.1
+```
+
+| Implementation and config        | map    | mrr    |
+| -------------------------------- |:------:|:------:|
+| Paper                            | 0.762  | 0.830  |
+| PyTorch using above config       | 0.7904 | 0.8223 |
+
+The paper results are reported in [Noise-Contrastive Estimation for Answer Selection with Deep Neural Networks](https://dl.acm.org/citation.cfm?id=2983872).
 
 These are not the optimal hyperparameters but they are decent. This README will be updated with more optimal hyperparameters and results in the future.
 

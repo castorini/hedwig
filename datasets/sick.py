@@ -3,13 +3,13 @@ import os
 
 import numpy as np
 import torch
-from torchtext.data.dataset import Dataset
 from torchtext.data.example import Example
 from torchtext.data.field import Field
 from torchtext.data.iterator import BucketIterator
 from torchtext.data.pipeline import Pipeline
 from torchtext.vocab import Vectors
 
+from datasets.castor_dataset import CastorPairDataset
 from datasets.idf_utils import get_pairwise_word_to_doc_freq, get_pairwise_overlap_features
 
 
@@ -28,7 +28,7 @@ def get_class_probs(sim, *args):
     return class_probs
 
 
-class SICK(Dataset):
+class SICK(CastorPairDataset):
     NAME = 'sick'
     NUM_CLASSES = 5
     ID_FIELD = Field(sequential=False, use_vocab=False, batch_first=True)
@@ -38,35 +38,13 @@ class SICK(Dataset):
 
     @staticmethod
     def sort_key(ex):
-        return len(ex.a)
+        return len(ex.sentence_1)
 
     def __init__(self, path):
         """
         Create a SICK dataset instance
         """
-        fields = [('id', self.ID_FIELD), ('a', self.TEXT_FIELD), ('b', self.TEXT_FIELD), ('ext_feats', self.EXT_FEATS_FIELD), ('label', self.LABEL_FIELD)]
-
-        examples = []
-        f1 = open(os.path.join(path, 'a.txt'), 'r')
-        f2 = open(os.path.join(path, 'b.txt'), 'r')
-        id_file = open(os.path.join(path, 'id.txt'), 'r')
-        label_file = open(os.path.join(path, 'sim.txt'), 'r')
-
-        sent_list_1 = [l.rstrip('.\n').split(' ') for l in f1]
-        sent_list_2 = [l.rstrip('.\n').split(' ') for l in f2]
-
-        word_to_doc_cnt = get_pairwise_word_to_doc_freq(sent_list_1, sent_list_2)
-        overlap_feats = get_pairwise_overlap_features(sent_list_1, sent_list_2, word_to_doc_cnt)
-
-        for pair_id, l1, l2, ext_feats, label in zip(id_file, sent_list_1, sent_list_2, overlap_feats, label_file):
-            pair_id = pair_id.rstrip('.\n')
-            label = label.rstrip('.\n')
-            example = Example.fromlist([pair_id, l1, l2, ext_feats, label], fields)
-            examples.append(example)
-
-        map(lambda f: f.close(), [f1, f2, label_file])
-
-        super(SICK, self).__init__(examples, fields)
+        super(SICK, self).__init__(path)
 
     @classmethod
     def splits(cls, path, train='train', validation='dev', test='test', **kwargs):
