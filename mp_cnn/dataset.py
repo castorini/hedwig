@@ -6,6 +6,7 @@ import torch.nn as nn
 from datasets.sick import SICK
 from datasets.msrvid import MSRVID
 from datasets.trecqa import TRECQA
+from datasets.wikiqa import WikiQA
 
 
 class UnknownWordVecCache(object):
@@ -53,6 +54,15 @@ class MPCNNDatasetFactory(object):
             embedding = nn.Embedding(embedding_dim[0], embedding_dim[1])
             embedding.weight = nn.Parameter(TRECQA.TEXT_FIELD.vocab.vectors)
             return TRECQA, embedding, train_loader, test_loader, dev_loader
+        elif dataset_name == 'wikiqa':
+            if not os.path.exists('../utils/trec_eval-9.0.5/trec_eval'):
+                raise FileNotFoundError('TrecQA requires the trec_eval tool to run. Please run get_trec_eval.sh inside Castor/utils (as working directory) before continuing.')
+            dataset_root = os.path.join(os.pardir, os.pardir, 'data', 'WikiQA/')
+            train_loader, dev_loader, test_loader = WikiQA.iters(dataset_root, word_vectors_file, word_vectors_dir, batch_size, device=device, unk_init=UnknownWordVecCache.unk)
+            embedding_dim = WikiQA.TEXT_FIELD.vocab.vectors.size()
+            embedding = nn.Embedding(embedding_dim[0], embedding_dim[1])
+            embedding.weight = nn.Parameter(WikiQA.TEXT_FIELD.vocab.vectors)
+            return WikiQA, embedding, train_loader, test_loader, dev_loader
         else:
             raise ValueError('{} is not a valid dataset.'.format(dataset_name))
 

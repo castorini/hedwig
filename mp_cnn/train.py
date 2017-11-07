@@ -1,6 +1,7 @@
 from mp_cnn.trainers.sick_trainer import SICKTrainer
 from mp_cnn.trainers.msrvid_trainer import MSRVIDTrainer
 from mp_cnn.trainers.trecqa_trainer import TRECQATrainer
+from mp_cnn.trainers.wikiqa_trainer import WikiQATrainer
 
 
 class MPCNNTrainerFactory(object):
@@ -10,7 +11,8 @@ class MPCNNTrainerFactory(object):
     trainer_map = {
         'sick': SICKTrainer,
         'msrvid': MSRVIDTrainer,
-        'trecqa': TRECQATrainer
+        'trecqa': TRECQATrainer,
+        'wikiqa': WikiQATrainer
     }
 
     @staticmethod
