@@ -10,6 +10,6 @@ class SST1Dataset(data.TabularDataset):
         prefix_name = 'stsa.fine.'
         path = './data'
         return super(SST1Dataset, cls).splits(
-            os.path.join(path, prefix_name), train, validation, test,
+            path, train=prefix_name + train, validation=prefix_name + validation, test=prefix_name + test,
             format='TSV', fields=[('label', label_field), ('text', text_field)]
         )
