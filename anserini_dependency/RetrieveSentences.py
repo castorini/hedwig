@@ -60,7 +60,7 @@ class RetrieveSentences:
             The number of passages to be returned 
         """
 
-        scorer = self.rs.getRankedPassagesList(query, index, int(hits), int(k))
+        scorer = self.rs.getRankedPassagesList(query.strip(), index, int(hits), int(k))
         candidate_passages_scores = []
         for i in range(0, scorer.size()):
             candidate_passages_scores.append(scorer.get(i))
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     parser.add_argument("-index", help="Lucene index", required=True)
     parser.add_argument("-embeddings", help="Path of the word2vec index", default="")
     parser.add_argument("-topics", help="topics file", default="")
-    parser.add_argument("-query", help="a single query", default="")
+    parser.add_argument("-query", help="a single query", default="who is newton")
     parser.add_argument("-hits", help="max number of hits to return", default=100)
     parser.add_argument("-scorer", help="passage scores", default="Idf")
     parser.add_argument("-k", help="top-k passages to be retrieved", default=1)
@@ -87,4 +87,3 @@ if __name__ == "__main__":
 
     rs = RetrieveSentences(args_raw)
     sc = rs.getRankedPassages(args_raw.query, args_raw.index, args_raw.hits, args_raw.k)
-
