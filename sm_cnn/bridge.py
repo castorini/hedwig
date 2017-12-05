@@ -3,117 +3,75 @@ import os
 import sys
 from collections import Counter
 import argparse
+import random
 
-import re
-import string
 import numpy as np
 import torch
 from nltk.tokenize import TreebankWordTokenizer
-from torch.autograd import Variable
-from py4j.java_gateway import JavaGateway
+from torchtext import  data
 
 from sm_cnn import model
 from sm_cnn.external_features import compute_overlap, compute_idf_weighted_overlap, stopped
+from sm_cnn.trec_dataset import TrecDataset
+from sm_cnn.wiki_dataset import WikiDataset
+from anserini_dependency.RetrieveSentences import RetrieveSentences
 
 sys.modules['model'] = model
 
-
 class SMModelBridge(object):
 
-    def __init__(self, model_file, word_embeddings_cache_file, index_path):
-        # init torch random seeds
-        torch.manual_seed(1234)
-        np.random.seed(1234)
+    def __init__(self, args):
+        if not args.cuda:
+            args.gpu = -1
+        if torch.cuda.is_available() and args.cuda:
+            print("Note: You are using GPU for training")
+            torch.cuda.set_device(args.gpu)
+            torch.cuda.manual_seed(args.seed)
+        if torch.cuda.is_available() and not args.cuda:
+            print("Warning: You have Cuda but do not use it. You are using CPU for training")
 
-        # load model
-        self.model = model.QAModel.load(model_file)
-        self.model_file = model_file
+        torch.manual_seed(args.seed)
+        np.random.seed(args.seed)
+        random.seed(args.seed)
 
-        # load vectors
-        self.vec_dim = self._preload_cached_embeddings(word_embeddings_cache_file)
-        self.unk_term_vec = np.random.uniform(-0.25, 0.25, self.vec_dim)
-
-        self.index = index_path
-
-
-    def _preload_cached_embeddings(self, cache_file):
-
-        with open(cache_file + '.dimensions') as d:
-            vocab_size, vec_dim = [int(e) for e in d.read().strip().split()]
-
-        self.W = np.memmap(cache_file, dtype=np.double, shape=(vocab_size, vec_dim))
-
-        with open(cache_file + '.vocab') as f:
-            w2v_vocab_list = map(str.strip, f.readlines())
-
-        self.vocab_dict = {w:k for k, w in enumerate(w2v_vocab_list)}
-        return vec_dim
+        self.QID = data.Field(sequential=False)
+        self.QUESTION = data.Field(batch_first=True)
+        self.ANSWER = data.Field(batch_first=True)
+        self.LABEL = data.Field(sequential=False)
+        self.EXTERNAL = data.Field(sequential=False, tensor_type=torch.FloatTensor, batch_first=True, use_vocab=False,
+                              preprocessing=data.Pipeline(lambda arr, _, train: [float(y) for y in arr]))
 
 
-    def parse(self, sentence, flags):
+        if 'TrecQA' in args.dataset:
+            train, dev, test = TrecDataset.splits(self.QID, self.QUESTION, self.ANSWER, self.EXTERNAL, self.LABEL)
+        elif 'WikiQA' in args.dataset:
+            train, dev, test = WikiDataset.splits(self.QID, self.QUESTION, self.ANSWER, self.EXTERNAL, self.LABEL)
+        else:
+            print("Unsupported dataset")
+            exit()
+
+        self.QID.build_vocab(train, dev, test)
+        self.QUESTION.build_vocab(train, dev, test)
+        self.ANSWER.build_vocab(train, dev, test)
+        self.LABEL.build_vocab(train, dev, test)
+        self.retrieveSentencesObj = RetrieveSentences(args)
+        self.idf_json = self.retrieveSentencesObj.getTermIdfJSON()
+
+        if args.cuda:
+            self.model = torch.load(args.model, map_location=lambda storage, location: storage.cuda(args.gpu))
+        else:
+            self.model = torch.load(args.model, map_location=lambda storage, location: storage)
+
+    def parse(self, sentence):
         s_toks = TreebankWordTokenizer().tokenize(sentence)
         sentence = ' '.join(s_toks).lower()
-
-        # model_input_args = self.model_file.split('.')
-        # punctuation = model_input_args[-3].split('-')[1]
-        # dash_words = model_input_args[-2].split('_')[1]
-
-        if flags["dash_words"] == "split":
-            def split_hyphenated_words(sentence):
-                rtokens = []
-                for term in sentence.split():
-                    for t in term.split('-'):
-                        if t:
-                            rtokens.append(t)
-                return ' '.join(rtokens)
-            sentence = split_hyphenated_words(sentence)
-
-        if flags["punctuation"] == "remove":
-            regex = re.compile('[{}]'.format(re.escape(string.punctuation)))
-            def remove_punctuation(sentence):
-                rtokens = []
-                for term in sentence.split():
-                    for t in regex.sub(' ', term).strip().split():
-                        if t:
-                            rtokens.append(t)
-                return ' '.join(rtokens)
-            sentence = remove_punctuation(sentence)
-
         return sentence
 
-
-    def make_input_matrix(self, sentence):
-        terms = sentence.strip().split()[:60]
-        # word_embeddings = torch.zeros(max_len, vec_dim).type(torch.DoubleTensor)
-        word_embeddings = torch.zeros(len(terms), self.vec_dim).type(torch.DoubleTensor)
-        for i in range(len(terms)):
-            word = terms[i]
-            if word not in self.vocab_dict:
-                emb = torch.from_numpy(self.unk_term_vec)
-            else:
-                emb = torch.from_numpy(self.W[self.vocab_dict[word]])
-            word_embeddings[i] = emb
-        input_tensor = torch.zeros(1, self.vec_dim, len(terms))
-        input_tensor[0] = torch.transpose(word_embeddings, 0, 1)
-        return input_tensor
-
-
-    def get_tensorized_inputs(self, batch_ques, batch_sents, batch_ext_feats):
-        assert(1 == len(batch_ques))
-        tensorized_inputs = []
-        for i in range(len(batch_ques)):
-            xq = Variable(self.make_input_matrix(batch_ques[i]))
-            xs = Variable(self.make_input_matrix(batch_sents[i]))
-            ext_feats = Variable(torch.FloatTensor(batch_ext_feats[i]))
-            ext_feats = torch.unsqueeze(ext_feats, 0)
-            tensorized_inputs.append((xq, xs, ext_feats))
-        return tensorized_inputs
-
-    def rerank_candidate_answers(self, question, answers, idf_json, flags):
+    def rerank_candidate_answers(self, question, answers):
         # run through the model
         scores_sentences = []
-        question = self.parse(question, flags)
-        term_idfs = json.loads(idf_json)
+        question = self.parse(question)
+        term_idfs = json.loads(self.idf_json)
         term_idfs = dict((k, float(v)) for k, v in term_idfs.items())
 
         for term in question.split():
@@ -121,7 +79,7 @@ class SMModelBridge(object):
                 term_idfs[term] = 0.0
 
         for answer in answers:
-            answer = self.parse(answer, flags)
+            answer = self.parse(answer)
             for term in answer.split():
                 if term not in term_idfs:
                     term_idfs[term] = 0.0
@@ -132,73 +90,56 @@ class SMModelBridge(object):
                 compute_overlap(stopped([question]), stopped([answer]))
             idf_weighted_overlap_no_stopwords =\
                 compute_idf_weighted_overlap(stopped([question]), stopped([answer]), term_idfs)
-            ext_feats = [np.array(feats) for feats in zip(overlap, idf_weighted_overlap,\
-                        overlap_no_stopwords, idf_weighted_overlap_no_stopwords)]
+            ext_feats = str(overlap[0]) + " " + str(idf_weighted_overlap[0]) + " " + \
+                        str(overlap_no_stopwords[0]) + " " + str(idf_weighted_overlap_no_stopwords[0])
 
-            xq, xa, x_ext_feats = self.get_tensorized_inputs([question], [answer], \
-                ext_feats)[0]
-            pred = self.model(xq, xa, x_ext_feats)
-            pred = torch.exp(pred)
-            scores_sentences.append((pred.data.squeeze()[1], answer))
+
+            fields = [('question', self.QUESTION), ('answer', self.ANSWER), ('ext_feat', self.EXTERNAL)]
+            example = data.Example.fromlist([question, answer, ext_feats], fields)
+            this_question = self.QUESTION.numericalize(self.QUESTION.pad([example.question]), args.gpu)
+            this_answer = self.ANSWER.numericalize(self.ANSWER.pad([example.answer]), args.gpu)
+            this_external = self.EXTERNAL.numericalize(self.EXTERNAL.pad([example.ext_feat]), args.gpu)
+            self.model.eval()
+            scores = self.model(this_question, this_answer, this_external)
+            scores_sentences.append((scores[:, 2].cpu().data.numpy(), answer))
 
         return scores_sentences
 
-def get_term_idf_json_list(index_path, sent_list):
-    gateway = JavaGateway()
-    index = gateway.jvm.java.lang.String(index_path)
-    pyserini = gateway.jvm.io.anserini.py4j.PyseriniEntryPoint()
-    pyserini.initializeWithIndex(index_path)
-    java_list = gateway.jvm.java.util.ArrayList()
-
-    for l in sent_list:
-        java_list.add(l)
-
-    json_object = pyserini.getTermIdfJSONs(java_list)
-    return json_object
-
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser(description="Bridge Demo. Produces scores in trec_eval format",
+    parser = argparse.ArgumentParser(description="Bridge Demo. Produces scores in trec_eval format",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    ap.add_argument('model', help="the path to the saved model file")
-    ap.add_argument('--word-embeddings-cache', help="the embeddings 'cache' file",\
-        default='../../data/word2vec/aquaint+wiki.txt.gz.ndim=50.cache')
-    ap.add_argument('index_path', help="the path to the source corpus index")
-    # ap.add_argument('--paper-ext-feats', action="store_true", \
-    #     help="external features as per the paper")
-    ap.add_argument('--dataset-folder', help="the QA dataset folder {TrecQA|WikiQA}",
-                    default='../../data/TrecQA/')
-    ap.add_argument("--punctuation", choices=["keep", "remove"], default="keep")
-    ap.add_argument("--dash-words", choices=["keep", "split"], default="keep")
+    parser.add_argument('--model', help="the path to the saved model file")
+    parser.add_argument('--dataset', help="the QA dataset folder {TrecQA|WikiQA}", default='../../data/TrecQA/')
+    parser.add_argument("--index", help="Lucene index", required=True)
+    parser.add_argument("--embeddings", help="Path of the word2vec index", default="")
+    parser.add_argument("--topics", help="topics file", default="")
+    parser.add_argument("--query", help="a single query", default="where was newton born ?")
+    parser.add_argument("--hits", help="max number of hits to return", default=100)
+    parser.add_argument("--scorer", help="passage scores", default="Idf")
+    parser.add_argument("--k", help="top-k passages to be retrieved", default=1)
+    parser.add_argument('--no_cuda', action='store_false', help='do not use cuda', dest='cuda')
+    parser.add_argument('--gpu', type=int, default=0) # Use -1 for CPU
+    parser.add_argument('--seed', type=int, default=3435)
 
-    args = ap.parse_args()
+    args = parser.parse_args()
 
-    smmodel = SMModelBridge(
-        args.model,
-        args.word_embeddings_cache,
-        args.index_path
-        )
+    if not args.cuda:
+        args.gpu = -1
+
+    smmodel = SMModelBridge(args)
 
     train_set, dev_set, test_set = 'train', 'dev', 'test'
-    if 'TrecQA' in args.dataset_folder:
+    if 'TrecQA' in args.dataset:
         train_set, dev_set, test_set = 'train-all', 'raw-dev', 'raw-test'
-
-    flags = {
-        "punctuation": args.punctuation,
-        "dash_words": args.dash_words
-    }
 
     for split in [dev_set, test_set]:
         outfile = open('bridge.{}.scores'.format(split), 'w')
 
-        questions = [q.strip() for q in \
-                        open(os.path.join(args.dataset_folder, split, 'a.toks')).readlines()]
-        answers = [q.strip() for q in \
-                        open(os.path.join(args.dataset_folder, split, 'b.toks')).readlines()]
-        labels = [q.strip() for q in \
-                        open(os.path.join(args.dataset_folder, split, 'sim.txt')).readlines()]
-        qids = [q.strip() for q in \
-                        open(os.path.join(args.dataset_folder, split, 'id.txt')).readlines()]
+        questions = [q.strip() for q in open(os.path.join(args.dataset, split, 'a.toks')).readlines()]
+        answers = [q.strip() for q in open(os.path.join(args.dataset, split, 'b.toks')).readlines()]
+        labels = [q.strip() for q in open(os.path.join(args.dataset, split, 'sim.txt')).readlines()]
+        qids = [q.strip() for q in open(os.path.join(args.dataset, split, 'id.txt')).readlines()]
 
         qid_question = dict(zip(qids, questions))
         q_counts = Counter(questions)
@@ -207,23 +148,21 @@ if __name__ == "__main__":
         docid_counter = 0
 
         all_questions_answers = questions + answers
-        idf_json = get_term_idf_json_list(args.index_path, all_questions_answers)
-
         for qid, question in sorted(qid_question.items(), key=lambda x: float(x[0])):
             num_answers = q_counts[question]
             q_answers = answers[answers_offset: answers_offset + num_answers]
             answers_offset += num_answers
-            sentence_scores = smmodel.rerank_candidate_answers(question, q_answers, idf_json, flags)
+            sentence_scores = smmodel.rerank_candidate_answers(question, q_answers)
 
             for score, sentence in sentence_scores:
                 print('{} Q0 {} 0 {} sm_cnn_bridge.{}.run'.format(
                     qid,
                     docid_counter,
                     score,
-                    os.path.basename(args.dataset_folder)
+                    os.path.basename(args.dataset)
                 ), file=outfile)
                 docid_counter += 1
-            if 'WikiQA' in args.dataset_folder:
+            if 'WikiQA' in args.dataset:
                 docid_counter = 0
 
         outfile.close()
