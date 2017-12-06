@@ -5,6 +5,7 @@ import random
 
 import torch
 import torch.nn as nn
+import torch.onnx
 from torchtext import data
 
 from args import get_args

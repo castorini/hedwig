@@ -102,3 +102,9 @@ predict(config.dataset, 'dev', dataset_iter=dev_iter)
 
 # Run the model on the test set
 predict(config.dataset, 'test', dataset_iter=test_iter)
+
+if args.onnx:
+    print("Saving model to ONNX...")
+    dummy_batch = next(iter(dev_iter))
+    dummy_input = (dummy_batch.question, dummy_batch.answer, dummy_batch.ext_feat)
+    torch.onnx.export(model, dummy_input, "sm_model.proto", verbose=True)

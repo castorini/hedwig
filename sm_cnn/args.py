@@ -23,6 +23,7 @@ def get_args():
     parser.add_argument('--vector_cache', type=str, default='data/word2vec.trecqa.pt')
     parser.add_argument('--trained_model', type=str, default="")
     parser.add_argument('--weight_decay',type=float, default=1e-5)
+    parser.add_argument('--onnx', action='store_true', help='export model to onnx')
 
     args = parser.parse_args()
     return args
