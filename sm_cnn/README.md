@@ -39,6 +39,26 @@ You should you see the following tree:
     └── word2vec
 ```
 
+Parse the TrecQA datset:
+```bash
+cd ../../data/TrecQA/
+python parse.py
+cd -
+```
+
+Parse the WikiQA datset:
+```bash
+cd ../../data/WikiQA/
+unzip WikiQACorpus.zip
+python create-train-dev-test-data.py 
+cd -
+```
+
+Your repository root should be in your `PYTHONPATH` environment variable:
+```bash
+export PYTHONPATH=$(pwd)
+```
+
 To create the dataset:
 ```bash
 cd Castor/sm_cnn/
@@ -51,10 +71,11 @@ We use `trec_eval` for evaluation:
 ```bash
 cd ../utils/
 ./get_trec_eval.sh
+cd ../sm_cnn
 ```
 
 ### Training
-Download the word2vec model from [here] (https://drive.google.com/file/d/0B2u_nClt6NbzUmhOZU55eEo4QWM/view?usp=sharing) 
+Download the word2vec model from [here](https://drive.google.com/file/d/0B2u_nClt6NbzUmhOZU55eEo4QWM/view?usp=sharing) 
 and copy it to the `data/` folder.
 
 You can train the SM model for the 4 following configurations:

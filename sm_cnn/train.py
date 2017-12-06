@@ -12,7 +12,6 @@ from model import SmPlusPlus
 from utils.relevancy_metrics import get_map_mrr
 from trec_dataset import TrecDataset
 from wiki_dataset import WikiDataset
-from evaluate import evaluate
 
 args = get_args()
 config = args
