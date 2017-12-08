@@ -39,21 +39,25 @@ class SmPlusPlus(nn.Module):
         self.combined_feature_vector = nn.Linear(n_hidden, n_hidden)
         self.hidden = nn.Linear(n_hidden, n_classes)
 
+    def _unsqueeze(self, tensor):
+        dim = tensor.size()
+        return tensor.view(dim[0], 1, dim[1], dim[2])
+
     def forward(self, x_question, x_answer, x_ext):
         if self.mode == 'rand':
-            question = self.question_embed(x_question).unsqueeze(1)
-            answer = self.answer_embed(x_answer).unsqueeze(1) # (batch, sent_len, embed_dim)
+            question = self._unsqueeze(self.question_embed(x_question))
+            answer = self._unsqueeze(self.answer_embed(x_answer)) # (batch, 1, sent_len, embed_dim)
             x = [F.tanh(self.conv_q(question)).squeeze(3), F.tanh(self.conv_a(answer)).squeeze(3)]
             x = [F.max_pool1d(i, i.size(2)).squeeze(2) for i in x]  # max-over-time pooling
         # actual SM model mode (Severyn & Moschitti, 2015)
         elif self.mode == 'static':
-            question = self.static_question_embed(x_question).unsqueeze(1)
-            answer = self.static_answer_embed(x_answer).unsqueeze(1) # (batch, sent_len, embed_dim)
+            question = self._unsqueeze(self.static_question_embed(x_question))
+            answer = self._unsqueeze(self.static_answer_embed(x_answer)) # (batch, 1, sent_len, embed_dim)
             x = [F.tanh(self.conv_q(question)).squeeze(3), F.tanh(self.conv_a(answer)).squeeze(3)]
             x = [F.max_pool1d(i, i.size(2)).squeeze(2) for i in x]  # max-over-time pooling
         elif self.mode == 'non-static':
-            question = self.nonstatic_question_embed(x_question).unsqueeze(1)
-            answer = self.nonstatic_answer_embed(x_answer).unsqueeze(1) # (batch, sent_len, embed_dim)
+            question = self._unsqueeze(self.nonstatic_question_embed(x_question))
+            answer = self._unsqueeze(self.nonstatic_answer_embed(x_answer)) # (batch, 1, sent_len, embed_dim)
             x = [F.tanh(self.conv_q(question)).squeeze(3), F.tanh(self.conv_a(answer)).squeeze(3)]
             x = [F.max_pool1d(i, i.size(2)).squeeze(2) for i in x]  # max-over-time pooling
         elif self.mode == 'multichannel':
