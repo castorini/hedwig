@@ -10,11 +10,11 @@ import torch
 from nltk.tokenize import TreebankWordTokenizer
 from torchtext import  data
 
-from sm_cnn import model
 from sm_cnn.external_features import compute_overlap, compute_idf_weighted_overlap, stopped
 from sm_cnn.trec_dataset import TrecDataset
 from sm_cnn.wiki_dataset import WikiDataset
 from anserini_dependency.RetrieveSentences import RetrieveSentences
+from sm_cnn import model
 
 sys.modules['model'] = model
 
@@ -38,9 +38,8 @@ class SMModelBridge(object):
         self.QUESTION = data.Field(batch_first=True)
         self.ANSWER = data.Field(batch_first=True)
         self.LABEL = data.Field(sequential=False)
-        self.EXTERNAL = data.Field(sequential=False, tensor_type=torch.FloatTensor, batch_first=True, use_vocab=False,
-                              preprocessing=data.Pipeline(lambda arr, _, train: [float(y) for y in arr]))
-
+        self.EXTERNAL = data.Field(sequential=True, tensor_type=torch.FloatTensor, batch_first=True, use_vocab=False,
+                              postprocessing=data.Pipeline(lambda arr, _, train: [float(y) for y in arr]))
 
         if 'TrecQA' in args.dataset:
             train, dev, test = TrecDataset.splits(self.QID, self.QUESTION, self.ANSWER, self.EXTERNAL, self.LABEL)
@@ -54,24 +53,24 @@ class SMModelBridge(object):
         self.QUESTION.build_vocab(train, dev, test)
         self.ANSWER.build_vocab(train, dev, test)
         self.LABEL.build_vocab(train, dev, test)
-        self.retrieveSentencesObj = RetrieveSentences(args)
-        self.idf_json = self.retrieveSentencesObj.getTermIdfJSON()
 
         if args.cuda:
             self.model = torch.load(args.model, map_location=lambda storage, location: storage.cuda(args.gpu))
         else:
             self.model = torch.load(args.model, map_location=lambda storage, location: storage)
 
+        self.gpu = args.gpu
+
     def parse(self, sentence):
         s_toks = TreebankWordTokenizer().tokenize(sentence)
         sentence = ' '.join(s_toks).lower()
         return sentence
 
-    def rerank_candidate_answers(self, question, answers):
+    def rerank_candidate_answers(self, question, answers, idf_json):
         # run through the model
         scores_sentences = []
         question = self.parse(question)
-        term_idfs = json.loads(self.idf_json)
+        term_idfs = json.loads(idf_json)
         term_idfs = dict((k, float(v)) for k, v in term_idfs.items())
 
         for term in question.split():
@@ -79,6 +78,7 @@ class SMModelBridge(object):
                 term_idfs[term] = 0.0
 
         for answer in answers:
+            answer = answer.split('\t')[0]
             answer = self.parse(answer)
             for term in answer.split():
                 if term not in term_idfs:
@@ -96,12 +96,12 @@ class SMModelBridge(object):
 
             fields = [('question', self.QUESTION), ('answer', self.ANSWER), ('ext_feat', self.EXTERNAL)]
             example = data.Example.fromlist([question, answer, ext_feats], fields)
-            this_question = self.QUESTION.numericalize(self.QUESTION.pad([example.question]), args.gpu)
-            this_answer = self.ANSWER.numericalize(self.ANSWER.pad([example.answer]), args.gpu)
-            this_external = self.EXTERNAL.numericalize(self.EXTERNAL.pad([example.ext_feat]), args.gpu)
+            this_question = self.QUESTION.numericalize(self.QUESTION.pad([example.question]), self.gpu)
+            this_answer = self.ANSWER.numericalize(self.ANSWER.pad([example.answer]), self.gpu)
+            this_external = self.EXTERNAL.numericalize(self.EXTERNAL.pad([example.ext_feat]), self.gpu)
             self.model.eval()
             scores = self.model(this_question, this_answer, this_external)
-            scores_sentences.append((scores[:, 2].cpu().data.numpy(), answer))
+            scores_sentences.append((scores[:, 2].cpu().data.numpy()[0].tolist(), answer))
 
         return scores_sentences
 
@@ -127,6 +127,8 @@ if __name__ == "__main__":
     if not args.cuda:
         args.gpu = -1
 
+    retrieveSentencesObj = RetrieveSentences(args)
+    idf_json = retrieveSentencesObj.getTermIdfJSON()
     smmodel = SMModelBridge(args)
 
     train_set, dev_set, test_set = 'train', 'dev', 'test'
@@ -152,7 +154,7 @@ if __name__ == "__main__":
             num_answers = q_counts[question]
             q_answers = answers[answers_offset: answers_offset + num_answers]
             answers_offset += num_answers
-            sentence_scores = smmodel.rerank_candidate_answers(question, q_answers)
+            sentence_scores = smmodel.rerank_candidate_answers(question, q_answers, idf_json)
 
             for score, sentence in sentence_scores:
                 print('{} Q0 {} 0 {} sm_cnn_bridge.{}.run'.format(
