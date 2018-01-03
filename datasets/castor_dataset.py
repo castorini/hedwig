@@ -1,10 +1,12 @@
 from abc import ABCMeta, abstractmethod
 import os
 import numpy as np
+from sys import exit
 
 from torchtext.data.dataset import Dataset
 from torchtext.data.example import Example
 from torchtext.data.field import Field
+import torch
 
 from datasets.idf_utils import get_pairwise_word_to_doc_freq, get_pairwise_overlap_features
 
@@ -49,3 +51,21 @@ class CastorPairDataset(Dataset, metaclass=ABCMeta):
                 examples.append(example)
 
         super(CastorPairDataset, self).__init__(examples, fields)
+
+    @classmethod
+    def set_vectors(cls, field, vector_path):
+        if os.path.isfile(vector_path):
+            stoi, vectors, dim = torch.load(vector_path)
+            field.vocab.vectors = torch.Tensor(len(field.vocab), dim)
+
+            for i, token in enumerate(field.vocab.itos):
+                wv_index = stoi.get(token, None)
+                if wv_index is not None:
+                    field.vocab.vectors[i] = vectors[wv_index]
+                else:
+                    # initialize <unk> with uniform_(-0.05, 0.05) vectors
+                    field.vocab.vectors[i] = torch.FloatTensor(dim).uniform_(-0.05, 0.05)
+        else:
+            print("Error: Need word embedding pt file")
+            exit(1)
+        return field

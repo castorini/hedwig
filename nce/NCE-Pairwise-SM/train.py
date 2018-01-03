@@ -15,6 +15,7 @@ from datasets.trecqa import TRECQA
 from args import get_args
 from model import SmPlusPlus, PairwiseConv
 from utils.relevancy_metrics import get_map_mrr
+from utils.nce_neighbors import get_nearest_neg_id, get_random_neg_id, get_batch
 
 
 class UnknownWordVecCache(object):
@@ -124,46 +125,6 @@ def train_sm():
     os.makedirs(args.save_path, exist_ok=True)
     os.makedirs(os.path.join(args.save_path, args.dataset), exist_ok=True)
     print(header)
-
-    # get the nearest negative samples to the positive sample by computing the feature difference
-    def get_nearest_neg_id(pos_feature, neg_dict, distance="cosine", k=1):
-        dis_list = []
-        pos_feature = pos_feature.data.cpu().numpy()
-        pos_feature_norm = pos_feature / np.sqrt(sum(pos_feature ** 2))
-        neg_list = []
-        for key in neg_dict:
-            if distance == "l2":
-                dis = np.sqrt(np.sum((np.array(pos_feature) - neg_dict[key]["feature"]) ** 2))
-            elif distance == "cosine":
-                neg_feature = np.array(neg_dict[key]["feature"])
-                feat_norm = neg_feature / np.sqrt(sum(neg_feature ** 2))
-                dis = 1 - feat_norm.dot(pos_feature_norm)
-            dis_list.append(dis)
-            neg_list.append(key)
-
-        k = min(k, len(neg_dict))
-        min_list = heapq.nsmallest(k, enumerate(dis_list), key=operator.itemgetter(1))
-        min_id_list = [neg_list[x[0]] for x in min_list]
-        return min_id_list
-
-    # get the negative samples randomly
-    def get_random_neg_id(q2neg, qid_i, k=5):
-        # question 1734 has no neg answer
-        if qid_i not in q2neg:
-            return []
-        k = min(k, len(q2neg[qid_i]))
-        ran = random.sample(q2neg[qid_i], k)
-        return ran
-
-    # pack the lists of question/answer/ext_feat into a torchtext batch
-    def get_batch(question, answer, ext_feat, size):
-        new_batch = data.Batch()
-        new_batch.batch_size = size
-        new_batch.dataset = batch.dataset
-        setattr(new_batch, "sentence_2", torch.stack(answer))
-        setattr(new_batch, "sentence_1", torch.stack(question))
-        setattr(new_batch, "ext_feats", torch.stack(ext_feat))
-        return new_batch
 
     while True:
         if early_stop:

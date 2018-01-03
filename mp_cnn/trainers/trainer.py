@@ -14,6 +14,7 @@ class Trainer(object):
         self.lr_reduce_factor = trainer_config['lr_reduce_factor']
         self.patience = trainer_config['patience']
         self.use_tensorboard = trainer_config['tensorboard']
+
         if self.use_tensorboard:
             from tensorboardX import SummaryWriter
             self.writer = SummaryWriter(log_dir=None, comment='' if trainer_config['run_label'] is None else trainer_config['run_label'])
@@ -25,7 +26,6 @@ class Trainer(object):
 
     def evaluate(self, evaluator, dataset_name):
         scores, metric_names = evaluator.get_scores()
-        self.logger.info('Evaluation metrics for {}:'.format(dataset_name))
         self.logger.info('\t'.join([' '] + metric_names))
         self.logger.info('\t'.join([dataset_name] + list(map(str, scores))))
         return scores

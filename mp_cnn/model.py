@@ -46,10 +46,10 @@ class MPCNN(nn.Module):
             # comparison units from per-dim conv
             2 * (len(self.filter_widths) - 1) * n_per_dim_filters * COMP_1_COMPONENTS_PER_DIM
         )
-        n_feat = n_feat_h + n_feat_v + EXT_FEATS
+        self.n_feat = n_feat_h + n_feat_v + EXT_FEATS
 
         self.final_layers = nn.Sequential(
-            nn.Linear(n_feat, hidden_layer_units),
+            nn.Linear(self.n_feat, hidden_layer_units),
             nn.Tanh(),
             nn.Dropout(dropout),
             nn.Linear(hidden_layer_units, num_classes),

@@ -37,24 +37,6 @@ class TRECQA(CastorPairDataset):
         return super(TRECQA, cls).splits(path, train=train, validation=validation, test=test, **kwargs)
 
     @classmethod
-    def set_vectors(cls, field, vector_path):
-        if os.path.isfile(vector_path):
-            stoi, vectors, dim = torch.load(vector_path)
-            field.vocab.vectors = torch.Tensor(len(field.vocab), dim)
-
-            for i, token in enumerate(field.vocab.itos):
-                wv_index = stoi.get(token, None)
-                if wv_index is not None:
-                    field.vocab.vectors[i] = vectors[wv_index]
-                else:
-                    # initialize <unk> with uniform_(-0.05, 0.05) vectors
-                    field.vocab.vectors[i] = torch.FloatTensor(dim).uniform_(-0.05, 0.05)
-        else:
-            print("Error: Need word embedding pt file")
-            exit(1)
-        return field
-
-    @classmethod
     def iters(cls, path, vectors_name, vectors_dir, batch_size=64, shuffle=True, device=0, pt_file = False, vectors=None, unk_init=torch.Tensor.zero_):
         """
         :param path: directory containing train, test, dev files
