@@ -12,16 +12,7 @@ Implementation for Convolutional Neural Networks for Sentence Classification of 
 
 ## Requirement
 
-- Install the latest version of pytorch
-- Install the version of torchtext
-```
-git clone https://github.com/pytorch/text.git 
-cd text  
-#use this commit number 
-git reset --hard 6f930eb8de936482f321ac123e020fd08dd07a4b
-python setup.py install
-```
-
+Assuming you already have PyTorch, just install torchtext (`pip install torchtext==0.2.0`)
 
 ## Quick Start
 
