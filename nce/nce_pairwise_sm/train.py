@@ -5,13 +5,16 @@ import random
 import heapq
 import operator
 import logging
+import pprint
 
 import torch
 import torch.nn as nn
 from torchtext import data
 from torch.nn import functional as F
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from datasets.trecqa import TRECQA
+from datasets.wikiqa import WikiQA
 from args import get_args
 from model import SmPlusPlus, PairwiseConv
 from utils.relevancy_metrics import get_map_mrr
@@ -29,7 +32,8 @@ class UnknownWordVecCache(object):
         size_tup = tuple(tensor.size())
         if size_tup not in cls.cache:
             cls.cache[size_tup] = torch.Tensor(tensor.size())
-            cls.cache[size_tup].uniform_(-0.05, 0.05)
+            # cls.cache[size_tup].uniform_(-0.05, 0.05)
+            cls.cache[size_tup].uniform_(-0.25, 0.25)
         return cls.cache[size_tup]
 
 
@@ -47,8 +51,12 @@ def train_sm():
     config = args
     torch.backends.cudnn.deterministic = True
 
+    logger.info(pprint.pformat(vars(args)))
+
     # Set random seed for reproducibility
     torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    random.seed(args.seed)
     if not args.cuda:
         args.gpu = -1
     if torch.cuda.is_available() and args.cuda:
@@ -57,22 +65,28 @@ def train_sm():
         torch.cuda.manual_seed(args.seed)
     if torch.cuda.is_available() and not args.cuda:
         logger.info("You have Cuda but you're using CPU for training.")
-    np.random.seed(args.seed)
-    random.seed(args.seed)
 
-    dataset_root = os.path.join(os.pardir, 'data', 'TrecQA/')
-    train_iter, dev_iter, test_iter = TRECQA.iters(dataset_root, args.vector_cache, args.wordvec_dir, batch_size=args.batch_size,
-                                                   pt_file=True, device=args.gpu, unk_init=UnknownWordVecCache.unk) #
+    if args.dataset == "trec":
+        dataset_cls = TRECQA
+        dataset_root = os.path.join(os.pardir, os.pardir, os.pardir, 'data', 'TrecQA/')
+    elif args.dataset == "wiki":
+        dataset_cls = WikiQA
+        dataset_root = os.path.join(os.pardir, os.pardir, os.pardir, 'data', 'WikiQA/')
 
-    index2text = np.array(TRECQA.TEXT_FIELD.vocab.itos)
+    train_iter, dev_iter, test_iter = dataset_cls.iters(dataset_root, args.vector_cache, args.wordvec_dir,
+                                                        batch_size=args.batch_size,
+                                                        pt_file=True, device=args.gpu,
+                                                        unk_init=UnknownWordVecCache.unk)  #
+
+    index2text = np.array(dataset_cls.TEXT_FIELD.vocab.itos)
 
     config.target_class = 2
-    config.questions_num = TRECQA.VOCAB_SIZE
-    config.answers_num = TRECQA.VOCAB_SIZE
+    config.questions_num = dataset_cls.VOCAB_SIZE
+    config.answers_num = dataset_cls.VOCAB_SIZE
 
     logger.info("index2text: {}".format(index2text))
     logger.info("Dataset: {}, Mode: {}".format(args.dataset, args.mode))
-    logger.info("VOCAB num: {}".format(TRECQA.VOCAB_SIZE))
+    logger.info("VOCAB num: {}".format(dataset_cls.VOCAB_SIZE))
 
     if args.resume_snapshot:
         if args.cuda:
@@ -81,10 +95,10 @@ def train_sm():
             pw_model = torch.load(args.resume_snapshot, map_location=lambda storage, location: storage)
     else:
         model = SmPlusPlus(config)
-        model.static_question_embed.weight.data.copy_(TRECQA.TEXT_FIELD.vocab.vectors)
-        model.nonstatic_question_embed.weight.data.copy_(TRECQA.TEXT_FIELD.vocab.vectors)
-        model.static_answer_embed.weight.data.copy_(TRECQA.TEXT_FIELD.vocab.vectors)
-        model.nonstatic_answer_embed.weight.data.copy_(TRECQA.TEXT_FIELD.vocab.vectors)
+        model.static_question_embed.weight.data.copy_(dataset_cls.TEXT_FIELD.vocab.vectors)
+        model.nonstatic_question_embed.weight.data.copy_(dataset_cls.TEXT_FIELD.vocab.vectors)
+        model.static_answer_embed.weight.data.copy_(dataset_cls.TEXT_FIELD.vocab.vectors)
+        model.nonstatic_answer_embed.weight.data.copy_(dataset_cls.TEXT_FIELD.vocab.vectors)
 
         if args.cuda:
             model.cuda()
@@ -124,11 +138,22 @@ def train_sm():
     log_template = ' '.join('{:>6.0f},{:>5.0f},{:>9.0f},{:>5.0f}/{:<5.0f} {:>7.0f}%,{:>11.6f},{:>11.6f},'.split(','))
     os.makedirs(args.save_path, exist_ok=True)
     os.makedirs(os.path.join(args.save_path, args.dataset), exist_ok=True)
-    print(header)
+    logger.info(header)
 
+    filename = "grid_{dataset}_lr_{learning_rate}_eps_{eps}_reg_{reg}_mode_{mode}_device_{dev}.txt".format(
+        learning_rate=args.lr, eps=args.eps, reg=args.weight_decay, dev=args.gpu, dataset=args.dataset, mode=args.mode)
+
+    if args.tensorboard:
+        from tensorboardX import SummaryWriter
+        writer = SummaryWriter(log_dir=None, comment=filename)
+
+    dev_index = 0
+    train_index = 0
+
+    # scheduler = ReduceLROnPlateau(optimizer, mode='max', factor=0.3, patience=8)
     while True:
         if early_stop:
-            logger.log("Early Stopping. Epoch: {}, Best Dev Loss: {}".format(epoch, best_dev_loss))
+            logger.info("Early Stopping. Epoch: {}, Best Dev Map: {}, Best Dev Mrr: {}".format(epoch, best_dev_map, best_dev_mrr))
             break
         epoch += 1
         train_iter.init_epoch()
@@ -229,6 +254,7 @@ def train_sm():
 
             # pack the selected pos and neg samples into the torchtext batch and train
             if epoch != 1:
+                train_index += 1
                 true_batch_size = len(new_train_neg["answer"])
                 if true_batch_size != 0:
                     for j in range(true_batch_size):
@@ -266,6 +292,7 @@ def train_sm():
                 qids = []
                 predictions = []
                 labels = []
+                dev_index += 1
 
                 for dev_batch_idx, dev_batch in enumerate(dev_iter):
                     '''
@@ -273,7 +300,8 @@ def train_sm():
                     but dev singlely is equal to dev_size = 1
                     '''
                     scores = pw_model.convModel(dev_batch)
-                    scores = pw_model.linearLayer(scores)
+                    # scores = pw_model.linearLayer(scores)
+                    scores = pw_model.predict(scores)
                     qid_array = np.transpose(dev_batch.id.cpu().data.numpy())
                     score_array = scores.cpu().data.numpy().reshape(-1)
                     true_label_array = np.transpose(dev_batch.label.cpu().data.numpy())
@@ -283,14 +311,42 @@ def train_sm():
                     labels.extend(true_label_array.tolist())
 
                 dev_map, dev_mrr = get_map_mrr(qids, predictions, labels)
-                print(dev_log_template.format(time.time() - start,
+                logger.info(dev_log_template.format(time.time() - start,
                                               epoch, iterations, 1 + batch_idx, len(train_iter),
                                               100. * (1 + batch_idx) / len(train_iter),
                                               loss_num, acc / tot, dev_map, dev_mrr))
+
+                qids = []
+                predictions = []
+                labels = []
+                for test_batch_idx, test_batch in enumerate(test_iter):
+                    '''
+                    # dev singlely or in a batch? -> in a batch
+                    but dev singlely is equal to dev_size = 1
+                    '''
+                    scores = pw_model.convModel(test_batch)
+                    # scores = pw_model.linearLayer(scores)
+                    scores = pw_model.predict(scores)
+                    qid_array = np.transpose(test_batch.id.cpu().data.numpy())
+                    score_array = scores.cpu().data.numpy().reshape(-1)
+                    true_label_array = np.transpose(test_batch.label.cpu().data.numpy())
+
+                    qids.extend(qid_array.tolist())
+                    predictions.extend(score_array.tolist())
+                    labels.extend(true_label_array.tolist())
+
+                if args.tensorboard:
+                    writer.add_scalar('{}/dev/map'.format(args.dataset), dev_map, dev_index)
+                    writer.add_scalar('{}/dev/mrr'.format(args.dataset), dev_mrr, dev_index)
+                    writer.add_scalar('{}/lr'.format(args.dataset),
+                                               optimizer.param_groups[0]['lr'], dev_index)
+                    writer.add_scalar('{}/train/loss'.format(args.dataset), loss_num, dev_index)
+
                 if best_dev_mrr < dev_mrr:
                     snapshot_path = os.path.join(args.save_path, args.dataset, args.mode + '_best_model.pt')
                     torch.save(pw_model, snapshot_path)
                     iters_not_improved = 0
+                    best_dev_map = dev_map
                     best_dev_mrr = dev_mrr
                 else:
                     iters_not_improved += 1
@@ -298,14 +354,19 @@ def train_sm():
                         early_stop = True
                         break
 
+                # scheduler.step(dev_mrr)
             if iterations % args.log_every == 1 and epoch != 1:
                 # logger.info progress message
-                print(log_template.format(time.time() - start,
+                logger.info(log_template.format(time.time() - start,
                                           epoch, iterations, 1 + batch_idx, len(train_iter),
                                           100. * (1 + batch_idx) / len(train_iter),
                                          loss_num,  acc / tot))
+
+
                 acc = 0
                 tot = 0
+
+
 
 if __name__ == '__main__':
     train_sm()

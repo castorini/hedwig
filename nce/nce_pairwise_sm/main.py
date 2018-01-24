@@ -7,9 +7,9 @@ import torch
 from torchtext import data
 
 from args import get_args
-from trec_dataset import TrecDataset
 from utils.relevancy_metrics import get_map_mrr
 from datasets.trecqa import TRECQA
+from datasets.wikiqa import WikiQA
 from train import UnknownWordVecCache
 
 logger = logging.getLogger(__name__)
@@ -36,22 +36,27 @@ if torch.cuda.is_available() and args.cuda:
 if torch.cuda.is_available() and not args.cuda:
     logger.info("Warning: You have Cuda but do not use it. You are using CPU for training")
 
-
-if config.dataset == 'TREC':
-    dataset_root = os.path.join(os.pardir, 'data', 'TrecQA/')
-    train_iter, dev_iter, test_iter = TRECQA.iters(dataset_root, args.vector_cache, args.wordvec_dir, batch_size=args.batch_size, pt_file=True, device=args.gpu, unk_init=UnknownWordVecCache.unk)
+if args.dataset == "trec":
+    dataset_cls = TRECQA
+    dataset_root = os.path.join(os.pardir, os.pardir, os.pardir, 'data', 'TrecQA/')
+elif args.dataset == "wiki":
+    dataset_cls = WikiQA
+    dataset_root = os.path.join(os.pardir, os.pardir, os.pardir, 'data', 'WikiQA/')
 else:
     logger.info("Unsupported dataset")
     exit()
 
+train_iter, dev_iter, test_iter = dataset_cls.iters(dataset_root, args.vector_cache, args.wordvec_dir, batch_size=args.batch_size, pt_file=True, device=args.gpu, unk_init=UnknownWordVecCache.unk)
+
 config.target_class = 2
-config.questions_num = len(TRECQA.TEXT_FIELD.vocab)
-config.answers_num = len(TRECQA.TEXT_FIELD.vocab)
+config.questions_num = len(dataset_cls.TEXT_FIELD.vocab)
+config.answers_num = len(dataset_cls.TEXT_FIELD.vocab)
 
 if args.cuda:
     model = torch.load(args.trained_model, map_location=lambda storage, location: storage.cuda(args.gpu))
 else:
-    model = torch.load(args.trained_model, map_location=lambda storage,location: storage)
+    model = torch.load(args.trained_model, map_location=lambda storage, location: storage)
+
 
 
 def predict(test_mode, dataset_iter):
@@ -73,6 +78,7 @@ def predict(test_mode, dataset_iter):
     dev_map, dev_mrr = get_map_mrr(qids, predictions, labels)
 
     logger.info("{} {}".format(dev_map, dev_mrr))
+
 
 # Run the model on the dev set
 predict('dev', dataset_iter=dev_iter)
