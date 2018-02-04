@@ -22,17 +22,17 @@ def discrete_tnorm(a, b, tgt_loc, sigma=1, n_steps=100):
     def Phi(x):
         return 0.5 * (1 + erf(x / np.sqrt(2)))
     def tgt_loc_update(x):
-        y1 = phi(a - x) / sigma
-        y2 = phi(b - x) / sigma
-        x1 = Phi(b - x) / sigma
-        x2 = Phi(a - x) / sigma
+        y1 = phi((a - x) / sigma)
+        y2 = phi((b - x) / sigma)
+        x1 = Phi((b - x) / sigma)
+        x2 = Phi((a - x) / sigma)
         denom = x1 - x2 + 1E-4
         return y1 / denom - y2 / denom
 
     x = tgt_loc
     direction = np.sign(tgt_loc - (b - a))
     for _ in range(n_steps):
-        x = tgt_loc - sigma* tgt_loc_update(x)
+        x = tgt_loc - sigma * tgt_loc_update(x)
     tn = truncnorm((a - x) / sigma, (b - x) / sigma, loc=x, scale=sigma)
     rrange = np.arange(a, b + 1)
     pdf = tn.pdf(rrange)
