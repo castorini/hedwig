@@ -12,6 +12,7 @@ class Configs(object):
         parser.add_argument("--input_model", type=str, default="local_saves/model.pt")
         parser.add_argument("--lr", type=float, default=1E-4)
         parser.add_argument("--mbatch_size", type=int, default=40)
+        parser.add_argument("--n_labels", type=int, default=5)
         parser.add_argument("--output_model", type=str, default="local_saves/model.pt")
         parser.add_argument("--restore", action="store_true", default=False)
         parser.add_argument("--wordvecs_file", type=str, default="local_data/glove/glove.840B.300d.txt")
