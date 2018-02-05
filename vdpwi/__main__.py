@@ -9,10 +9,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils as utils
 
+from utils.log import LogWriter
 import data
 import model as mod
 
-Context = namedtuple("Context", "model, train_loader, dev_loader, test_loader, optimizer, criterion, params")
+Context = namedtuple("Context", "model, train_loader, dev_loader, test_loader, optimizer, criterion, params, log_writer")
 EvaluateResult = namedtuple("EvaluateResult", "pearsonr, spearmanr")
 
 def create_context(config):
@@ -20,10 +21,12 @@ def create_context(config):
         emb1 = []
         emb2 = []
         labels = []
-        for s1, s2, l in batch:
+        cmp_labels = []
+        for s1, s2, l, cl in batch:
             emb1.append(s1)
             emb2.append(s2)
             labels.append(l)
+            cmp_labels.append(cl)
         emb1 = torch.LongTensor(emb1)
         emb2 = torch.LongTensor(emb2)
         labels = torch.Tensor(labels)
@@ -34,7 +37,7 @@ def create_context(config):
             emb1 = emb1.cuda()
             emb2 = emb2.cuda()
             labels = labels.cuda()
-        return emb1, emb2, labels
+        return emb1, emb2, labels, cmp_labels
 
     embedding, (train_set, dev_set, test_set) = data.load_dataset(config.dataset)
     model = mod.VDPWIModel(embedding, config)
@@ -48,42 +51,65 @@ def create_context(config):
     test_loader = utils.data.DataLoader(test_set, batch_size=1, collate_fn=collate_fn)
 
     params = list(filter(lambda x: x.requires_grad, model.parameters()))
-    optimizer = optim.RMSprop(params, lr=config.lr, alpha=config.decay, momentum=config.momentum)
+    optimizer = optim.Adam(params, lr=config.lr, weight_decay=config.weight_decay)
+    # optimizer = optim.SGD(params, lr=config.lr, momentum=config.momentum, weight_decay=config.weight_decay)
     criterion = nn.KLDivLoss()
-    return Context(model, train_loader, dev_loader, test_loader, optimizer, criterion, params)
+    log_writer = LogWriter()
+    return Context(model, train_loader, dev_loader, test_loader, optimizer, criterion, params, log_writer)
 
 def test(config):
-    pass
+    context = create_context(config)
+    result = evaluate(context, context.test_loader)
+    print("Final test result: {}".format(result))
 
-def evaluate(model, data_loader):
+def evaluate(context, data_loader):
+    model = context.model
     model.eval()
     predictions = []
     true_labels = []
-    for sent1, sent2, label_pmf in data_loader:
+    for sent1, sent2, _, truth in data_loader:
         scores = model(sent1, sent2)
         scores = F.softmax(scores).cpu().data.numpy()[0]
         prediction = np.dot(np.arange(1, len(scores) + 1), scores)
-        truth = np.dot(np.arange(1, len(scores) + 1), label_pmf.cpu().data.numpy()[0])
-        predictions.append(prediction); true_labels.append(truth)
-    return EvaluateResult(stats.pearsonr(predictions, true_labels)[0], stats.spearmanr(predictions, true_labels)[0])
+        predictions.append(prediction); true_labels.append(truth[0][0])
+    
+    pearsonr = stats.pearsonr(predictions, true_labels)[0]
+    spearmanr = stats.spearmanr(predictions, true_labels)[0]
+    context.log_writer.log_dev_metrics(pearsonr, spearmanr)
+    return EvaluateResult(pearsonr, spearmanr)
 
 def train(config):
     context = create_context(config)
+    context.log_writer.log_hyperparams()
+    best_dev_pr = 0
     for epoch_no in range(config.n_epochs):
         print("Epoch number: {}".format(epoch_no + 1))
         loader_wrapper = tqdm(enumerate(context.train_loader), total=len(context.train_loader), desc="Loss")
         context.model.train()
-        for i, (sent1, sent2, label_pmf) in loader_wrapper:
+        loss = 0
+        for i, (sent1, sent2, label_pmf, _) in loader_wrapper:
             context.optimizer.zero_grad()
             scores = F.log_softmax(context.model(sent1, sent2))
 
-            loss = context.criterion(scores, label_pmf)
-            loss.backward()
-            nn.utils.clip_grad_norm(context.params, 50)
-            loader_wrapper.set_description("Loss = {}".format(loss.cpu().data[0]))
-            context.optimizer.step()
-        result = evaluate(context.model, context.dev_loader)
-        print(result)
+            loss = context.criterion(scores, label_pmf) + loss
+            if i % config.mbatch_size == (config.mbatch_size - 1):
+                loss /= config.mbatch_size
+                loss.backward()
+                nn.utils.clip_grad_norm(context.params, 5)
+                context.optimizer.step()
+
+                loss = loss.cpu().data[0]
+                loader_wrapper.set_description("Loss: {:<8}".format(round(loss, 5)))
+                context.log_writer.log_train_loss(loss)
+                loss = 0
+        result = evaluate(context, context.dev_loader)
+        print("Dev result: {}".format(result))
+        if best_dev_pr < result.pearsonr:
+            best_dev_pr = result.pearsonr
+            print("Saving best model...")
+            context.model.save(config.output_file)
+    test_result = evaluate(context, context.test_loader)
+    print("Final test result: {}".format(test_result))
 
 def main():
     config = data.Configs.base_config()

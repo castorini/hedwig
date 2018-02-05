@@ -17,7 +17,7 @@ class SerializableModule(nn.Module):
 class VDPWIConvNet(SerializableModule):
     def __init__(self, n_labels):
         super().__init__()
-        self.conv1 = nn.Conv2d(13, 128, 3, padding=1)
+        self.conv1 = nn.Conv2d(12, 128, 3, padding=1)
         self.conv2 = nn.Conv2d(128, 164, 3, padding=1)
         self.conv3 = nn.Conv2d(164, 192, 3, padding=1)
         self.conv4 = nn.Conv2d(192, 192, 3, padding=1)
@@ -25,20 +25,16 @@ class VDPWIConvNet(SerializableModule):
         self.maxpool2 = nn.MaxPool2d(2, ceil_mode=True)
         self.dnn = nn.Linear(128, 128)
         self.output = nn.Linear(128, n_labels)
+        self.input_len = 32
 
     def forward(self, x):
-        def pad_side(idx, max_size):
-            if max_size <= 32:
-                pad_len = 32 - x.size(idx)
-            elif max_size <= 48:
-                pad_len = 48 - x.size(idx)
-            else:
-                pad_len = 0
+        def pad_side(idx):
+            pad_len = max(32 - x.size(idx), 0)
             return [0, pad_len]
-        padding = pad_side(3, max(x.size()[2:]))
-        padding.extend(pad_side(2, max(x.size()[2:])))
+        padding = pad_side(3)
+        padding.extend(pad_side(2))
         x = F.pad(x, padding)
-        x = x[:, :, :48, :48]
+        x = x[:, :, :32, :32]
 
         pool_final = nn.MaxPool2d(2, ceil_mode=True) if x.size(2) == 32 else nn.MaxPool2d(3, 1, ceil_mode=True)
         x = self.maxpool2(F.relu(self.conv1(x)))
@@ -58,7 +54,7 @@ class VDPWIModel(SerializableModule):
         self.use_cuda = not config.cpu
         self.classifier_net = VDPWIConvNet(config.n_labels) if classifier_net is None else classifier_net
 
-    def compute_sim_cube(self, seq1, seq2):
+    def compute_sim_cube(self, seq1, seq2, truncate=None):
         def compute_sim(prism1, prism2):
             prism1_len = prism1.norm(dim=2)
             prism2_len = prism2.norm(dim=2)
@@ -76,8 +72,7 @@ class VDPWIModel(SerializableModule):
             prism2 = prism2.permute(0, 1, 2).contiguous()
             return compute_sim(prism1, prism2)
 
-        sim_cube = Variable(torch.Tensor(13, seq1.size(0), seq2.size(0)))
-        sim_cube[12] = 0
+        sim_cube = Variable(torch.Tensor(12, seq1.size(0), seq2.size(0)))
         if self.use_cuda:
             sim_cube = sim_cube.cuda()
         seq1_f = seq1[:, :self.hidden_dim]
@@ -88,6 +83,8 @@ class VDPWIModel(SerializableModule):
         sim_cube[3:6] = compute_prism(seq1_f, seq2_f)
         sim_cube[6:9] = compute_prism(seq1_b, seq2_b)
         sim_cube[9:12] = compute_prism(seq1_f + seq1_b, seq2_f + seq2_b)
+        if truncate is not None:
+            sim_cube = sim_cube[:, :truncate, :truncate].contiguous()
         return sim_cube
 
     def compute_focus_cube(self, sim_cube):
@@ -108,7 +105,6 @@ class VDPWIModel(SerializableModule):
                     mask[:, int(pos1), int(pos2)] = 1
         build_mask(9)
         build_mask(10)
-        mask[12, :, :] = 1
         return mask * sim_cube
 
     def forward(self, x1, x2):
@@ -122,7 +118,7 @@ class VDPWIModel(SerializableModule):
         seq2 = torch.cat([seq2f, seq2b], 2)
         seq1 = seq1.squeeze(0) # batch size assumed to be 1
         seq2 = seq2.squeeze(0)
-        sim_cube = self.compute_sim_cube(seq1, seq2)
+        sim_cube = self.compute_sim_cube(seq1, seq2, truncate=self.classifier_net.input_len)
         focus_cube = self.compute_focus_cube(sim_cube)
         logits = self.classifier_net(focus_cube.unsqueeze(0))
         return logits
