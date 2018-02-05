@@ -12,7 +12,7 @@ import torch.utils as utils
 import data
 import model as mod
 
-Context = namedtuple("Context", "model, train_loader, dev_loader, test_loader, optimizer, criterion")
+Context = namedtuple("Context", "model, train_loader, dev_loader, test_loader, optimizer, criterion, params")
 EvaluateResult = namedtuple("EvaluateResult", "pearsonr, spearmanr")
 
 def create_context(config):
@@ -45,12 +45,12 @@ def create_context(config):
 
     train_loader = utils.data.DataLoader(train_set, shuffle=True, batch_size=1, collate_fn=collate_fn)
     dev_loader = utils.data.DataLoader(dev_set, batch_size=1, collate_fn=collate_fn)
-    test_loader = utils.data.DataLoader(dev_set, batch_size=1, collate_fn=collate_fn)
+    test_loader = utils.data.DataLoader(test_set, batch_size=1, collate_fn=collate_fn)
 
     params = list(filter(lambda x: x.requires_grad, model.parameters()))
     optimizer = optim.RMSprop(params, lr=config.lr, alpha=config.decay, momentum=config.momentum)
     criterion = nn.KLDivLoss()
-    return Context(model, train_loader, dev_loader, test_loader, optimizer, criterion)
+    return Context(model, train_loader, dev_loader, test_loader, optimizer, criterion, params)
 
 def test(config):
     pass
@@ -72,13 +72,14 @@ def train(config):
     for epoch_no in range(config.n_epochs):
         print("Epoch number: {}".format(epoch_no + 1))
         loader_wrapper = tqdm(enumerate(context.train_loader), total=len(context.train_loader), desc="Loss")
+        context.model.train()
         for i, (sent1, sent2, label_pmf) in loader_wrapper:
-            context.model.train()
             context.optimizer.zero_grad()
             scores = F.log_softmax(context.model(sent1, sent2))
 
             loss = context.criterion(scores, label_pmf)
             loss.backward()
+            nn.utils.clip_grad_norm(context.params, 50)
             loader_wrapper.set_description("Loss = {}".format(loss.cpu().data[0]))
             context.optimizer.step()
         result = evaluate(context.model, context.dev_loader)

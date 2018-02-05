@@ -14,14 +14,14 @@ class Configs(object):
         parser.add_argument("--decay", type=float, default=0.95)
         parser.add_argument("--input_model", type=str, default="local_saves/model.pt")
         parser.add_argument("--lr", type=float, default=1E-4)
-        parser.add_argument("--mbatch_size", type=int, default=40)
+        parser.add_argument("--mbatch_size", type=int, default=1)
         parser.add_argument("--mode", type=str, default="train", choices=["train", "test"])
         parser.add_argument("--momentum", type=float, default=0.9)
         parser.add_argument("--n_epochs", type=int, default=40)
         parser.add_argument("--n_labels", type=int, default=5)
         parser.add_argument("--output_model", type=str, default="local_saves/model.pt")
         parser.add_argument("--restore", action="store_true", default=False)
-        parser.add_argument("--rnn_hidden_dim", type=int, default=300)
+        parser.add_argument("--rnn_hidden_dim", type=int, default=250)
         parser.add_argument("--wordvecs_file", type=str, default="local_data/glove/glove.840B.300d.txt")
         return parser.parse_known_args()[0]
 
