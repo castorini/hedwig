@@ -53,7 +53,7 @@ def load_sick():
         filename = os.path.join(config.sick_data, dataset, name)
         with open(filename) as f:
             for line in f:
-                indices = [embed_ids.get(word, -1) for word in line.strip().split()]
+                indices = [embed_ids.get(word, padding_idx) for word in line.strip().split()]
                 sentence_indices.append(indices)
         return sentence_indices
 
@@ -66,6 +66,8 @@ def load_sick():
             vec = list(map(float, vec.strip().split()))
             embed_ids[word] = i
             embeddings.append(vec)
+    padding_idx = len(embeddings)
+    embeddings.append([0.0] * 300)
 
     for dataset in ("train", "dev", "test"):
         filename = os.path.join(config.sick_data, dataset, "sim_sparse.txt")
@@ -76,7 +78,7 @@ def load_sick():
         indices1 = fetch_indices("a.toks")
         indices2 = fetch_indices("b.toks")
         sets.append(LabeledEmbeddedDataset(indices1, indices2, labels))
-    embedding = nn.Embedding(len(embeddings), 300, -1)
+    embedding = nn.Embedding(len(embeddings), 300)
     embedding.weight.data.copy_(torch.Tensor(embeddings))
     embedding.weight.requires_grad = False
     return embedding, sets
