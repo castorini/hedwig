@@ -35,20 +35,20 @@ def discrete_tnorm(a, b, tgt_loc, sigma=1, n_steps=100):
         x = tgt_loc - sigma * tgt_loc_update(x)
     tn = truncnorm((a - x) / sigma, (b - x) / sigma, loc=x, scale=sigma)
     rrange = np.arange(a, b + 1)
-    pdf = tn.pdf(rrange)
-    pdf /= np.sum(pdf)
-    return pdf
+    pmf = tn.pdf(rrange)
+    pmf /= np.sum(pmf)
+    return pmf
 
 def discrete_lerp(a, b, ground_truth):
-    pdf = np.zeros(b - a + 1)
+    pmf = np.zeros(b - a + 1)
     c = int(np.ceil(ground_truth + 1E-8))
     f = int(np.floor(ground_truth))
-    pdf[min(c - a, b - a)] = ground_truth - f
-    pdf[f - a] = c - ground_truth
-    return pdf
+    pmf[min(c - a, b - a)] = ground_truth - f
+    pmf[f - a] = c - ground_truth
+    return pmf
 
 def smoothed_labels(truth, n_labels):
-    return discrete_tnorm(1, n_labels, truth, sigma=0.35, n_steps=0)
+    return discrete_lerp(1, n_labels, truth)
 
 def preprocess(filename, output_name="sim_sparse.txt"):
     print("Preprocessing {}...".format(filename))

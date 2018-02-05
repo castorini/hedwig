@@ -2,25 +2,33 @@ import argparse
 import os
 
 import torch
+import torch.nn as nn
 import torch.utils.data as data
 
 class Configs(object):
     @staticmethod
     def base_config():
         parser = argparse.ArgumentParser()
+        parser.add_argument("--cpu", action="store_true", default=False)
         parser.add_argument("--dataset", type=str, default="sick", choices=["sick"])
+        parser.add_argument("--decay", type=float, default=0.95)
         parser.add_argument("--input_model", type=str, default="local_saves/model.pt")
         parser.add_argument("--lr", type=float, default=1E-4)
         parser.add_argument("--mbatch_size", type=int, default=40)
+        parser.add_argument("--mode", type=str, default="train", choices=["train", "test"])
+        parser.add_argument("--momentum", type=float, default=0.9)
+        parser.add_argument("--n_epochs", type=int, default=40)
         parser.add_argument("--n_labels", type=int, default=5)
         parser.add_argument("--output_model", type=str, default="local_saves/model.pt")
         parser.add_argument("--restore", action="store_true", default=False)
+        parser.add_argument("--rnn_hidden_dim", type=int, default=300)
         parser.add_argument("--wordvecs_file", type=str, default="local_data/glove/glove.840B.300d.txt")
         return parser.parse_known_args()[0]
 
     @staticmethod
     def sick_config():
         parser = argparse.ArgumentParser()
+        parser.add_argument("--n_labels", type=int, default=5)
         parser.add_argument("--sick_cache", type=str, default="local_data/sick/.vec-cache")
         parser.add_argument("--sick_data", type=str, default="local_data/sick")
         return parser.parse_known_args()[0]
@@ -68,12 +76,12 @@ def load_sick():
         indices1 = fetch_indices("a.toks")
         indices2 = fetch_indices("b.toks")
         sets.append(LabeledEmbeddedDataset(indices1, indices2, labels))
-    return embeddings, sets
+    embedding = nn.Embedding(len(embeddings), 300, -1)
+    embedding.weight.data.copy_(torch.Tensor(embeddings))
+    embedding.weight.requires_grad = False
+    return embedding, sets
 
-def load_dataset():
-    config = Configs.base_config()
-    return _loaders[config.dataset]()
+def load_dataset(dataset):
+    return _loaders[dataset]()
 
 _loaders = dict(sick=load_sick)
-
-load_dataset()

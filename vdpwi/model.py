@@ -16,6 +16,7 @@ class SerializableModule(nn.Module):
 
 class VDPWIConvNet(SerializableModule):
     def __init__(self, n_labels):
+        super().__init__()
         self.conv1 = nn.Conv2d(13, 128, 3, padding=1)
         self.conv2 = nn.Conv2d(128, 164, 3, padding=1)
         self.conv3 = nn.Conv2d(164, 192, 3, padding=1)
@@ -26,6 +27,19 @@ class VDPWIConvNet(SerializableModule):
         self.output = nn.Linear(128, n_labels)
 
     def forward(self, x):
+        def pad_side(idx, max_size):
+            if max_size <= 32:
+                pad_len = 32 - x.size(idx)
+            elif max_size <= 48:
+                pad_len = 48 - x.size(idx)
+            else:
+                pad_len = 0
+            return [0, pad_len]
+        padding = pad_side(3, max(x.size()[2:]))
+        padding.extend(pad_side(2, max(x.size()[2:])))
+        x = F.pad(x, padding)
+        x = x[:, :, :48, :48]
+
         pool_final = nn.MaxPool2d(2, ceil_mode=True) if x.size(2) == 32 else nn.MaxPool2d(3, 1, ceil_mode=True)
         x = self.maxpool2(F.relu(self.conv1(x)))
         x = self.maxpool2(F.relu(self.conv2(x)))
@@ -38,9 +52,10 @@ class VDPWIConvNet(SerializableModule):
 class VDPWIModel(SerializableModule):
     def __init__(self, embedding, config, classifier_net=None):
         super().__init__()
-        self.rnn = nn.LSTM(300, config.rnn_hidden_dim, 1, bidirectional=True)
+        self.rnn = nn.LSTM(300, config.rnn_hidden_dim, 1, bidirectional=True, batch_first=True)
         self.embedding = embedding
-        self.classifier_net = VDPWIConvNet(config.n_labels) if classifier is None else classifier_net
+        self.use_cuda = not config.cpu
+        self.classifier_net = VDPWIConvNet(config.n_labels) if classifier_net is None else classifier_net
 
     def compute_sim_cube(self, seq1, seq2):
         def compute_sim(h1, h2):
@@ -50,9 +65,11 @@ class VDPWIModel(SerializableModule):
             dot_prod = torch.dot(h1, h2)
             cos_dist = dot_prod / (h1_len * h2_len + 1E-8)
             l2_dist = torch.sqrt(torch.sum((h1 - h2)**2))
-            return dot_prod, cos_dist, l2_dist
+            return torch.cat([dot_prod, cos_dist, l2_dist])
 
-        sim_cube = Variable(torch.Tensor(13, seq1.size(0), seq2.size(0)).cuda())
+        sim_cube = Variable(torch.Tensor(13, seq1.size(0), seq2.size(0)))
+        if self.use_cuda:
+            sim_cube = sim_cube.cuda()
         seq1_f = seq1[:, 0]
         seq1_b = seq1[:, 1]
         seq2_f = seq2[:, 0]
@@ -66,18 +83,21 @@ class VDPWIModel(SerializableModule):
         return sim_cube
 
     def compute_focus_cube(self, sim_cube):
-        mask = Variable(torch.Tensor(*sim_cube.size()).cuda())
+        mask = Variable(torch.Tensor(*sim_cube.size()))
+        if self.use_cuda:
+            mask = mask.cuda()
+        mask[:, :, :] = 0.1
         def build_mask(index):
             s1tag = np.zeros(sim_cube.size(1))
             s2tag = np.zeros(sim_cube.size(2))
             _, indices = torch.sort(sim_cube[index].view(-1), descending=True)
-            for i, index in enumerate(indices):
+            for i, index in enumerate(indices.cpu().data.numpy()):
                 if i >= len(s1tag) + len(s2tag):
                     break
-                pos1, pos2 = index // len(s1tag), index % len(s2tag)
+                pos1, pos2 = index // len(s2tag), index % len(s2tag)
                 if s1tag[pos1] + s2tag[pos2] == 0:
                     s1tag[pos1] = s2tag[pos2] = 1
-                    mask[:, pos1, pos2] = 1
+                    mask[:, int(pos1), int(pos2)] = 1
         build_mask(10)
         build_mask(11)
         mask[12, :, :] = 1
@@ -86,11 +106,11 @@ class VDPWIModel(SerializableModule):
     def forward(self, x1, x2):
         x1 = self.embedding(x1)
         x2 = self.embedding(x2)
-        seq1, _ = self.rnn(x1, batch_first=True)
-        seq2, _ = self.rnn(x2, batch_first=True)
-        seq1 = seq1.squeeze(1) # batch size assumed to be 1
-        seq2 = seq2.squeeze(1)
+        seq1, _ = self.rnn(x1)
+        seq2, _ = self.rnn(x2)
+        seq1 = seq1.squeeze(0) # batch size assumed to be 1
+        seq2 = seq2.squeeze(0)
         sim_cube = self.compute_sim_cube(seq1, seq2)
         focus_cube = self.compute_focus_cube(sim_cube)
         logits = self.classifier_net(focus_cube.unsqueeze(0))
-        return torch.log(F.softmax(logits))
+        return F.log_softmax(logits)
