@@ -58,28 +58,33 @@ class VDPWIModel(SerializableModule):
         self.classifier_net = VDPWIConvNet(config.n_labels) if classifier_net is None else classifier_net
 
     def compute_sim_cube(self, seq1, seq2):
-        def compute_sim(h1, h2):
-            h1_len = torch.sqrt(torch.sum(h1**2))
-            h2_len = torch.sqrt(torch.sum(h2**2))
+        def compute_sim(prism1, prism2):
+            prism1_len = torch.sqrt(torch.sum(prism1**2, 2))
+            prism2_len = torch.sqrt(torch.sum(prism2**2, 2))
 
-            dot_prod = torch.dot(h1, h2)
-            cos_dist = dot_prod / (h1_len * h2_len + 1E-8)
-            l2_dist = torch.sqrt(torch.sum((h1 - h2)**2))
-            return torch.cat([dot_prod, cos_dist, l2_dist])
+            dot_prod = torch.matmul(prism1.unsqueeze(2), prism2.unsqueeze(3))
+            dot_prod = dot_prod.squeeze(2).squeeze(2)
+            cos_dist = dot_prod / (prism1_len * prism2_len + 1E-8)
+            l2_dist = torch.sqrt(torch.sum((prism1 - prism2)**2, 2))
+            return torch.stack([dot_prod, cos_dist, l2_dist], 0)
+        def compute_prism(seq1, seq2):
+            prism1 = seq1.repeat(seq2.size(0), 1, 1)
+            prism2 = seq2.repeat(seq1.size(0), 1, 1)
+            prism1 = prism1.permute(1, 0, 2).contiguous()
+            prism2 = prism2.permute(0, 1, 2).contiguous()
+            return compute_sim(prism1, prism2)
 
         sim_cube = Variable(torch.Tensor(13, seq1.size(0), seq2.size(0)))
         if self.use_cuda:
             sim_cube = sim_cube.cuda()
-        seq1_f = seq1[:, 0]
-        seq1_b = seq1[:, 1]
-        seq2_f = seq2[:, 0]
-        seq2_b = seq2[:, 1]
-        for t, (h1f, h1b) in enumerate(zip(seq1_f, seq1_b)):
-            for s, (h2f, h2b) in enumerate(zip(seq2_f, seq2_b)):
-                sim_cube[0:3, t, s] = compute_sim(torch.cat([h1f, h1b]), torch.cat([h2f, h2b]))
-                sim_cube[3:6, t, s] = compute_sim(h1f, h2f)
-                sim_cube[6:9, t, s] = compute_sim(h1b, h2b)
-                sim_cube[9:12, t, s] = compute_sim(h1f + h1b, h2f + h2b)
+        seq1_f = seq1[:, :300]
+        seq1_b = seq1[:, 300:]
+        seq2_f = seq2[:, :300]
+        seq2_b = seq2[:, 300:]
+        sim_cube[0:3] = compute_prism(seq1, seq2)
+        sim_cube[3:6] = compute_prism(seq1_f, seq2_f)
+        sim_cube[6:9] = compute_prism(seq1_b, seq2_b)
+        sim_cube[9:12] = compute_prism(seq1_f + seq1_b, seq2_f + seq2_b)
         return sim_cube
 
     def compute_focus_cube(self, sim_cube):
@@ -113,4 +118,4 @@ class VDPWIModel(SerializableModule):
         sim_cube = self.compute_sim_cube(seq1, seq2)
         focus_cube = self.compute_focus_cube(sim_cube)
         logits = self.classifier_net(focus_cube.unsqueeze(0))
-        return F.log_softmax(logits)
+        return logits

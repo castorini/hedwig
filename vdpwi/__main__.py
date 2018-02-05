@@ -61,11 +61,11 @@ def evaluate(model, data_loader):
     true_labels = []
     for sent1, sent2, label_pmf in data_loader:
         scores = model(sent1, sent2)
-        scores = F.softmax(scores).cpu().data.numpy()
+        scores = F.softmax(scores).cpu().data.numpy()[0]
         prediction = np.dot(np.arange(1, len(scores) + 1), scores)
-        truth = np.dot(np.arange(1, len(scores) + 1), label_pmf.cpu().data.numpy())
+        truth = np.dot(np.arange(1, len(scores) + 1), label_pmf.cpu().data.numpy()[0])
         predictions.append(prediction); true_labels.append(truth)
-    return EvaluateResult(stats.pearsonr(predictions, truth)[0], stats.spearmanr(predictions, truth)[0])
+    return EvaluateResult(stats.pearsonr(predictions, true_labels)[0], stats.spearmanr(predictions, true_labels)[0])
 
 def train(config):
     context = create_context(config)
@@ -75,7 +75,7 @@ def train(config):
         for i, (sent1, sent2, label_pmf) in loader_wrapper:
             context.model.train()
             context.optimizer.zero_grad()
-            scores = context.model(sent1, sent2)
+            scores = F.log_softmax(context.model(sent1, sent2))
 
             loss = context.criterion(scores, label_pmf)
             loss.backward()
