@@ -9,6 +9,8 @@ class Configs(object):
     @staticmethod
     def base_config():
         parser = argparse.ArgumentParser()
+        parser.add_argument("--classifier", type=str, default="vdpwi", choices=["vdpwi", "resnet"])
+        parser.add_argument("--clip_norm", type=float, default=5)
         parser.add_argument("--cpu", action="store_true", default=False)
         parser.add_argument("--dataset", type=str, default="sick", choices=["sick"])
         parser.add_argument("--decay", type=float, default=0.95)
@@ -17,10 +19,12 @@ class Configs(object):
         parser.add_argument("--mbatch_size", type=int, default=16)
         parser.add_argument("--mode", type=str, default="train", choices=["train", "test"])
         parser.add_argument("--momentum", type=float, default=0.9)
-        parser.add_argument("--n_epochs", type=int, default=40)
+        parser.add_argument("--n_epochs", type=int, default=35)
         parser.add_argument("--n_labels", type=int, default=5)
         parser.add_argument("--optimizer", type=str, default="adam", choices=["adam", "sgd", "rmsprop"])
         parser.add_argument("--output_file", type=str, default="local_saves/model.pt")
+        parser.add_argument("--res_fmaps", type=int, default=32)
+        parser.add_argument("--res_layers", type=int, default=16)
         parser.add_argument("--restore", action="store_true", default=False)
         parser.add_argument("--rnn_hidden_dim", type=int, default=250)
         parser.add_argument("--weight_decay", type=float, default=5E-4)

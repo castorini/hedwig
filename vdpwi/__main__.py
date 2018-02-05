@@ -51,8 +51,12 @@ def create_context(config):
     test_loader = utils.data.DataLoader(test_set, batch_size=1, collate_fn=collate_fn)
 
     params = list(filter(lambda x: x.requires_grad, model.parameters()))
-    optimizer = optim.Adam(params, lr=config.lr, weight_decay=config.weight_decay)
-    # optimizer = optim.SGD(params, lr=config.lr, momentum=config.momentum, weight_decay=config.weight_decay)
+    if config.optimizer == "adam":
+        optimizer = optim.Adam(params, lr=config.lr, weight_decay=config.weight_decay)
+    elif config.optimizer == "sgd":
+        optimizer = optim.SGD(params, lr=config.lr, momentum=config.momentum, weight_decay=config.weight_decay)
+    elif config.optimizer == "rmsprop":
+        optimizer = optim.RMSprop(params, lr=config.lr, alpha=config.decay, momentum=config.momentum, weight_decay=config.weight_decay)
     criterion = nn.KLDivLoss()
     log_writer = LogWriter()
     return Context(model, train_loader, dev_loader, test_loader, optimizer, criterion, params, log_writer)
@@ -95,7 +99,7 @@ def train(config):
             if i % config.mbatch_size == (config.mbatch_size - 1):
                 loss /= config.mbatch_size
                 loss.backward()
-                nn.utils.clip_grad_norm(context.params, 5)
+                nn.utils.clip_grad_norm(context.params, config.clip_norm)
                 context.optimizer.step()
 
                 loss = loss.cpu().data[0]
@@ -108,8 +112,6 @@ def train(config):
             best_dev_pr = result.pearsonr
             print("Saving best model...")
             context.model.save(config.output_file)
-    test_result = evaluate(context, context.test_loader)
-    print("Final test result: {}".format(test_result))
 
 def main():
     config = data.Configs.base_config()

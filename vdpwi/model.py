@@ -2,6 +2,7 @@ from torch.autograd import Variable
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision.models as models
 import numpy as np
 
 class SerializableModule(nn.Module):
@@ -14,8 +15,41 @@ class SerializableModule(nn.Module):
     def load(self, filename):
         self.load_state_dict(torch.load(filename, map_location=lambda storage, loc: storage))
 
+def hard_pad2d(x, pad):
+    def pad_side(idx):
+        pad_len = max(pad - x.size(idx), 0)
+        return [0, pad_len]
+    padding = pad_side(3)
+    padding.extend(pad_side(2))
+    x = F.pad(x, padding)
+    return x[:, :, :pad, :pad]
+
+class ResNet(SerializableModule):
+    def __init__(self, config):
+        super().__init__()
+        n_layers = config.res_layers
+        n_maps = config.res_fmaps
+        n_labels = config.n_labels
+        self.conv0 = nn.Conv2d(12, n_maps, (3, 3), padding=1)
+        self.convs = [nn.Conv2d(n_maps, n_maps, (3, 3), padding=1) for _ in range(n_layers)]
+        self.output = nn.Linear(n_maps, n_labels)
+        self.input_len = None
+        for i, conv in enumerate(self.convs):
+            self.add_module("conv{}".format(i + 1), conv)
+
+    def forward(self, x):
+        x = F.relu(self.conv0(x))
+        old_x = x
+        for i, conv in enumerate(self.convs):
+            x = F.relu(conv(x))
+            if i % 2 == 1:
+                x += old_x
+                old_x = x
+        x = torch.mean(x.view(x.size(0), x.size(1), -1), 2)
+        return self.output(x)
+
 class VDPWIConvNet(SerializableModule):
-    def __init__(self, n_labels):
+    def __init__(self, config):
         super().__init__()
         self.conv1 = nn.Conv2d(12, 128, 3, padding=1)
         self.conv2 = nn.Conv2d(128, 164, 3, padding=1)
@@ -24,18 +58,11 @@ class VDPWIConvNet(SerializableModule):
         self.conv5 = nn.Conv2d(192, 128, 3, padding=1)
         self.maxpool2 = nn.MaxPool2d(2, ceil_mode=True)
         self.dnn = nn.Linear(128, 128)
-        self.output = nn.Linear(128, n_labels)
+        self.output = nn.Linear(128, config.n_labels)
         self.input_len = 32
 
     def forward(self, x):
-        def pad_side(idx):
-            pad_len = max(32 - x.size(idx), 0)
-            return [0, pad_len]
-        padding = pad_side(3)
-        padding.extend(pad_side(2))
-        x = F.pad(x, padding)
-        x = x[:, :, :32, :32]
-
+        x = hard_pad2d(x, self.input_len)
         pool_final = nn.MaxPool2d(2, ceil_mode=True) if x.size(2) == 32 else nn.MaxPool2d(3, 1, ceil_mode=True)
         x = self.maxpool2(F.relu(self.conv1(x)))
         x = self.maxpool2(F.relu(self.conv2(x)))
@@ -46,13 +73,16 @@ class VDPWIConvNet(SerializableModule):
         return self.output(x)
 
 class VDPWIModel(SerializableModule):
-    def __init__(self, embedding, config, classifier_net=None):
+    def __init__(self, embedding, config):
         super().__init__()
         self.hidden_dim = config.rnn_hidden_dim
         self.rnn = nn.LSTM(300, self.hidden_dim, 1, batch_first=True)
         self.embedding = embedding
         self.use_cuda = not config.cpu
-        self.classifier_net = VDPWIConvNet(config.n_labels) if classifier_net is None else classifier_net
+        if config.classifier == "vdpwi":
+            self.classifier_net = VDPWIConvNet(config)
+        elif config.classifier == "resnet":
+            self.classifier_net = ResNet(config)
 
     def compute_sim_cube(self, seq1, seq2, truncate=None):
         def compute_sim(prism1, prism2):
