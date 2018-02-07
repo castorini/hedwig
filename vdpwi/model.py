@@ -51,11 +51,16 @@ class ResNet(SerializableModule):
 class VDPWIConvNet(SerializableModule):
     def __init__(self, config):
         super().__init__()
-        self.conv1 = nn.Conv2d(12, 128, 3, padding=1)
-        self.conv2 = nn.Conv2d(128, 164, 3, padding=1)
-        self.conv3 = nn.Conv2d(164, 192, 3, padding=1)
-        self.conv4 = nn.Conv2d(192, 192, 3, padding=1)
-        self.conv5 = nn.Conv2d(192, 128, 3, padding=1)
+        def make_conv(n_in, n_out):
+            conv = nn.Conv2d(n_in, n_out, 3, padding=1)
+            conv.bias.data.zero_()
+            nn.init.xavier_normal(conv.weight)
+            return conv
+        self.conv1 = make_conv(12, 128)
+        self.conv2 = make_conv(128, 164)
+        self.conv3 = make_conv(164, 192)
+        self.conv4 = make_conv(192, 192)
+        self.conv5 = make_conv(192, 128)
         self.maxpool2 = nn.MaxPool2d(2, ceil_mode=True)
         self.dnn = nn.Linear(128, 128)
         self.output = nn.Linear(128, config.n_labels)
@@ -84,60 +89,67 @@ class VDPWIModel(SerializableModule):
         elif config.classifier == "resnet":
             self.classifier_net = ResNet(config)
 
-    def compute_sim_cube(self, seq1, seq2, truncate=None):
+    def compute_sim_cube(self, seq1, seq2):
         def compute_sim(prism1, prism2):
-            prism1_len = prism1.norm(dim=2)
-            prism2_len = prism2.norm(dim=2)
+            prism1_len = prism1.norm(dim=3)
+            prism2_len = prism2.norm(dim=3)
 
-            dot_prod = torch.matmul(prism1.unsqueeze(2), prism2.unsqueeze(3))
-            dot_prod = dot_prod.squeeze(2).squeeze(2)
+            dot_prod = torch.matmul(prism1.unsqueeze(3), prism2.unsqueeze(4))
+            dot_prod = dot_prod.squeeze(3).squeeze(3)
             cos_dist = dot_prod / (prism1_len * prism2_len + 1E-8)
-            l2_dist = (prism1 - prism2).norm(dim=2)
-            return torch.stack([dot_prod, cos_dist, l2_dist], 0)
+            l2_dist = -((prism1 - prism2).norm(dim=3))
+            return torch.stack([dot_prod, cos_dist, l2_dist], 1)
 
         def compute_prism(seq1, seq2):
-            prism1 = seq1.repeat(seq2.size(0), 1, 1)
-            prism2 = seq2.repeat(seq1.size(0), 1, 1)
-            prism1 = prism1.permute(1, 0, 2).contiguous()
-            prism2 = prism2.permute(0, 1, 2).contiguous()
+            prism1 = seq1.repeat(seq2.size(1), 1, 1, 1)
+            prism2 = seq2.repeat(seq1.size(1), 1, 1, 1)
+            prism1 = prism1.permute(1, 2, 0, 3).contiguous()
+            prism2 = prism2.permute(1, 0, 2, 3).contiguous()
             return compute_sim(prism1, prism2)
 
-        sim_cube = Variable(torch.Tensor(12, seq1.size(0), seq2.size(0)))
+        sim_cube = Variable(torch.Tensor(seq1.size(0), 12, seq1.size(1), seq2.size(1)))
         if self.use_cuda:
             sim_cube = sim_cube.cuda()
-        seq1_f = seq1[:, :self.hidden_dim]
-        seq1_b = seq1[:, self.hidden_dim:]
-        seq2_f = seq2[:, :self.hidden_dim]
-        seq2_b = seq2[:, self.hidden_dim:]
-        sim_cube[0:3] = compute_prism(seq1, seq2)
-        sim_cube[3:6] = compute_prism(seq1_f, seq2_f)
-        sim_cube[6:9] = compute_prism(seq1_b, seq2_b)
-        sim_cube[9:12] = compute_prism(seq1_f + seq1_b, seq2_f + seq2_b)
-        if truncate is not None:
-            sim_cube = sim_cube[:, :truncate, :truncate].contiguous()
+        seq1_f = seq1[:, :, :self.hidden_dim]
+        seq1_b = seq1[:, :, self.hidden_dim:]
+        seq2_f = seq2[:, :, :self.hidden_dim]
+        seq2_b = seq2[:, :, self.hidden_dim:]
+        sim_cube[:, 0:3] = compute_prism(seq1, seq2)
+        sim_cube[:, 3:6] = compute_prism(seq1_f, seq2_f)
+        sim_cube[:, 6:9] = compute_prism(seq1_b, seq2_b)
+        sim_cube[:, 9:12] = compute_prism(seq1_f + seq1_b, seq2_f + seq2_b)
         return sim_cube
 
-    def compute_focus_cube(self, sim_cube):
+    def compute_focus_cube(self, sim_cube, pad_cube):
+        neg_magic = -10000
+        pad_cube = pad_cube.repeat(12, 1, 1, 1)
+        pad_cube = pad_cube.permute(1, 0, 2, 3).contiguous()
+        sim_cube = neg_magic * pad_cube + sim_cube
         mask = Variable(torch.Tensor(*sim_cube.size()))
         if self.use_cuda:
             mask = mask.cuda()
-        mask[:, :, :] = 0.1
+        mask[:, :, :, :] = 0.1
+
         def build_mask(index):
-            s1tag = np.zeros(sim_cube.size(1))
-            s2tag = np.zeros(sim_cube.size(2))
-            _, indices = torch.sort(sim_cube[index].view(-1), descending=True)
-            for i, index in enumerate(indices.cpu().data.numpy()):
-                if i >= len(s1tag) + len(s2tag):
-                    break
-                pos1, pos2 = index // len(s2tag), index % len(s2tag)
-                if s1tag[pos1] + s2tag[pos2] == 0:
-                    s1tag[pos1] = s2tag[pos2] = 1
-                    mask[:, int(pos1), int(pos2)] = 1
+            max_mask = sim_cube[:, index].clone()
+            for _ in range(min(sim_cube.size(2), sim_cube.size(3))):
+                values, indices = torch.max(max_mask.view(sim_cube.size(0), -1), 1)
+                row_indices = indices / sim_cube.size(3)
+                col_indices = indices % sim_cube.size(3)
+                row_indices = row_indices.unsqueeze(1)
+                col_indices = col_indices.unsqueeze(1).unsqueeze(1)
+                for i, (row_i, col_i, val) in enumerate(zip(row_indices, col_indices, values)):
+                    if val < neg_magic / 2:
+                        continue
+                    mask[i, :, row_i, col_i] = 1
+                    max_mask[i, row_i, :] = neg_magic
+                    max_mask[i, :, col_i] = neg_magic
         build_mask(9)
         build_mask(10)
-        return mask * sim_cube
+        focus_cube = mask * sim_cube * (1 - pad_cube)
+        return focus_cube
 
-    def forward(self, x1, x2):
+    def forward(self, x1, x2, pad_cube):
         x1 = self.embedding(x1)
         x2 = self.embedding(x2)
         seq1f, _ = self.rnn(x1)
@@ -146,9 +158,11 @@ class VDPWIModel(SerializableModule):
         seq2b, _ = self.rnn(torch.cat(x2.split(1, 1)[::-1], 1))
         seq1 = torch.cat([seq1f, seq1b], 2)
         seq2 = torch.cat([seq2f, seq2b], 2)
-        seq1 = seq1.squeeze(0) # batch size assumed to be 1
-        seq2 = seq2.squeeze(0)
-        sim_cube = self.compute_sim_cube(seq1, seq2, truncate=self.classifier_net.input_len)
-        focus_cube = self.compute_focus_cube(sim_cube)
-        logits = self.classifier_net(focus_cube.unsqueeze(0))
+        sim_cube = self.compute_sim_cube(seq1, seq2)
+        truncate = self.classifier_net.input_len
+        if truncate is not None:
+            sim_cube = sim_cube[:, :, :truncate, :truncate].contiguous()
+            pad_cube = pad_cube[:, :truncate, :truncate].contiguous()
+        focus_cube = self.compute_focus_cube(sim_cube, pad_cube)
+        logits = self.classifier_net(focus_cube)
         return logits
