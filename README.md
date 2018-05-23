@@ -1,20 +1,24 @@
 # Castor
 
-Deep learning for information retrieval with PyTorch.
+This is the common repo for PyTorch deep learning models by the Data Systems Group at the University of Waterloo.
 
 ## Models
 
-### Baselines
+### Predictions Over One Input Sequence
 
-1. [IDF Baseline](./idf_baseline/): IDF overlap between question and candidate answers
+For sentiment analysis, topic classification, etc.
 
-### Deep Learning Models
++ [Kim CNN](./kim_cnn/): baseline convolutional neural networks
++ [conv-RNN](./conv_rnn): convolutional RNN
 
-1. [SM-CNN](./sm_cnn/): Ranking short text pairs with Convolutional Neural Networks
-2. [Kim CNN](./kim_cnn/): Sentence classification using Convolutional Neural Networks
-3. [MP-CNN](./mp_cnn/): Sentence pair modelling with Multi-Perspective Convolutional Neural Networks
-4. [NCE](./nce/): Noise-Contrastive Estimation for answer selection applied on SM-CNN and MP-CNN
-5. [conv-RNN](./conv_rnn): Convolutional RNN for text modelling
+### Predictions Over Two Input Sequences
+
+For paraphrase detection, question answering, etc.
+
++ [SM-CNN](./sm_cnn/): Ranking short text pairs with Convolutional Neural Networks
++ [MP-CNN](./mp_cnn/): Sentence pair modelling with Multi-Perspective Convolutional Neural Networks
++ [NCE](./nce/): Noise-Contrastive Estimation for answer selection applied on SM-CNN and MP-CNN
++ [IDF Baseline](./idf_baseline/): IDF overlap between question and candidate answers
 
 ## Setting up PyTorch
 
