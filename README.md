@@ -1,40 +1,51 @@
 # Castor
 
-PyTorch deep learning models.
+Deep learning for information retrieval with PyTorch.
 
-1. [SM model](./sm_cnn/): Similarity between question and candidate answers.
+## Models
 
+### Baselines
+
+1. [IDF Baseline](./idf_baseline/): IDF overlap between question and candidate answers
+
+### Deep Learning Models
+
+1. [SM-CNN](./sm_cnn/): Ranking short text pairs with Convolutional Neural Networks
+2. [Kim CNN](./kim_cnn/): Sentence classification using Convolutional Neural Networks
+3. [MP-CNN](./mp_cnn/): Sentence pair modelling with Multi-Perspective Convolutional Neural Networks
+4. [NCE](./nce/): Noise-Contrastive Estimation for answer selection applied on SM-CNN and MP-CNN
+5. [conv-RNN](./conv_rnn): Convolutional RNN for text modelling
 
 ## Setting up PyTorch
 
-You need Python 3.6 to use the models in this repository.
+Copy and run the command at https://pytorch.org/ for your environment. PyTorch recommends the Anaconda environment, which we use in our lab.
 
-As per [pytorch.org](pytorch.org),
-> "[Anaconda](https://www.continuum.io/downloads) is our recommended package manager"
+The typical installation command is
 
-```conda install pytorch torchvision -c soumith```
+```bash
+conda install pytorch torchvision -c pytorch
+```
 
-Other pytorch installation modalities (e.g. via ```pip```) can be seen at [pytorch.org](pytorch.org).
+## Data and Pre-Trained Models
 
-We also recommend [gensim](https://radimrehurek.com/gensim/). We use some gensim modules to cache word embeddings.
+Data associated for use with this repository can be found at: https://git.uwaterloo.ca/jimmylin/Castor-data.git.
 
-```conda install gensim```
+Pre-trained models can be found at: https://github.com/castorini/models.git.
 
+Your directory structure should look like
+```
+.
+├── Castor
+├── Castor-data
+└── models
+```
 
-PyTorch has good support for GPU computations.
-CUDA installation guide for linux can be found [here](http://docs.nvidia.com/cuda/cuda-installation-guide-linux/)
+For example (if you use HTTPS instead of SSH):
 
-**NOTE**: Install CUDA libraries **before** installing conda and pytorch.
+```bash
+git clone https://github.com/castorini/Castor.git
+git clone https://git.uwaterloo.ca/jimmylin/Castor-data.git
+git clone https://github.com/castorini/models.git
+```
 
-
-## data for models
-
-Sourcing and pre-processing of input data for each model is described in respective ```model/README.md```'s
-
-## Baselines
-
-1. [IDF Baseline](./idf_baseline/): IDF overlap between question and candidate answers.
-
-## Tutorials
-
-SM Model tutorial: [sm_cnn/tutorial.ipynb](sm_cnn/tutorial.ipynb) - notebook that walks through SM CNN model, good for beginnners.
+Sourcing and pre-processing of input data for each model is described in the respective ```model/README.md```'s.

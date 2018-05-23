@@ -1,11 +1,8 @@
 ## Setup Retrieve Sentences and end2end QA pipeline
 
-#### 1. Clone [Anserini](https://github.com/castorini/Anserini.git), [Castor](https://github.com/castorini/Castor.git), [data](https://github.com/castorini/data.git), and [models](https://github.com/castorini/models.git):
+#### 1. Assuming you've already followed the main [README](../README.md) instructions, just clone [Anserini](https://github.com/castorini/Anserini.git):
 ```bash
 git clone https://github.com/castorini/Anserini.git
-git clone https://github.com/castorini/Castor.git
-git clone https://github.com/castorini/data.git
-git clone https://github.com/castorini/models.git
 ```
 
 Your directory structure should look like
@@ -13,7 +10,7 @@ Your directory structure should look like
 .
 ├── Anserini
 ├── Castor
-├── data
+├── Castor-data
 └── models
 ```
 
@@ -34,21 +31,12 @@ Install the dependency packages:
 
 ```
 cd Castor
-pip3 install -r requirements.txt
+pip install -r requirements.txt
 ```
-Make sure that you have PyTorch installed. For more help, follow [these](https://github.com/castorini/Castor) steps.
 
 #### 3. Download Dependencies
 - Download the TrecQA lucene index
 - Download the Google word2vec file from [here](https://drive.google.com/drive/folders/0B2u_nClt6NbzNWJkWExmaklYNTA?usp=sharing)
-
-#### 4. Additional files for pipeline:
-As some of the files are too large to be uploaded onto GitHub, please download the following files from
-[here](https://drive.google.com/drive/folders/0B2u_nClt6NbzNm1LdjlwUFdzQVE?usp=sharing) and place them
-in the appropriate locations:
-
-- copy the contents of `word2vec` directory to `data/word2vec`
-- copy `word2dfs.p` to `data/TrecQA/`
 
 ### To run RetrieveSentences:
 

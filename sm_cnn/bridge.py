@@ -110,7 +110,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Bridge Demo. Produces scores in trec_eval format",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--model', help="the path to the saved model file")
-    parser.add_argument('--dataset', help="the QA dataset folder {TrecQA|WikiQA}", default='../../data/TrecQA/')
+    parser.add_argument('--dataset', help="the QA dataset folder {TrecQA|WikiQA}", default='../../Castor-data/TrecQA/')
     parser.add_argument("--index", help="Lucene index", required=True)
     parser.add_argument("--embeddings", help="Path of the word2vec index", default="")
     parser.add_argument("--topics", help="topics file", default="")

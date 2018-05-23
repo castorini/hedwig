@@ -16,30 +16,11 @@ Assuming you already have PyTorch, just install torchtext (`pip install torchtex
 
 ## Quick Start
 
-Clone and create the dataset.
-```
-git clone https://github.com/castorini/Castor.git
-```
-
-```
-. 
-├── Castor
-    ├── README.md 
-    ├── baseline_results.tsv 
-    ├── idf_baseline 
-    ├── kim_cnn 
-    ├── mp_cnn 
-    ├── setup.py 
-    ├── sm_cnn 
-    └── sm_modified_cnn 
-```
-
 To get the dataset, you can run this.
 ```
 cd kim_cnn
 bash get_data.sh
 ```
-
 
 To run the model on SST-1 dataset on multichannel, just run the following code.
 

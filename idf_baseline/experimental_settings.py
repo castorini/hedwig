@@ -122,7 +122,7 @@ if __name__ == "__main__":
     ap.add_argument("--runall", help="runs all experiments in order", action="store_true")
     ap.add_argument("index_path", help="required for some combination of experiments")
     ap.add_argument('qa_data', help="path to the QA dataset",
-                    choices=['../../data/TrecQA', '../../data/WikiQA'])
+                    choices=['../../Castor-data/TrecQA', '../../Castor-data/WikiQA'])
 
     args = ap.parse_args()
 

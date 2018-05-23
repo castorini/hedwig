@@ -5,54 +5,7 @@
 Networks. In Proceedings of the 38th International ACM SIGIR Conference on Research and Development in Information 
 Retrieval (SIGIR '15). ACM, New York, NY, USA, 373-382. DOI: http://dx.doi.org/10.1145/2766462.2767738
 
-
-### Setup
-Clone and create the dataset:
-```bash
-git clone https://github.com/castorini/data.git
-git clone https://github.com/castorini/Castor.git
-```
-
-You should you see the following tree:
-```
-.
-├── Castor
-│   ├── README.md
-│   ├── baseline_results.tsv
-│   ├── idf_baseline
-│   ├── kim_cnn
-│   ├── mp_cnn
-│   ├── setup.py
-│   ├── sm_cnn
-└── data
-    ├── GloVe
-    ├── ParagramEmbeddings
-    ├── README.md
-    ├── SimpleQuestions_v2
-    ├── TrecQA
-    ├── WikiQA
-    ├── msrvid
-    ├── requirements.txt
-    ├── sick
-    ├── twitterPPDB
-    ├── utils
-    └── word2vec
-```
-
-Parse the TrecQA datset:
-```bash
-cd ../../data/TrecQA/
-python parse.py
-cd -
-```
-
-Parse the WikiQA datset:
-```bash
-cd ../../data/WikiQA/
-unzip WikiQACorpus.zip
-python create-train-dev-test-data.py 
-cd -
-```
+Please ensure you have followed instructions in the main [README](../README.md) doc before running any further commands in this doc.
 
 Your repository root should be in your `PYTHONPATH` environment variable:
 ```bash
@@ -64,7 +17,6 @@ To create the dataset:
 cd Castor/sm_cnn/
 ./create_dataset.sh
 ```
-
 
 We use `trec_eval` for evaluation:
 
@@ -144,7 +96,7 @@ NB: The results on WikiQA are based on the SM model hyperparameters.
 to the `data/` folder
 
 ```bash
-python $PYTHONPATH/utils/build_w2v.py --input data/aquaint+wiki.txt.gz.ndim=50.bin
+python $PYTHONPATH/utils/build_w2v.py --input ../../Castor-data/embeddings/word2vec/aquaint+wiki.txt.gz.ndim=50.bin
 ```
 
 Note that `$PYTHONPATH` holds the location of the repository root.

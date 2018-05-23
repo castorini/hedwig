@@ -125,7 +125,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="uses idf weights from the question-answer pairs only,\
                    and not from the whole corpus")
     ap.add_argument('qa_data', help="path to the QA dataset",
-                    choices=['../../data/TrecQA', '../../data/WikiQA'])
+                    choices=['../../Castor-data/TrecQA', '../../Castor-data/WikiQA'])
     ap.add_argument('outfile_prefix', help="output file prefix")
     ap.add_argument('--ignore-test', help="does not consider test data when computing IDF of terms",
                     action="store_true")

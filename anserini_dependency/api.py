@@ -51,7 +51,7 @@ def get_answers(question, num_hits, k):
     parser.add_argument("--scorer", help="passage scores", default="Idf")
     parser.add_argument("--k", help="top-k passages to be retrieved", default=1)
     parser.add_argument('--model', help="the path to the saved model file")
-    parser.add_argument('--dataset', help="the QA dataset folder {TrecQA|WikiQA}", default='../../data/TrecQA/')
+    parser.add_argument('--dataset', help="the QA dataset folder {TrecQA|WikiQA}", default='../../Castor-data/TrecQA/')
     parser.add_argument('--no_cuda', action='store_false', help='do not use cuda', dest='cuda')
     parser.add_argument('--gpu', type=int, default=0) # Use -1 for CPU
     parser.add_argument('--seed', type=int, default=3435)
@@ -109,7 +109,7 @@ if __name__ == "__main__":
     parser.add_argument('--no_cuda', action='store_false', help='do not use cuda', dest='cuda')
     parser.add_argument('--gpu', type=int, default=0) # Use -1 for CPU
     parser.add_argument('--seed', type=int, default=3435)
-    parser.add_argument('--dataset', help="the QA dataset folder {TrecQA|WikiQA}", default='../../data/TrecQA/')
+    parser.add_argument('--dataset', help="the QA dataset folder {TrecQA|WikiQA}", default='../../Castor-data/TrecQA/')
 
     args = parser.parse_args()
     if not args.cuda:

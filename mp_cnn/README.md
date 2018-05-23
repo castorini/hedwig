@@ -4,21 +4,7 @@ This is a PyTorch implementation of the following paper
 
 * Hua He, Kevin Gimpel, and Jimmy Lin. [Multi-Perspective Sentence Similarity Modeling with Convolutional Neural Networks](http://aclweb.org/anthology/D/D15/D15-1181.pdf). *Proceedings of the 2015 Conference on Empirical Methods in Natural Language Processing (EMNLP 2015)*, pages 1576-1586.
 
-The SICK and MSRVID datasets are available in https://github.com/castorini/data, as well as the GloVe word embeddings.
-
-Directory layout should be like this:
-```
-├── Castor
-│   ├── README.md
-│   ├── ...
-│   └── mp_cnn/
-├── data
-│   ├── README.md
-│   ├── ...
-│   ├── msrvid/
-│   ├── sick/
-│   └── GloVe/
-```
+Please ensure you have followed instructions in the main [README](../README.md) doc before running any further commands in this doc.
 
 ## SICK Dataset
 

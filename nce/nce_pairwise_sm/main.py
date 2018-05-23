@@ -38,10 +38,10 @@ if torch.cuda.is_available() and not args.cuda:
 
 if args.dataset == "trec":
     dataset_cls = TRECQA
-    dataset_root = os.path.join(os.pardir, os.pardir, os.pardir, 'data', 'TrecQA/')
+    dataset_root = os.path.join(os.pardir, os.pardir, os.pardir, 'Castor-data', 'embeddings', 'TrecQA/')
 elif args.dataset == "wiki":
     dataset_cls = WikiQA
-    dataset_root = os.path.join(os.pardir, os.pardir, os.pardir, 'data', 'WikiQA/')
+    dataset_root = os.path.join(os.pardir, os.pardir, os.pardir, 'Castor-data', 'embeddings', 'WikiQA/')
 else:
     logger.info("Unsupported dataset")
     exit()

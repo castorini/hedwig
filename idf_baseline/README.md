@@ -4,11 +4,11 @@ Implements IDF baselines for QA datasets.
 
 ### Getting the data
 
-Git clone [castorini/data](https://github.com/castorini/data) to get TrecQA and WikiQA datasets.
+Assuming you followed instructions in the main [README](../README.md) instructions to clone Castor-data.
 
 Follow instructions in ``TrecQA/README.txt`` and ``WikiQA/README.txt`` to process the data into a _standard_ format.
 
-After running the respectve scripts, you should have the following directories structure in ``castorini/data/TrecQA``
+After running the respective scripts, you should have the following directories structure in ``castorini/Castor-data/TrecQA``
 ```
 ├── raw-dev
 ├── raw-test
@@ -16,7 +16,7 @@ After running the respectve scripts, you should have the following directories s
 └── train-all
 ```
 
-and, the following directories in ``castorini/data/WikiQA``.
+and, the following directories in ``castorini/Castor-data/WikiQA``.
 ```
 ├── dev
 ├── test
@@ -138,25 +138,25 @@ eval/trec_eval.9.0/trec_eval -m map -m recip_rank <qrel-file> <run-file>
 
 For the WikiQA dataset
 ```
-../../Anserini/eval/trec_eval.9.0/trec_eval -m map ../../data/WikiQA/WikiQACorpus/WikiQA-$set.ref WikiQA.$set.idfsim 
+../../Anserini/eval/trec_eval.9.0/trec_eval -m map ../../Castor-data/WikiQA/WikiQACorpus/WikiQA-$set.ref WikiQA.$set.idfsim
 ```
 
 For the TrecQA dataset
 ```
-../../Anserini/eval/trec_eval.9.0/trec_eval -m map ../../data/TrecQA/$set.qrel TrecQA.$set.idfsim
+../../Anserini/eval/trec_eval.9.0/trec_eval -m map ../../Castor-data/TrecQA/$set.qrel TrecQA.$set.idfsim
 ```
 
 #### 3. IDF sum similarity  using only the QA dataset to compute IDF of terms
 
 ```
-python qa-data-idf-only.py ../../data/TrecQA TrecQA
-python qa-data-only-idf.py ../../data/WikiQA WikiQA
+python qa-data-idf-only.py ../../Castor-data/TrecQA TrecQA
+python qa-data-only-idf.py ../../Castor-data/WikiQA WikiQA
 ```
 Evaluate these using step 2.
 
-The same script can now also be used to comput idf sum similarity based on corpus idf statistics
+The same script can now also be used to compute idf sum similarity based on corpus idf statistics
 ```
-python qa-data-only-idf.py ../../data/TrecQA TrecQA --index-for-corpusIDF ../../data/indices/index.qadata.pos.docvectors.keepstopwords/ 
+python qa-data-only-idf.py ../../Castor-data/TrecQA TrecQA --index-for-corpusIDF ../../Castor-data/indices/index.qadata.pos.docvectors.keepstopwords/
 ```
 
 ### Baseline results
