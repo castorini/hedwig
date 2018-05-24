@@ -11,7 +11,7 @@ Please ensure you have followed instructions in the main [README](../README.md) 
 To run MP-CNN on the SICK dataset, use the following command. `--dropout 0` is for mimicking the original paper, although adding dropout can improve performance. If you have any problems running it check the Troubleshooting section below.
 
 ```
-python main.py mpcnn.sick.model.castor --dataset sick --epochs 19 --epsilon 1e-7 --dropout 0
+python -m mp_cnn mpcnn.sick.model.castor --dataset sick --epochs 19 --epsilon 1e-7 --dropout 0
 ```
 
 | Implementation and config        | Pearson's r   | Spearman's p  |
@@ -23,7 +23,7 @@ python main.py mpcnn.sick.model.castor --dataset sick --epochs 19 --epsilon 1e-7
 
 To run MP-CNN on the MSRVID dataset, use the following command:
 ```
-python main.py mpcnn.msrvid.model.castor --dataset msrvid --batch-size 16 --epsilon 1e-7 --epochs 32 --dropout 0 --regularization 0.0025
+python -m mp_cnn mpcnn.msrvid.model.castor --dataset msrvid --batch-size 16 --epsilon 1e-7 --epochs 32 --dropout 0 --regularization 0.0025
 ```
 
 | Implementation and config        | Pearson's r   |
@@ -37,7 +37,7 @@ To run MP-CNN on (Raw) TrecQA, you first need to run `./get_trec_eval.sh` in `ut
 
 Then, you can run:
 ```
-python main.py mpcnn.trecqa.model --dataset trecqa --epochs 5 --regularization 0.0005 --dropout 0.5 --eps 0.1
+python -m mp_cnn mpcnn.trecqa.model --dataset trecqa --epochs 5 --regularization 0.0005 --dropout 0.5 --eps 0.1
 ```
 
 | Implementation and config        | map    | mrr    |
@@ -53,7 +53,7 @@ You also need `trec_eval` for this dataset, similar to TrecQA.
 
 Then, you can run:
 ```
-python main.py mpcnn.wikiqa.model --epochs 10 --dataset wikiqa --batch-size 64 --lr 0.0004 --regularization 0.02
+python -m mp_cnn mpcnn.wikiqa.model --epochs 10 --dataset wikiqa --batch-size 64 --lr 0.0004 --regularization 0.02
 ```
 | Implementation and config        | map    | mrr    |
 | -------------------------------- |:------:|:------:|
@@ -67,7 +67,7 @@ These are not the optimal hyperparameters but they are decent. This README will 
 
 To see all options available, use
 ```
-python main.py --help
+python -m mp_cnn --help
 ```
 
 ## Troubleshooting
@@ -75,9 +75,9 @@ python main.py --help
 ### ModuleNotFoundError: datasets
 ```
 Traceback (most recent call last):
-  File "main.py", line 9, in <module>
-    from dataset import MPCNNDatasetFactory
-  File "/u/z3tu/castorini/Castor/mp_cnn/dataset.py", line 12, in <module>
+  File "__main__.py", line 9, in <module>
+    from common.dataset import DatasetFactory
+  File "/u/z3tu/castorini/Castor/common/dataset.py", line 12, in <module>
     from datasets.sick import SICK
 ModuleNotFoundError: No module named 'datasets'
 ```

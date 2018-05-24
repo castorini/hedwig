@@ -8,10 +8,10 @@ import numpy as np
 import torch
 import torch.optim as optim
 
-from mp_cnn.dataset import MPCNNDatasetFactory
-from mp_cnn.evaluation import MPCNNEvaluatorFactory
-from mp_cnn.model import MPCNN
-from mp_cnn.train import MPCNNTrainerFactory
+from common.dataset import DatasetFactory
+from common.evaluation import EvaluatorFactory
+from common.train import TrainerFactory
+from .model import MPCNN
 
 
 if __name__ == '__main__':
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     logger.info(pprint.pformat(vars(args)))
 
     dataset_cls, embedding, train_loader, test_loader, dev_loader \
-        = MPCNNDatasetFactory.get_dataset(args.dataset, args.word_vectors_dir, args.word_vectors_file, args.batch_size, args.device)
+        = DatasetFactory.get_dataset(args.dataset, args.word_vectors_dir, args.word_vectors_file, args.batch_size, args.device)
 
     filter_widths = list(range(1, args.max_window_size + 1)) + [np.inf]
     model = MPCNN(embedding, args.holistic_filters, args.per_dim_filters, filter_widths,
@@ -80,9 +80,9 @@ if __name__ == '__main__':
     else:
         raise ValueError('optimizer not recognized: it should be either adam or sgd')
 
-    train_evaluator = MPCNNEvaluatorFactory.get_evaluator(dataset_cls, model, train_loader, args.batch_size, args.device)
-    test_evaluator = MPCNNEvaluatorFactory.get_evaluator(dataset_cls, model, test_loader, args.batch_size, args.device)
-    dev_evaluator = MPCNNEvaluatorFactory.get_evaluator(dataset_cls, model, dev_loader, args.batch_size, args.device)
+    train_evaluator = EvaluatorFactory.get_evaluator(dataset_cls, model, train_loader, args.batch_size, args.device)
+    test_evaluator = EvaluatorFactory.get_evaluator(dataset_cls, model, test_loader, args.batch_size, args.device)
+    dev_evaluator = EvaluatorFactory.get_evaluator(dataset_cls, model, dev_loader, args.batch_size, args.device)
 
     trainer_config = {
         'optimizer': optimizer,
@@ -95,7 +95,7 @@ if __name__ == '__main__':
         'run_label': args.run_label,
         'logger': logger
     }
-    trainer = MPCNNTrainerFactory.get_trainer(args.dataset, model, train_loader, trainer_config, train_evaluator, test_evaluator, dev_evaluator)
+    trainer = TrainerFactory.get_trainer(args.dataset, model, train_loader, trainer_config, train_evaluator, test_evaluator, dev_evaluator)
 
     if not args.skip_training:
         total_params = 0
@@ -106,7 +106,7 @@ if __name__ == '__main__':
         trainer.train(args.epochs)
 
     model = torch.load(args.model_outfile)
-    saved_model_evaluator = MPCNNEvaluatorFactory.get_evaluator(dataset_cls, model, test_loader, args.batch_size, args.device)
+    saved_model_evaluator = EvaluatorFactory.get_evaluator(dataset_cls, model, test_loader, args.batch_size, args.device)
     scores, metric_names = saved_model_evaluator.get_scores()
     logger.info('Evaluation metrics for test')
     logger.info('\t'.join([' '] + metric_names))

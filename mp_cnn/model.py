@@ -91,7 +91,7 @@ class MPCNN(nn.Module):
                 x2 = sent2_block_a[ws][pool]
                 batch_size = x1.size()[0]
                 comparison_feats.append(F.cosine_similarity(x1, x2).contiguous().view(batch_size, 1))
-                comparison_feats.append(F.pairwise_distance(x1, x2))
+                comparison_feats.append(F.pairwise_distance(x1, x2).unsqueeze(-1))
         return torch.cat(comparison_feats, dim=1)
 
     def _algo_2_vert_comp(self, sent1_block_a, sent2_block_a, sent1_block_b, sent2_block_b):
@@ -105,7 +105,7 @@ class MPCNN(nn.Module):
                     x2 = sent2_block_a[ws2][pool]
                     if (not np.isinf(ws1) and not np.isinf(ws2)) or (np.isinf(ws1) and np.isinf(ws2)):
                         comparison_feats.append(F.cosine_similarity(x1, x2).contiguous().view(batch_size, 1))
-                        comparison_feats.append(F.pairwise_distance(x1, x2))
+                        comparison_feats.append(F.pairwise_distance(x1, x2).unsqueeze(-1))
                         comparison_feats.append(torch.abs(x1 - x2))
 
         for pool in ('max', 'min'):
@@ -117,7 +117,7 @@ class MPCNN(nn.Module):
                     x2 = oG_2B[:, :, i]
                     batch_size = x1.size()[0]
                     comparison_feats.append(F.cosine_similarity(x1, x2).contiguous().view(batch_size, 1))
-                    comparison_feats.append(F.pairwise_distance(x1, x2))
+                    comparison_feats.append(F.pairwise_distance(x1, x2).unsqueeze(-1))
                     comparison_feats.append(torch.abs(x1 - x2))
 
         return torch.cat(comparison_feats, dim=1)

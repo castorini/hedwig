@@ -1,6 +1,6 @@
 import torch.nn.functional as F
 
-from mp_cnn.evaluators.evaluator import Evaluator
+from .evaluator import Evaluator
 from utils.relevancy_metrics import get_map_mrr
 
 

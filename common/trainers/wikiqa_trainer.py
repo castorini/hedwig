@@ -1,4 +1,4 @@
-from mp_cnn.trainers.qa_trainer import QATrainer
+from .qa_trainer import QATrainer
 
 
 class WikiQATrainer(QATrainer):

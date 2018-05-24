@@ -1,4 +1,4 @@
-from mp_cnn.evaluators.qa_evaluator import QAEvaluator
+from .qa_evaluator import QAEvaluator
 
 
 class WikiQAEvaluator(QAEvaluator):

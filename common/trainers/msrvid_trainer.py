@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from scipy.stats import pearsonr
 
-from mp_cnn.trainers.trainer import Trainer
+from .trainer import Trainer
 
 
 class MSRVIDTrainer(Trainer):

@@ -8,10 +8,10 @@ import numpy as np
 import torch
 import torch.optim as optim
 
-from mp_cnn.dataset import MPCNNDatasetFactory
-from mp_cnn.evaluation import MPCNNEvaluatorFactory
+from common.dataset import MPCNNDatasetFactory
+from common.evaluation import MPCNNEvaluatorFactory
 from nce.nce_pairwise_mp.model import MPCNN4NCE, PairwiseConv
-from mp_cnn.train import MPCNNTrainerFactory
+from common.train import MPCNNTrainerFactory
 
 
 if __name__ == '__main__':

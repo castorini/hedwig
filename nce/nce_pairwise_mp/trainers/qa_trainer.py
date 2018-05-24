@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-from mp_cnn.trainers.trainer import Trainer
+from common.trainers.trainer import Trainer
 from utils.nce_neighbors import get_nearest_neg_id, get_random_neg_id, get_batch
 
 class QATrainer(Trainer):

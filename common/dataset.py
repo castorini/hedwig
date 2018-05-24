@@ -24,7 +24,7 @@ class UnknownWordVecCache(object):
         return cls.cache[size_tup]
 
 
-class MPCNNDatasetFactory(object):
+class DatasetFactory(object):
     """
     Get the corresponding Dataset class for a particular dataset.
     """
