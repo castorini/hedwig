@@ -56,7 +56,8 @@ class MSRVIDTrainer(Trainer):
         return left_out_val_a, left_out_val_b, left_out_val_ext_feats, left_out_val_labels
 
     def train(self, epochs):
-        scheduler = ReduceLROnPlateau(self.optimizer, mode='max', factor=self.lr_reduce_factor, patience=self.patience)
+        if self.lr_reduce_factor != 1 and self.lr_reduce_factor != None:
+            scheduler = ReduceLROnPlateau(self.optimizer, mode='max', factor=self.lr_reduce_factor, patience=self.patience)
         epoch_times = []
         prev_loss = -1
         best_dev_score = -1
@@ -100,7 +101,8 @@ class MSRVIDTrainer(Trainer):
                     self.writer.add_scalar('msrvid/dev/kl_div_loss', val_kl_div_loss, epoch)
                 break
 
-            scheduler.step(pearson_r)
+            if scheduler is not None:
+                scheduler.step(pearson_r)
 
             end = time.time()
             duration = end - start

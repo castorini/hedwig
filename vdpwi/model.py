@@ -32,7 +32,7 @@ class ResNet(nn.Module):
                 x += old_x
                 old_x = x
         x = torch.mean(x.view(x.size(0), x.size(1), -1), 2)
-        return self.output(x)
+        return F.log_softmax(self.output(x), 1)
 
 class VDPWIConvNet(nn.Module):
     def __init__(self, config):

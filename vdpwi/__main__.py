@@ -33,17 +33,17 @@ if __name__ == '__main__':
     parser.add_argument('--skip-training', help='will load pre-trained model', action='store_true')
     parser.add_argument('--device', type=int, default=0, help='GPU device, -1 for CPU (default: 0)')
     parser.add_argument('--sparse-features', action='store_true', default=False, help='use sparse features (default: false)')
-    parser.add_argument('--batch-size', type=int, default=64, help='input batch size for training (default: 64)')
+    parser.add_argument('--batch-size', type=int, default=16, help='input batch size for training (default: 64)')
     parser.add_argument('--epochs', type=int, default=10, help='number of epochs to train (default: 10)')
-    parser.add_argument('--optimizer', type=str, default='adam', help='optimizer to use: adam or sgd (default: adam)')
+    parser.add_argument('--optimizer', type=str, default='rmsprop', help='optimizer to use: adam, sgd, or rmsprop (default: adam)')
     parser.add_argument('--lr', type=float, default=5E-4, help='learning rate (default: 0.001)')
-    parser.add_argument('--lr-reduce-factor', type=float, default=1, help='learning rate reduce factor after plateau (default: 0.3)')
+    parser.add_argument('--lr-reduce-factor', type=float, default=0.3, help='learning rate reduce factor after plateau (default: 0.3)')
     parser.add_argument('--patience', type=float, default=2, help='learning rate patience after seeing plateau (default: 2)')
     parser.add_argument('--momentum', type=float, default=0.1, help='momentum (default: 0.1)')
     parser.add_argument('--epsilon', type=float, default=1e-8, help='Adam epsilon (default: 1e-8)')
     parser.add_argument('--log-interval', type=int, default=10, help='how many batches to wait before logging training status (default: 10)')
     parser.add_argument('--regularization', type=float, default=1E-5, help='Regularization for the optimizer (default: 0.00001)')
-    parser.add_argument('--hidden-units', type=int, default=150, help='number of hidden units in the RNN')
+    parser.add_argument('--hidden-units', type=int, default=250, help='number of hidden units in the RNN')
     parser.add_argument('--seed', type=int, default=1, help='random seed (default: 1)')
     parser.add_argument('--tensorboard', action='store_true', default=False, help='use TensorBoard to visualize training (default: false)')
     parser.add_argument('--run-label', type=str, help='label to describe run')
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     elif args.optimizer == 'sgd':
         optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.regularization)
     elif args.optimizer == "rmsprop":
-        optimizer = optim.RMSprop(model.parameters(), lr=args.lr, momentum=args.momentum, alpha=config.decay, 
+        optimizer = optim.RMSprop(model.parameters(), lr=args.lr, momentum=args.momentum, alpha=args.decay, 
             weight_decay=args.regularization)
     else:
         raise ValueError('optimizer not recognized: it should be one of adam, sgd, or rmsprop')

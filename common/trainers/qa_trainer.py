@@ -40,7 +40,9 @@ class QATrainer(Trainer):
         return total_loss
 
     def train(self, epochs):
-        scheduler = ReduceLROnPlateau(self.optimizer, mode='max', factor=self.lr_reduce_factor, patience=self.patience)
+        scheduler = None
+        if self.lr_reduce_factor != 1 and self.lr_reduce_factor != None:
+            scheduler = ReduceLROnPlateau(self.optimizer, mode='max', factor=self.lr_reduce_factor, patience=self.patience)
         epoch_times = []
         prev_loss = -1
         best_dev_score = -1
@@ -72,6 +74,7 @@ class QATrainer(Trainer):
                 break
 
             prev_loss = new_loss
-            scheduler.step(mean_average_precision)
+            if scheduler is not None:
+                scheduler.step(mean_average_precision)
 
         self.logger.info('Training took {:.2f} minutes overall...'.format(sum(epoch_times) / 60))
