@@ -6,46 +6,44 @@ This is a PyTorch implementation of the following paper
 
 Please ensure you have followed instructions in the main [README](../README.md) doc before running any further commands in this doc.
 
+## Pre-Trained Models
+
+We have pre-trained models for SICK, TrecQA, and WikiQA in the [Castor-models](https://git.uwaterloo.ca/jimmylin/Castor-models) repository. They are trained using the commands in each of the dataset sections below and the evaluation metrics match the reported values in those sections in our environment.
+
+| Dataset   | Model file                 | Command to run pre-trained model                                                                                       |
+| --------- |:--------------------------:|:----------------------------------------------------------------------------------------------------------------------:|
+| SICK      | mp_cnn/mpcnn.sick.model    | `python -m mp_cnn ../Castor-models/mp_cnn/mpcnn.sick.model --dataset sick --skip-training`                             |
+| TrecQA    | mp_cnn/mpcnn.trecqa.model  | `python -m mp_cnn ../Castor-models/mp_cnn/mpcnn.trecqa.model --dataset trecqa --holistic-filters 200 --skip-training`  |
+| WikiQA    | mp_cnn/mpcnn.wikiqa.model  | `python -m mp_cnn ../Castor-models/mp_cnn/mpcnn.wikiqa.model --dataset wikiqa --holistic-filters 100 --skip-training`  |
+
+If you want to train them yourself, please read on.
+
 ## SICK Dataset
 
-To run MP-CNN on the SICK dataset, use the following command. `--dropout 0` is for mimicking the original paper, although adding dropout can improve performance. If you have any problems running it check the Troubleshooting section below.
+To run MP-CNN on the SICK dataset, use the following command. `--dropout 0` is for mimicking the original paper, although adding dropout can improve results. If you have any problems running it check the Troubleshooting section below.
 
 ```
-python -m mp_cnn mpcnn.sick.model.castor --dataset sick --epochs 19 --epsilon 1e-7 --dropout 0
+python -m mp_cnn mpcnn.sick.model.castor --dataset sick --epochs 19 --dropout 0 --lr 0.0005
 ```
 
-| Implementation and config        | Pearson's r   | Spearman's p  |
-| -------------------------------- |:-------------:|:-------------:|
-| Paper                            | 0.8686        |   0.8047      |
-| PyTorch using above config       | 0.8684        |   0.8083      |
-
-## MSRVID Dataset
-
-To run MP-CNN on the MSRVID dataset, use the following command:
-```
-python -m mp_cnn mpcnn.msrvid.model.castor --dataset msrvid --batch-size 16 --epsilon 1e-7 --epochs 32 --dropout 0 --regularization 0.0025
-```
-
-| Implementation and config        | Pearson's r   |
-| -------------------------------- |:-------------:|
-| Paper                            | 0.9090        |
-| PyTorch using above config       | 0.8911        |
+| Implementation and config        | Pearson's r   | Spearman's p  | MSE        |
+| -------------------------------- |:-------------:|:-------------:|:----------:|
+| Paper                            | 0.8686        |   0.8047      | 0.2606     |
+| PyTorch using above config       | 0.8738        |   0.8116      | 0.2414     |
 
 ## TrecQA Dataset
 
-To run MP-CNN on (Raw) TrecQA, you first need to run `./get_trec_eval.sh` in `utils` under the repo root while inside the `utils` directory. This will download and compile the official `trec_eval` tool used for evaluation.
-
-Then, you can run:
+To run MP-CNN on the TrecQA dataset, use the following command:
 ```
-python -m mp_cnn mpcnn.trecqa.model --dataset trecqa --epochs 5 --regularization 0.0005 --dropout 0.5 --eps 0.1
+python -m mp_cnn mpcnn.trecqa.model --dataset trecqa --epochs 5 --holistic-filters 200 --lr 0.00018 --regularization 0.0006405 --dropout 0
 ```
 
 | Implementation and config        | map    | mrr    |
 | -------------------------------- |:------:|:------:|
-| Paper                            | 0.762  | 0.830  |
-| PyTorch using above config       | 0.7904 | 0.8223 |
+| Paper                            | 0.764  | 0.827  |
+| PyTorch using above config       | 0.777  | 0.821  |
 
-The paper results are reported in [Noise-Contrastive Estimation for Answer Selection with Deep Neural Networks](https://dl.acm.org/citation.cfm?id=2983872).
+This are the TrecQA raw dataset results. The paper results are reported in [Noise-Contrastive Estimation for Answer Selection with Deep Neural Networks](https://dl.acm.org/citation.cfm?id=2983872).
 
 ## WikiQA Dataset
 
@@ -53,40 +51,23 @@ You also need `trec_eval` for this dataset, similar to TrecQA.
 
 Then, you can run:
 ```
-python -m mp_cnn mpcnn.wikiqa.model --epochs 10 --dataset wikiqa --batch-size 64 --lr 0.0004 --regularization 0.02
+python -m mp_cnn mpcnn.wikiqa.model --epochs 10 --dataset wikiqa --epochs 5 --holistic-filters 100 --lr 0.00042 --regularization 0.0001683 --dropout 0
 ```
 | Implementation and config        | map    | mrr    |
 | -------------------------------- |:------:|:------:|
 | Paper                            | 0.693  | 0.709  |
-| PyTorch using above config       | 0.693  | 0.7091 |
+| PyTorch using above config       | 0.717  | 0.729  |
 
 The paper results are reported in [Noise-Contrastive Estimation for Answer Selection with Deep Neural Networks](https://dl.acm.org/citation.cfm?id=2983872).
-
-
-These are not the optimal hyperparameters but they are decent. This README will be updated with more optimal hyperparameters and results in the future.
 
 To see all options available, use
 ```
 python -m mp_cnn --help
 ```
 
-## Troubleshooting
-
-### ModuleNotFoundError: datasets
-```
-Traceback (most recent call last):
-  File "__main__.py", line 9, in <module>
-    from common.dataset import DatasetFactory
-  File "/u/z3tu/castorini/Castor/common/dataset.py", line 12, in <module>
-    from datasets.sick import SICK
-ModuleNotFoundError: No module named 'datasets'
-```
-
-You need to make sure the repository root is in your `PYTHONPATH` environment variable. One way to do this is while you are in the repo root (Castor) as your current working directory, run `export PYTHONPATH=$(pwd)`.
-
 ## Optional Dependencies
 
-To optionally visualize the learning curve during training, we make use of https://github.com/lanpa/tensorboard-pytorch to connect to [TensorBoard](https://github.com/tensorflow/tensorboard). These projects require TensorFlow as a dependency, so you need to install TensorFlow before running the commands below. After these are installed, just add `--tensorboard` when running `main.py` and open TensorBoard in the browser.
+To optionally visualize the learning curve during training, we make use of https://github.com/lanpa/tensorboard-pytorch to connect to [TensorBoard](https://github.com/tensorflow/tensorboard). These projects require TensorFlow as a dependency, so you need to install TensorFlow before running the commands below. After these are installed, just add `--tensorboard` when running the training commands and open TensorBoard in the browser.
 
 ```sh
 pip install tensorboardX
