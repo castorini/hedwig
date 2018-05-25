@@ -1,5 +1,6 @@
 import time
 
+import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
@@ -22,6 +23,8 @@ class SICKTrainer(Trainer):
             loss = F.kl_div(output, batch.label, size_average=False)
             total_loss += loss.item()
             loss.backward()
+            if self.clip_norm:
+                nn.utils.clip_grad_norm(self.model.parameters(), self.clip_norm)
             self.optimizer.step()
             if batch_idx % self.log_interval == 0:
                 self.logger.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
@@ -36,7 +39,9 @@ class SICKTrainer(Trainer):
         return total_loss
 
     def train(self, epochs):
-        scheduler = ReduceLROnPlateau(self.optimizer, mode='max', factor=self.lr_reduce_factor, patience=self.patience)
+        scheduler = None
+        if self.lr_reduce_factor != 1 and self.lr_reduce_factor != None:
+            scheduler = ReduceLROnPlateau(self.optimizer, mode='max', factor=self.lr_reduce_factor, patience=self.patience)
         epoch_times = []
         prev_loss = -1
         best_dev_score = -1
@@ -66,6 +71,7 @@ class SICKTrainer(Trainer):
                 break
 
             prev_loss = new_loss
-            scheduler.step(pearson)
+            if scheduler is not None:
+                scheduler.step(pearson)
 
         self.logger.info('Training took {:.2f} minutes overall...'.format(sum(epoch_times) / 60))
