@@ -1,7 +1,9 @@
-gensim==1.0.1
-numpy==1.12.1
-pandas==0.19.2
 Flask==0.12.1
-nltk==3.2.2
+gensim==1.0.1
+nltk==3.2.5
+numpy==1.14.0
+pandas==0.19.2
 pyjnius==1.1.1
--e git+https://github.com/castorini/Castor.git#egg=sm-cnn-1.0.0
+scikit-learn==0.19.1
+scipy==1.0.0
+torchtext==0.2.3

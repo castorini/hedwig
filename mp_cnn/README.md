@@ -5,6 +5,7 @@ This is a PyTorch implementation of the following paper
 * Hua He, Kevin Gimpel, and Jimmy Lin. [Multi-Perspective Sentence Similarity Modeling with Convolutional Neural Networks](http://aclweb.org/anthology/D/D15/D15-1181.pdf). *Proceedings of the 2015 Conference on Empirical Methods in Natural Language Processing (EMNLP 2015)*, pages 1576-1586.
 
 Please ensure you have followed instructions in the main [README](../README.md) doc before running any further commands in this doc.
+The commands in this doc assume you are under the root directory of the Castor repo.
 
 ## Pre-Trained Models
 
