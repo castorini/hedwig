@@ -7,37 +7,46 @@ from .evaluator import Evaluator
 
 class SICKEvaluator(Evaluator):
 
-    def __init__(self, dataset_cls, model, data_loader, batch_size, device):
-        super(SICKEvaluator, self).__init__(dataset_cls, model, data_loader, batch_size, device)
-
     def get_scores(self):
         self.model.eval()
         num_classes = self.dataset_cls.NUM_CLASSES
-        predict_classes = torch.arange(1, num_classes + 1).expand(self.batch_size, num_classes)
         test_kl_div_loss = 0
         predictions = []
         true_labels = []
 
         for batch in self.data_loader:
-            output = self.model(batch.sentence_1, batch.sentence_2, batch.ext_feats)
-            test_kl_div_loss += F.kl_div(output, batch.label, size_average=False).data[0]
+            # Select embedding
+            sent1, sent2 = self.get_sentence_embeddings(batch)
+
+            output = self.model(sent1, sent2, batch.ext_feats, batch.dataset.word_to_doc_cnt, batch.sentence_1_raw, batch.sentence_2_raw)
+            test_kl_div_loss += F.kl_div(output, batch.label, size_average=False).item()
+
+            predict_classes = batch.label.new_tensor(torch.arange(1, num_classes + 1)).expand(self.batch_size, num_classes)
             # handle last batch which might have smaller size
             if len(predict_classes) != len(batch.sentence_1):
-                predict_classes = torch.arange(1, num_classes + 1).expand(len(batch.sentence_1), num_classes)
+                predict_classes = batch.label.new_tensor(torch.arange(1, num_classes + 1)).expand(len(batch.sentence_1), num_classes)
 
-            if self.data_loader.device != -1:
-                with torch.cuda.device(self.device):
-                    predict_classes = predict_classes.cuda()
-
-            true_labels.append((predict_classes * batch.label.data).sum(dim=1))
-            predictions.append((predict_classes * output.data.exp()).sum(dim=1))
+            true_labels.append((predict_classes * batch.label.detach()).sum(dim=1))
+            predictions.append((predict_classes * output.detach().exp()).sum(dim=1))
 
             del output
 
-        predictions = torch.cat(predictions).cpu().numpy()
-        true_labels = torch.cat(true_labels).cpu().numpy()
+        predictions = torch.cat(predictions)
+        true_labels = torch.cat(true_labels)
+        mse = F.mse_loss(predictions, true_labels).item()
         test_kl_div_loss /= len(batch.dataset.examples)
+        predictions = predictions.cpu().numpy()
+        true_labels = true_labels.cpu().numpy()
         pearson_r = pearsonr(predictions, true_labels)[0]
         spearman_r = spearmanr(predictions, true_labels)[0]
 
-        return [pearson_r, spearman_r, test_kl_div_loss], ['pearson_r', 'spearman_r', 'KL-divergence loss']
+        return [pearson_r, spearman_r, mse, test_kl_div_loss], ['pearson_r', 'spearman_r', 'mse', 'KL-divergence loss']
+
+    def get_final_prediction_and_label(self, batch_predictions, batch_labels):
+        num_classes = self.dataset_cls.NUM_CLASSES
+        predict_classes = batch_labels.new_tensor(torch.arange(1, num_classes + 1)).expand(batch_predictions.size(0), num_classes)
+
+        predictions = (predict_classes * batch_predictions.exp()).sum(dim=1)
+        true_labels = (predict_classes * batch_labels).sum(dim=1)
+
+        return predictions, true_labels

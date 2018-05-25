@@ -11,7 +11,7 @@ from utils.nce_neighbors import get_nearest_neg_id, get_random_neg_id, get_batch
 class QATrainer(Trainer):
 
     def __init__(self, model, train_loader, trainer_config, train_evaluator, test_evaluator, dev_evaluator=None, weighting=False):
-        super(QATrainer, self).__init__(model, train_loader, trainer_config, train_evaluator, test_evaluator, dev_evaluator)
+        super(QATrainer, self).__init__(model, None, train_loader, trainer_config, train_evaluator, test_evaluator, dev_evaluator)
         self.loss = torch.nn.MarginRankingLoss(margin=1, size_average=True)
         self.question2answer = {}
         self.best_dev_map = 0

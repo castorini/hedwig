@@ -7,7 +7,7 @@ from utils.relevancy_metrics import get_map_mrr
 class QAEvaluator(Evaluator):
 
     def __init__(self, dataset_cls, model, data_loader, batch_size, device):
-        super(QAEvaluator, self).__init__(dataset_cls, model, data_loader, batch_size, device)
+        super(QAEvaluator, self).__init__(dataset_cls, model, None, data_loader, batch_size, device)
 
     def get_scores(self):
         self.model.eval()

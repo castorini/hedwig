@@ -1,14 +1,20 @@
 class Evaluator(object):
     """
-    Evaluates performance of model on a Dataset, using metrics specific to the Dataset.
+    Evaluates a model on a Dataset, using metrics specific to the Dataset.
     """
 
-    def __init__(self, dataset_cls, model, data_loader, batch_size, device):
+    def __init__(self, dataset_cls, model, embedding, data_loader, batch_size, device):
         self.dataset_cls = dataset_cls
         self.model = model
+        self.embedding = embedding
         self.data_loader = data_loader
         self.batch_size = batch_size
         self.device = device
+
+    def get_sentence_embeddings(self, batch):
+        sent1 = self.embedding(batch.sentence_1).transpose(1, 2)
+        sent2 = self.embedding(batch.sentence_2).transpose(1, 2)
+        return sent1, sent2
 
     def get_scores(self):
         """

@@ -1,13 +1,11 @@
 import os
 
 import torch
-from torchtext.data.example import Example
-from torchtext.data.field import Field
+from torchtext.data.field import Field, RawField
 from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
 
 from datasets.castor_dataset import CastorPairDataset
-from datasets.idf_utils import get_pairwise_word_to_doc_freq, get_pairwise_overlap_features
 
 
 class WikiQA(CastorPairDataset):
@@ -18,6 +16,8 @@ class WikiQA(CastorPairDataset):
     TEXT_FIELD = Field(batch_first=True, tokenize=lambda x: x)  # tokenizer is identity since we already tokenized it to compute external features
     EXT_FEATS_FIELD = Field(tensor_type=torch.FloatTensor, use_vocab=False, batch_first=True, tokenize=lambda x: x)
     LABEL_FIELD = Field(sequential=False, use_vocab=False, batch_first=True)
+    RAW_TEXT_FIELD = RawField()
+    VOCAB_SIZE = 0
 
     @staticmethod
     def sort_key(ex):
@@ -62,4 +62,4 @@ class WikiQA(CastorPairDataset):
         cls.VOCAB_SIZE = len(cls.TEXT_FIELD.vocab)
 
         return BucketIterator.splits((train, validation, test), batch_size=batch_size, repeat=False, shuffle=shuffle,
-                                     device=device)
+                                     sort_within_batch=True, device=device)

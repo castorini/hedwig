@@ -1,14 +1,11 @@
 import os
 
 import torch
-from torchtext.data.field import Field
+from torchtext.data.field import Field, RawField
 from torchtext.data.iterator import BucketIterator
-from torchtext.data.iterator import Iterator
 from torchtext.vocab import Vectors
-from torchtext.data import Pipeline
 
 from datasets.castor_dataset import CastorPairDataset
-from datasets.idf_utils import get_pairwise_word_to_doc_freq, get_pairwise_overlap_features
 
 
 class TRECQA(CastorPairDataset):
@@ -17,9 +14,9 @@ class TRECQA(CastorPairDataset):
     ID_FIELD = Field(sequential=False, tensor_type=torch.FloatTensor, use_vocab=False, batch_first=True)
     AID_FIELD = Field(sequential=False, use_vocab=False, batch_first=True)
     TEXT_FIELD = Field(batch_first=True, tokenize=lambda x: x)  # tokenizer is identity since we already tokenized it to compute external features
-    EXT_FEATS_FIELD = Field(tensor_type=torch.FloatTensor, use_vocab=False, batch_first=True, tokenize=lambda x: x,
-                            postprocessing=Pipeline(lambda arr, _, train: [float(y) for y in arr]))
+    EXT_FEATS_FIELD = Field(tensor_type=torch.FloatTensor, use_vocab=False, batch_first=True, tokenize=lambda x: x)
     LABEL_FIELD = Field(sequential=False, use_vocab=False, batch_first=True)
+    RAW_TEXT_FIELD = RawField()
     VOCAB_SIZE = 0
 
     @staticmethod
@@ -37,7 +34,7 @@ class TRECQA(CastorPairDataset):
         return super(TRECQA, cls).splits(path, train=train, validation=validation, test=test, **kwargs)
 
     @classmethod
-    def iters(cls, path, vectors_name, vectors_dir, batch_size=64, shuffle=True, device=0, pt_file = False, vectors=None, unk_init=torch.Tensor.zero_):
+    def iters(cls, path, vectors_name, vectors_dir, batch_size=64, shuffle=True, device=0, pt_file=False, vectors=None, unk_init=torch.Tensor.zero_):
         """
         :param path: directory containing train, test, dev files
         :param vectors_name: name of word vectors file
@@ -62,4 +59,4 @@ class TRECQA(CastorPairDataset):
 
         cls.VOCAB_SIZE = len(cls.TEXT_FIELD.vocab)
 
-        return BucketIterator.splits((train, validation, test), batch_size=batch_size, repeat=False, shuffle=shuffle, device=device)
+        return BucketIterator.splits((train, validation, test), batch_size=batch_size, repeat=False, shuffle=shuffle, sort_within_batch=True, device=device)

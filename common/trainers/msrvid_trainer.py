@@ -7,12 +7,10 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from scipy.stats import pearsonr
 
 from .trainer import Trainer
+from utils.serialization import save_checkpoint
 
 
 class MSRVIDTrainer(Trainer):
-
-    def __init__(self, model, train_loader, trainer_config, train_evaluator, test_evaluator, dev_evaluator=None):
-        super(MSRVIDTrainer, self).__init__(model, train_loader, trainer_config, train_evaluator, test_evaluator, dev_evaluator)
 
     def train_epoch(self, epoch):
         self.model.train()
@@ -34,22 +32,26 @@ class MSRVIDTrainer(Trainer):
                 left_out_val_labels.append(batch.label)
                 continue
             self.optimizer.zero_grad()
-            output = self.model(batch.sentence_1, batch.sentence_2, batch.ext_feats)
-            loss = F.kl_div(output, batch.label)
-            total_loss += loss.data[0]
+
+            # Select embedding
+            sent1, sent2 = self.get_sentence_embeddings(batch)
+
+            output = self.model(sent1, sent2, batch.ext_feats)
+            loss = F.kl_div(output, batch.label, size_average=False)
+            total_loss += loss.item()
             loss.backward()
             self.optimizer.step()
             if batch_idx % self.log_interval == 0:
                 self.logger.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch, min(batch_idx * self.batch_size, len(batch.dataset.examples)),
                     len(batch.dataset.examples),
-                    100. * batch_idx / (len(self.train_loader)), loss.data[0])
+                    100. * batch_idx / (len(self.train_loader)), loss.item() / len(batch))
                 )
 
         self.evaluate(self.train_evaluator, 'train')
 
         if self.use_tensorboard:
-            self.writer.add_scalar('msrvid/train/kl_div_loss', total_loss, epoch)
+            self.writer.add_scalar('msrvid/train/kl_div_loss', total_loss / len(self.train_loader.dataset.examples), epoch)
 
         return left_out_val_a, left_out_val_b, left_out_val_ext_feats, left_out_val_labels
 
@@ -67,15 +69,17 @@ class MSRVIDTrainer(Trainer):
             all_predictions, all_true_labels = [], []
             val_kl_div_loss = 0
             for i in range(len(left_out_a)):
-                output = self.model(left_out_a[i], left_out_b[i], left_out_ext_feats[i])
-                val_kl_div_loss += F.kl_div(output, left_out_label[i], size_average=False).data[0]
-                predict_classes = torch.arange(0, self.train_loader.dataset.NUM_CLASSES).expand(len(left_out_a[i]), self.train_loader.dataset.NUM_CLASSES)
-                if self.train_loader.device != -1:
-                    with torch.cuda.device(self.train_loader.device):
-                        predict_classes = predict_classes.cuda()
+                # Select embedding
+                sent1 = self.embedding(left_out_a[i]).transpose(1, 2)
+                sent2 = self.embedding(left_out_b[i]).transpose(1, 2)
 
-                predictions = (predict_classes * output.data.exp()).sum(dim=1)
-                true_labels = (predict_classes * left_out_label[i].data).sum(dim=1)
+                output = self.model(sent1, sent2, left_out_ext_feats[i])
+                val_kl_div_loss += F.kl_div(output, left_out_label[i], size_average=False).item()
+                predict_classes = left_out_a[i].new_tensor(torch.arange(0, self.train_loader.dataset.NUM_CLASSES))\
+                                    .float().expand(len(left_out_a[i]), self.train_loader.dataset.NUM_CLASSES)
+
+                predictions = (predict_classes * output.detach().exp()).sum(dim=1)
+                true_labels = (predict_classes * left_out_label[i].detach()).sum(dim=1)
                 all_predictions.append(predictions)
                 all_true_labels.append(true_labels)
 
@@ -88,7 +92,7 @@ class MSRVIDTrainer(Trainer):
                 self.writer.add_scalar('msrvid/dev/pearson_r', pearson_r, epoch)
 
             for param_group in self.optimizer.param_groups:
-                self.logger.info('Validation size: %s Pearson\'s r: %s', output.size()[0], pearson_r)
+                self.logger.info('Validation size: %s Pearson\'s r: %s', output.size(0), pearson_r)
                 self.logger.info('Learning rate: %s', param_group['lr'])
 
                 if self.use_tensorboard:
@@ -105,7 +109,7 @@ class MSRVIDTrainer(Trainer):
 
             if pearson_r > best_dev_score:
                 best_dev_score = pearson_r
-                torch.save(self.model, self.model_outfile)
+                save_checkpoint(epoch, self.model.arch, self.model.state_dict(), self.optimizer.state_dict(), best_dev_score, self.model_outfile)
 
             if abs(prev_loss - val_kl_div_loss) <= 0.0005:
                 self.logger.info('Early stopping. Loss changed by less than 0.0005.')
