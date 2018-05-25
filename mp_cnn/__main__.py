@@ -13,6 +13,7 @@ from common.evaluation import EvaluatorFactory
 from common.train import TrainerFactory
 from utils.serialization import load_checkpoint
 from .model import MPCNN
+from .lite_model import MPCNNLite
 
 
 def get_logger():
@@ -39,6 +40,7 @@ def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_si
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch implementation of Multi-Perspective CNN')
     parser.add_argument('model_outfile', help='file to save final model')
+    parser.add_argument('--arch', help='model architecture to use', choices=['mpcnn', 'mpcnn_lite'], default='mpcnn')
     parser.add_argument('--dataset', help='dataset to use, one of [sick, msrvid, trecqa, wikiqa]', default='sick')
     parser.add_argument('--word-vectors-dir', help='word vectors directory',
                         default=os.path.join(os.pardir, 'Castor-data', 'embeddings', 'GloVe'))
@@ -95,7 +97,9 @@ if __name__ == '__main__':
 
     filter_widths = list(range(1, args.max_window_size + 1)) + [np.inf]
     ext_feats = dataset_cls.EXT_FEATS if args.sparse_features else 0
-    model = MPCNN(args.word_vectors_dim, args.holistic_filters, args.per_dim_filters, filter_widths,
+
+    model_cls = MPCNN if args.arch == 'mpcnn' else MPCNNLite
+    model = model_cls(args.word_vectors_dim, args.holistic_filters, args.per_dim_filters, filter_widths,
                   args.hidden_units, dataset_cls.NUM_CLASSES, args.dropout, ext_feats,
                   args.attention, args.wide_conv)
 
