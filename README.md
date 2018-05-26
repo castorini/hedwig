@@ -27,9 +27,8 @@ Each model directory has a `README.md` with further details.
 **If you are an internal Castor contributor and is planning to use the Data System Group's GPU machines in the lab,
 please follow the instructions [here](./docs/internal-instructions.md) instead.**
 
-Copy and run the command at [https://pytorch.org/](https://pytorch.org/) for your environment.
-PyTorch recommends the Anaconda environment, which we use in our lab. We are currently targeting PyTorch 0.4 for our codebase.
-
+Castor is designed for Python 3.6 and [PyTorch](https://pytorch.org/) 0.4.
+PyTorch recommends [Anaconda](https://www.anaconda.com/distribution/) for managing your environment.
 The typical installation command is
 
 ```bash
@@ -53,11 +52,12 @@ Please also run the following inside the `utils` directory to build the `trec_ev
 **If you are an internal Castor contributor and is planning to use the Data System Group's GPU machines in the lab,
 please follow the instructions [here](./docs/internal-instructions.md) instead.**
 
-Data associated for use with this repository can be found at: https://git.uwaterloo.ca/jimmylin/Castor-data.git.
+To fully take advantage of code here, clone these other two repos:
 
-Pre-trained models can be found at: https://git.uwaterloo.ca/jimmylin/Castor-models.
++ [`Castor-data`](https://git.uwaterloo.ca/jimmylin/Castor-data): embeddings, datasets, etc.
++ [`Caster-models`](https://git.uwaterloo.ca/jimmylin/Castor-models): pre-trained models
 
-Your directory structure should look like
+Organize your directory structure as follows:
 ```
 .
 ├── Castor
@@ -65,7 +65,7 @@ Your directory structure should look like
 └── Castor-models
 ```
 
-For example (if you use HTTPS instead of SSH):
+For example (using HTTPS):
 
 ```bash
 git clone https://github.com/castorini/Castor.git
