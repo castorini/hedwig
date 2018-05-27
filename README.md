@@ -18,14 +18,14 @@ For paraphrase detection, question answering, etc.
 + [SM-CNN](./sm_cnn/): Siamese CNN for ranking texts [(Severyn and Moschitti, SIGIR 2015)](https://dl.acm.org/citation.cfm?id=2767738)
 + [MP-CNN](./mp_cnn/): Multi-Perspective CNN [(He et al., EMNLP 2015)](http://anthology.aclweb.org/D/D15/D15-1181.pdf)
 + [NCE](./nce/): Noise-Contrastive Estimation for answer selection applied on SM-CNN and MP-CNN [(Rao et al., CIKM 2016)](https://dl.acm.org/citation.cfm?id=2983872)
++ [VDPWI](./vdpwi): Very-Deep Pairwise Word Interaction Neural Networks for modeling textual similarity [(He and Lin, NAACL 2016)](http://www.aclweb.org/anthology/N16-1108)
 + [IDF Baseline](./idf_baseline/): IDF overlap between question and candidate answers
 
 Each model directory has a `README.md` with further details.
 
 ## Setting up PyTorch
 
-**If you are an internal Castor contributor and is planning to use the Data System Group's GPU machines in the lab,
-please follow the instructions [here](./docs/internal-instructions.md) instead.**
+**If you are an internal Castor contributor using GPU machines in the lab, follow the instructions [here](./docs/internal-instructions.md).**
 
 Castor is designed for Python 3.6 and [PyTorch](https://pytorch.org/) 0.4.
 PyTorch recommends [Anaconda](https://www.anaconda.com/distribution/) for managing your environment.
@@ -56,8 +56,7 @@ Finally, run the following inside the `utils` directory to build the `trec_eval`
 
 ## Data and Pre-Trained Models
 
-**If you are an internal Castor contributor and is planning to use the Data System Group's GPU machines in the lab,
-please follow the instructions [here](./docs/internal-instructions.md) instead.**
+**If you are an internal Castor contributor using GPU machines in the lab, follow the instructions [here](./docs/internal-instructions.md).**
 
 To fully take advantage of code here, clone these other two repos:
 
