@@ -18,7 +18,7 @@ For paraphrase detection, question answering, etc.
 + [SM-CNN](./sm_cnn/): Siamese CNN for ranking texts [(Severyn and Moschitti, SIGIR 2015)](https://dl.acm.org/citation.cfm?id=2767738)
 + [MP-CNN](./mp_cnn/): Multi-Perspective CNN [(He et al., EMNLP 2015)](http://anthology.aclweb.org/D/D15/D15-1181.pdf)
 + [NCE](./nce/): Noise-Contrastive Estimation for answer selection applied on SM-CNN and MP-CNN [(Rao et al., CIKM 2016)](https://dl.acm.org/citation.cfm?id=2983872)
-+ [VDPWI](./vdpwi): Very-Deep Pairwise Word Interaction Neural Networks for modeling textual similarity [(He and Lin, NAACL 2016)](http://www.aclweb.org/anthology/N16-1108)
++ [VDPWI](./vdpwi): Very-Deep Pairwise Word Interaction NNs for modeling textual similarity [(He and Lin, NAACL 2016)](http://www.aclweb.org/anthology/N16-1108)
 + [IDF Baseline](./idf_baseline/): IDF overlap between question and candidate answers
 
 Each model directory has a `README.md` with further details.
