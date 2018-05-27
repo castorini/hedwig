@@ -29,16 +29,23 @@ Each model directory has a `README.md` with further details.
 
 Castor is designed for Python 3.6 and [PyTorch](https://pytorch.org/) 0.4.
 PyTorch recommends [Anaconda](https://www.anaconda.com/distribution/) for managing your environment.
-The typical installation command is
+We'd recommend creating a custom environment as follows:
 
-```bash
-conda install pytorch torchvision -c pytorch
+```
+$ conda create --name castor python=3.6
+$ source activate castor
+```
+
+And installing the packages as follows:
+
+```
+$ conda install pytorch torchvision -c pytorch
 ```
 
 Other Python packages we use can be installed via pip:
 
-```bash
-pip install -r requirements.txt
+```
+$ pip install -r requirements.txt
 ```
 
 Code depends on data from NLTK (e.g., stopwords) so you'll have to download them. Run the Python interpreter and type the commands:
@@ -51,7 +58,7 @@ Code depends on data from NLTK (e.g., stopwords) so you'll have to download them
 Finally, run the following inside the `utils` directory to build the `trec_eval` tool for evaluating certain datasets.
 
 ```bash
-./get_trec_eval.sh
+$ ./get_trec_eval.sh
 ```
 
 ## Data and Pre-Trained Models
@@ -64,6 +71,7 @@ To fully take advantage of code here, clone these other two repos:
 + [`Caster-models`](https://git.uwaterloo.ca/jimmylin/Castor-models): pre-trained models
 
 Organize your directory structure as follows:
+
 ```
 .
 ├── Castor
@@ -74,9 +82,9 @@ Organize your directory structure as follows:
 For example (using HTTPS):
 
 ```bash
-git clone https://github.com/castorini/Castor.git
-git clone https://git.uwaterloo.ca/jimmylin/Castor-data.git
-git clone https://git.uwaterloo.ca/jimmylin/Castor-models.git
+$ git clone https://github.com/castorini/Castor.git
+$ git clone https://git.uwaterloo.ca/jimmylin/Castor-data.git
+$ git clone https://git.uwaterloo.ca/jimmylin/Castor-models.git
 ```
 
 After cloning the Castor-data repo, you need to unzip embeddings and run data pre-processing scripts. You can choose
@@ -84,5 +92,5 @@ to follow instructions under each dataset and embedding directory separately, or
 to do all of the steps for you:
 
 ```bash
-./setup.sh
+$ ./setup.sh
 ```
