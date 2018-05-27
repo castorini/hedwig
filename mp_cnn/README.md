@@ -1,23 +1,44 @@
-# MP-CNN PyTorch Implementation
+# MP-CNN (and "Lite" Variants)
 
-This is a PyTorch implementation of the following paper
+This is a PyTorch reimplementation of the following paper:
 
-* Hua He, Kevin Gimpel, and Jimmy Lin. [Multi-Perspective Sentence Similarity Modeling with Convolutional Neural Networks](http://aclweb.org/anthology/D/D15/D15-1181.pdf). *Proceedings of the 2015 Conference on Empirical Methods in Natural Language Processing (EMNLP 2015)*, pages 1576-1586.
++ Hua He, Kevin Gimpel, and Jimmy Lin. [Multi-Perspective Sentence Similarity Modeling with Convolutional Neural Networks](http://aclweb.org/anthology/D/D15/D15-1181.pdf). *Proceedings of the 2015 Conference on Empirical Methods in Natural Language Processing (EMNLP 2015)*, pages 1576-1586.
+
+On top of which we performed additional ablation experiments and explored a number of variants, as described in:
+
++ Zhucheng Tu. [An Experimental Analysis of Multi-Perspective Convolutional Neural Networks](https://uwspace.uwaterloo.ca/handle/10012/13297). Master's Thesis, Computer Science, University of Waterloo, 2018.
 
 Please ensure you have followed instructions in the main [README](../README.md) doc before running any further commands in this doc.
 The commands in this doc assume you are under the root directory of the Castor repo.
 
 ## Pre-Trained Models
 
-We have pre-trained models for SICK, TrecQA, and WikiQA in the [Castor-models](https://git.uwaterloo.ca/jimmylin/Castor-models) repository. They are trained using the commands in each of the dataset sections below and the evaluation metrics match the reported values in those sections in our environment.
+We provide pre-trained models for SICK, TrecQA, and WikiQA in the [Castor-models](https://git.uwaterloo.ca/jimmylin/Castor-models) repository. They are trained using the commands in each of the dataset sections below; evaluation metrics match the reported values in those sections in our environment.
 
-| Dataset   | Model file                 | Command to run pre-trained model                                                                                       |
-| --------- |:--------------------------:|:----------------------------------------------------------------------------------------------------------------------:|
-| SICK      | mp_cnn/mpcnn.sick.model    | `python -m mp_cnn ../Castor-models/mp_cnn/mpcnn.sick.model --dataset sick --skip-training`                             |
-| TrecQA    | mp_cnn/mpcnn.trecqa.model  | `python -m mp_cnn ../Castor-models/mp_cnn/mpcnn.trecqa.model --dataset trecqa --holistic-filters 200 --skip-training`  |
-| WikiQA    | mp_cnn/mpcnn.wikiqa.model  | `python -m mp_cnn ../Castor-models/mp_cnn/mpcnn.wikiqa.model --dataset wikiqa --holistic-filters 100 --skip-training`  |
+**SICK** ([`mp_cnn/mpcnn.sick.model`](https://git.uwaterloo.ca/jimmylin/Castor-models/tree/master/mp_cnn))
 
-If you want to train them yourself, please read on.
+```
+$ python -m mp_cnn ../Castor-models/mp_cnn/mpcnn.sick.model --dataset sick \
+    --skip-training
+```
+
+**TrecQA** ([`mp_cnn/mpcnn.trecqa.model`](https://git.uwaterloo.ca/jimmylin/Castor-models/tree/master/mp_cnn))
+
+```
+$ python -m mp_cnn ../Castor-models/mp_cnn/mpcnn.trecqa.model --dataset trecqa \
+    --holistic-filters 200 --skip-training
+```
+
+**WikiQA** ([`mp_cnn/mpcnn.wikiqa.model`](https://git.uwaterloo.ca/jimmylin/Castor-models/tree/master/mp_cnn))
+
+```
+$ python -m mp_cnn ../Castor-models/mp_cnn/mpcnn.wikiqa.model --dataset wikiqa \
+    --holistic-filters 100 --skip-training
+```
+
+The commands above assume GPU; for running on the CPU, add `--device -1`.
+
+If you want to train the models yourself, please read on.
 
 ## SICK Dataset
 
