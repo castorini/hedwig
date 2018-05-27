@@ -4,14 +4,14 @@ This is the common repo for PyTorch deep learning models by the Data Systems Gro
 
 ## Models
 
-### Predictions Over One Input Sequence
+### Predictions Over One Input Text Sequence
 
 For sentiment analysis, topic classification, etc.
 
 + [Kim CNN](./kim_cnn/): baseline convolutional neural network for sentence classification [(Kim, EMNLP 2014)](http://www.aclweb.org/anthology/D14-1181)
 + [conv-RNN](./conv_rnn): convolutional RNN [(Wang et al., KDD 2017)](https://dl.acm.org/citation.cfm?id=3098140)
 
-### Predictions Over Two Input Sequences
+### Predictions Over Two Input Text Sequences
 
 For paraphrase detection, question answering, etc.
 
@@ -41,7 +41,14 @@ Other Python packages we use can be installed via pip:
 pip install -r requirements.txt
 ```
 
-Please also run the following inside the `utils` directory to build the `trec_eval` tool for evaluating certain datasets.
+Code depends on data from NLTK (e.g., stopwords) so you'll have to download them. Run the Python interpreter and type the commands:
+
+```python
+>>> import nltk
+>>> nltk.download()
+```
+
+Finally, run the following inside the `utils` directory to build the `trec_eval` tool for evaluating certain datasets.
 
 ```bash
 ./get_trec_eval.sh
@@ -74,7 +81,7 @@ git clone https://git.uwaterloo.ca/jimmylin/Castor-models.git
 ```
 
 After cloning the Castor-data repo, you need to unzip embeddings and run data pre-processing scripts. You can choose
-to follow instructions under each dataset / embedding directory separately, or just run the following script in Castor-data
+to follow instructions under each dataset and embedding directory separately, or just run the following script in Castor-data
 to do all of the steps for you:
 
 ```bash
