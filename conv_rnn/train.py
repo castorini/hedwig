@@ -94,7 +94,7 @@ def train(**kwargs):
         for m_in, m_out in loader:
             scores = conv_rnn(m_in)
             loss = criterion(scores, m_out).cpu().data[0]
-            n_correct = (torch.max(scores, 1)[1].view(m_in.size(0)).data == m_out.data).sum()
+            n_correct = (torch.max(scores, 1)[1].view(m_in.size(0)).data == m_out.data).float().sum().item()
             accuracy = n_correct / m_in.size(0)
             scheduler.step(accuracy)
             if dev and accuracy >= evaluate.best_dev:
@@ -122,7 +122,7 @@ def train(**kwargs):
             loss = criterion(scores, train_out)
             loss.backward()
             optimizer.step()
-            accuracy = (torch.max(scores, 1)[1].view(-1).data == train_out.data).sum() / mbatch_size
+            accuracy = (torch.max(scores, 1)[1].view(-1).data == train_out.data).float().sum() / mbatch_size
             if verbose and i % (mbatch_size * 10) == 0:
                 print("accuracy: {}, {} / {}".format(accuracy, j * mbatch_size, len(train_set)))
             i += mbatch_size

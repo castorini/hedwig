@@ -72,8 +72,8 @@ class ConvRNNModel(nn.Module):
         x = nn_func.relu(x) # shape: (batch, channels, seq len)
         x = nn_func.max_pool1d(x, x.size(2)) # shape: (batch, channels)
         out = [t.squeeze(1) for t in rnn_out.chunk(2, 1)]
-        out.append(x)
-        x = torch.cat(out, 1).squeeze(2)
+        out.append(x.squeeze(-1))
+        x = torch.cat(out, 1)
         x = nn_func.relu(self.fc1(x))
         return self.fc2(x)
 
