@@ -4,17 +4,15 @@ import random
 import torch
 import torch.nn as nn
 import numpy as np
-from torchtext import data
+
+from datasets.sst import SST1
 from args import get_args
 from model import KimCNN
-from SST1 import SST1Dataset
-from utils import clean_str_sst
 
 # Set default configuration in : args.py
 args = get_args()
 
 # Set random seed for reproducibility
-
 torch.manual_seed(args.seed)
 torch.backends.cudnn.deterministic = True
 if not args.cuda:
@@ -28,54 +26,21 @@ if torch.cuda.is_available() and not args.cuda:
 np.random.seed(args.seed)
 random.seed(args.seed)
 
-# Set up the data for training
-# SST-1
+# Set up the data for training SST-1
 if args.dataset == 'SST-1':
-    TEXT = data.Field(batch_first=True, tokenize=clean_str_sst)
-    LABEL = data.Field(sequential=False)
-    train, dev, test = SST1Dataset.splits(TEXT, LABEL)
-
-TEXT.build_vocab(train, min_freq=2)
-LABEL.build_vocab(train)
-
-if os.path.isfile(args.vector_cache):
-    stoi, vectors, dim = torch.load(args.vector_cache)
-    TEXT.vocab.vectors = torch.Tensor(len(TEXT.vocab), dim)
-    for i, token in enumerate(TEXT.vocab.itos):
-        wv_index = stoi.get(token, None)
-        if wv_index is not None:
-            TEXT.vocab.vectors[i] = vectors[wv_index]
-        else:
-            TEXT.vocab.vectors[i] = torch.Tensor.zero_(TEXT.vocab.vectors[i])
-else:
-    print("Error: Need word embedding pt file")
-    exit(1)
-
-#print('len(TEXT.vocab)', len(TEXT.vocab))
-#print('TEXT.vocab.vectors.size()', TEXT.vocab.vectors.size())
-
-train_iter = data.Iterator(train, batch_size=args.batch_size, device=args.gpu, train=True, repeat=False,
-                                   sort=False, shuffle=True)
-dev_iter = data.Iterator(dev, batch_size=args.batch_size, device=args.gpu, train=False, repeat=False,
-                                   sort=False, shuffle=False)
-test_iter = data.Iterator(test, batch_size=args.batch_size, device=args.gpu, train=False, repeat=False,
-                                   sort=False, shuffle=False)
+    train_iter, dev_iter, test_iter = SST1.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu)
 
 config = args
-config.target_class = len(LABEL.vocab)
-config.words_num = len(TEXT.vocab)
-config.embed_num = len(TEXT.vocab)
+config.target_class = train_iter.dataset.NUM_CLASSES
+config.words_num = len(train_iter.dataset.TEXT_FIELD.vocab)
+config.embed_num = len(train_iter.dataset.TEXT_FIELD.vocab)
 
-
-#print(config)
 print("Dataset {}    Mode {}".format(args.dataset, args.mode))
-print("VOCAB num",len(TEXT.vocab))
-print("LABEL.target_class:", len(LABEL.vocab))
-print("LABELS:",LABEL.vocab.itos)
-print("Train instance", len(train))
-print("Dev instance", len(dev))
-print("Test instance", len(test))
-
+print("VOCAB num",len(train_iter.dataset.TEXT_FIELD.vocab))
+print("LABEL.target_class:", train_iter.dataset.NUM_CLASSES)
+print("Train instance", len(train_iter.dataset))
+print("Dev instance", len(dev_iter.dataset))
+print("Test instance", len(test_iter.dataset))
 
 if args.resume_snapshot:
     if args.cuda:
@@ -84,8 +49,8 @@ if args.resume_snapshot:
         model = torch.load(args.resume_snapshot, map_location=lambda storage, location: storage)
 else:
     model = KimCNN(config)
-    model.static_embed.weight.data.copy_(TEXT.vocab.vectors)
-    model.non_static_embed.weight.data.copy_(TEXT.vocab.vectors)
+    model.static_embed.weight.data.copy_(train_iter.dataset.TEXT_FIELD.vocab.vectors)
+    model.non_static_embed.weight.data.copy_(train_iter.dataset.TEXT_FIELD.vocab.vectors)
     if args.cuda:
         model.cuda()
         print("Shift model to GPU")
@@ -119,11 +84,9 @@ while True:
     n_correct, n_total = 0, 0
 
     for batch_idx, batch in enumerate(train_iter):
-        # Batch size : (Sentence Length, Batch_size)
         iterations += 1
-        model.train(); optimizer.zero_grad()
-        #print("Text Size:", batch.text.size())
-        #print("Label Size:", batch.label.size())
+        model.train()
+        optimizer.zero_grad()
         scores = model(batch)
         n_correct += (torch.max(scores, 1)[1].view(batch.label.size()).data == batch.label.data).sum()
         n_total += batch.batch_size
@@ -134,22 +97,22 @@ while True:
 
         optimizer.step()
 
-
         # Evaluate performance on validation set
         if iterations % args.dev_every == 1:
             # switch model into evalutaion mode
-            model.eval(); dev_iter.init_epoch()
+            model.eval()
+            dev_iter.init_epoch()
             n_dev_correct = 0
             dev_losses = []
             for dev_batch_idx, dev_batch in enumerate(dev_iter):
                 scores = model(dev_batch)
                 n_dev_correct += (torch.max(scores, 1)[1].view(dev_batch.label.size()).data == dev_batch.label.data).sum()
                 dev_loss = criterion(scores, dev_batch.label)
-                dev_losses.append(dev_loss.data[0])
-            dev_acc = 100. * n_dev_correct / len(dev)
+                dev_losses.append(dev_loss.item())
+            dev_acc = 100. * n_dev_correct / len(dev_iter.dataset)
             print(dev_log_template.format(time.time() - start,
                                           epoch, iterations, 1 + batch_idx, len(train_iter),
-                                          100. * (1 + batch_idx) / len(train_iter), loss.data[0],
+                                          100. * (1 + batch_idx) / len(train_iter), loss.item(),
                                           sum(dev_losses) / len(dev_losses), train_acc, dev_acc))
 
             # Update validation results
@@ -168,25 +131,5 @@ while True:
             # print progress message
             print(log_template.format(time.time() - start,
                                       epoch, iterations, 1 + batch_idx, len(train_iter),
-                                      100. * (1 + batch_idx) / len(train_iter), loss.data[0], ' ' * 8,
+                                      100. * (1 + batch_idx) / len(train_iter), loss.item(), ' ' * 8,
                                       n_correct / n_total * 100, ' ' * 12))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

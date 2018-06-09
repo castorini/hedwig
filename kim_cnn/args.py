@@ -22,10 +22,13 @@ def get_args():
     parser.add_argument('--embed_dim', type=int, default=300)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--epoch_decay', type=int, default=15)
-    parser.add_argument('--vector_cache', type=str, default="data/word2vec.sst-1.pt")
+    parser.add_argument('--data_dir', help='word vectors directory',
+                        default=os.path.join(os.pardir, os.pardir, 'Castor-data', 'datasets', 'SST'))
+    parser.add_argument('--word_vectors_dir', help='word vectors directory',
+                        default=os.path.join(os.pardir, os.pardir, 'Castor-data', 'embeddings', 'word2vec'))
+    parser.add_argument('--word_vectors_file', help='word vectors filename', default='GoogleNews-vectors-negative300.txt')
     parser.add_argument('--trained_model', type=str, default="")
     parser.add_argument('--weight_decay',type=float, default=0)
-
 
     args = parser.parse_args()
     return args

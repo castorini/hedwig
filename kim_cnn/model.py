@@ -3,6 +3,7 @@ import torch.nn as nn
 
 import torch.nn.functional as F
 
+
 class KimCNN(nn.Module):
     def __init__(self, config):
         super(KimCNN, self).__init__()
@@ -29,7 +30,6 @@ class KimCNN(nn.Module):
 
         self.dropout = nn.Dropout(config.dropout)
         self.fc1 = nn.Linear(Ks * output_channel, target_class)
-
 
     def forward(self, x):
         x = x.text
