@@ -3,7 +3,7 @@ import subprocess
 import time
 
 
-def get_map_mrr(qids, predictions, labels, device=0):
+def get_map_mrr(qids, predictions, labels, device=0, keep_results=False):
     """
     Get the map and mrr using the trec_eval utility.
     qids, predictions, labels should have the same length.
@@ -30,7 +30,11 @@ def get_map_mrr(qids, predictions, labels, device=0):
     mean_average_precision = float(trec_out_lines[0].split('\t')[-1])
     mean_reciprocal_rank = float(trec_out_lines[1].split('\t')[-1])
 
-    os.remove(qrel_fname)
-    os.remove(results_fname)
+    if keep_results:
+        print("Saving prediction file to {}".format(results_fname))
+        print("Saving qrel file to {}".format(qrel_fname))
+    else:
+        os.remove(results_fname)
+        os.remove(qrel_fname)
 
     return mean_average_precision, mean_reciprocal_rank

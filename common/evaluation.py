@@ -22,7 +22,7 @@ class EvaluatorFactory(object):
     }
 
     @staticmethod
-    def get_evaluator(dataset_cls, model, embedding, data_loader, batch_size, device, nce=False):
+    def get_evaluator(dataset_cls, model, embedding, data_loader, batch_size, device, nce=False, keep_results=False):
         if data_loader is None:
             return None
 
@@ -38,5 +38,5 @@ class EvaluatorFactory(object):
             raise ValueError('{} is not implemented.'.format(dataset_cls))
 
         return evaluator_map[dataset_cls.NAME](
-            dataset_cls, model, embedding, data_loader, batch_size, device
+            dataset_cls, model, embedding, data_loader, batch_size, device, keep_results
         )

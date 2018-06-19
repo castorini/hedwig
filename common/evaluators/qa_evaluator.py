@@ -28,7 +28,9 @@ class QAEvaluator(Evaluator):
 
         qids = list(map(lambda n: int(round(n * 10, 0)) / 10, qids))
 
-        mean_average_precision, mean_reciprocal_rank = get_map_mrr(qids, predictions, true_labels, self.data_loader.device)
+        mean_average_precision, mean_reciprocal_rank = get_map_mrr(qids, predictions, true_labels,
+                                                                   self.data_loader.device,
+                                                                   keep_results=self.keep_results)
         test_cross_entropy_loss /= len(batch.dataset.examples)
 
         return [mean_average_precision, mean_reciprocal_rank, test_cross_entropy_loss], ['map', 'mrr', 'cross entropy loss']
