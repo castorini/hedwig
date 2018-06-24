@@ -3,7 +3,7 @@ import os
 import random
 
 from torch import utils
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from tqdm import tqdm
 import numpy as np
 import torch
 import torch.nn as nn
@@ -79,24 +79,21 @@ def train(**kwargs):
     conv_rnn.train()
     criterion = nn.CrossEntropyLoss()
     parameters = list(filter(lambda p: p.requires_grad, conv_rnn.parameters()))
-    optimizer = torch.optim.SGD(parameters, lr=lr, weight_decay=weight_decay, momentum=0.9)
-    scheduler = ReduceLROnPlateau(optimizer, patience=kwargs["dev_per_epoch"] * 4)
+    optimizer = torch.optim.Adam(parameters, lr=lr, weight_decay=weight_decay)
     train_set, dev_set, test_set = data.SSTDataset.load_sst_sets("data")
 
     collate_fn = conv_rnn.convert_dataset
-    train_loader = utils.data.DataLoader(train_set, shuffle=True, batch_size=mbatch_size, drop_last=True, 
-        collate_fn=collate_fn)
+    train_loader = utils.data.DataLoader(train_set, shuffle=True, batch_size=mbatch_size, collate_fn=collate_fn)
     dev_loader = utils.data.DataLoader(dev_set, batch_size=len(dev_set), collate_fn=collate_fn)
     test_loader = utils.data.DataLoader(test_set, batch_size=len(test_set), collate_fn=collate_fn)
 
     def evaluate(loader, dev=True):
         conv_rnn.eval()
         for m_in, m_out in loader:
-            scores = conv_rnn(m_in)
-            loss = criterion(scores, m_out).cpu().data[0]
-            n_correct = (torch.max(scores, 1)[1].view(m_in.size(0)).data == m_out.data).float().sum().item()
-            accuracy = n_correct / m_in.size(0)
-            scheduler.step(accuracy)
+            scores = conv_rnn(*m_in)
+            loss = criterion(scores, m_out).item()
+            n_correct = (torch.max(scores, 1)[1].view(m_in[0].size(0)).data == m_out.data).float().sum().item()
+            accuracy = n_correct / m_in[0].size(0)
             if dev and accuracy >= evaluate.best_dev:
                 evaluate.best_dev = accuracy
                 print("Saving best model ({})...".format(accuracy))
@@ -111,23 +108,13 @@ def train(**kwargs):
         if verbose:
             print()
         i = 0
-        for j, (train_in, train_out) in enumerate(train_loader):
+        for (j, (train_in, train_out)), _ in zip(enumerate(train_loader), tqdm(range(len(train_loader)))):
             optimizer.zero_grad()
-
-            if not kwargs["no_cuda"]:
-                train_in.cuda()
-                train_out.cuda()
-
-            scores = conv_rnn(train_in)
+            scores = conv_rnn(*train_in)
             loss = criterion(scores, train_out)
             loss.backward()
             optimizer.step()
-            accuracy = (torch.max(scores, 1)[1].view(-1).data == train_out.data).float().sum() / mbatch_size
-            if verbose and i % (mbatch_size * 10) == 0:
-                print("accuracy: {}, {} / {}".format(accuracy, j * mbatch_size, len(train_set)))
-            i += mbatch_size
-            if i % (len(train_set) // kwargs["dev_per_epoch"]) < mbatch_size:
-                evaluate(dev_loader)
+        evaluate(dev_loader)
     evaluate(test_loader, dev=False)
     return evaluate.best_dev
 
@@ -153,10 +140,10 @@ def main():
     parser.add_argument("--dev_per_epoch", default=9, type=int)
     parser.add_argument("--fc_size", default=200, type=int)
     parser.add_argument("--gpu_number", default=0, type=int)
-    parser.add_argument("--hidden_size", default=200, type=int)
+    parser.add_argument("--hidden_size", default=150, type=int)
     parser.add_argument("--input_file", default="saves/model.pt", type=str)
-    parser.add_argument("--lr", default=1E-1, type=float)
-    parser.add_argument("--mbatch_size", default=64, type=int)
+    parser.add_argument("--lr", default=5E-4, type=float)
+    parser.add_argument("--mbatch_size", default=16, type=int)
     parser.add_argument("--n_epochs", default=30, type=int)
     parser.add_argument("--n_feature_maps", default=200, type=float)
     parser.add_argument("--n_labels", default=5, type=int)
@@ -167,7 +154,7 @@ def main():
     parser.add_argument("--rnn_type", choices=["lstm", "gru"], default="lstm", type=str)
     parser.add_argument("--seed", default=3, type=int)
     parser.add_argument("--quiet", action="store_true", default=False)
-    parser.add_argument("--weight_decay", default=1E-4, type=float)
+    parser.add_argument("--weight_decay", default=1E-3, type=float)
     args = parser.parse_args()
     if args.random_search:
         do_random_search(vars(args))

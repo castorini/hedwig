@@ -3,9 +3,11 @@ import random
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as nn_func
+import torch.nn.functional as F
+import torch.nn.utils.rnn as rnn_utils
 
 import data
+
 
 class ConvRNNModel(nn.Module):
     def __init__(self, word_model, **config):
@@ -17,14 +19,7 @@ class ConvRNNModel(nn.Module):
         self.batch_size = config["mbatch_size"]
         n_fmaps = config["n_feature_maps"]
         self.rnn_type = config["rnn_type"]
-
-        self.h_0_cache = torch.autograd.Variable(torch.zeros(2, self.batch_size, self.hidden_size))
-        self.c_0_cache = torch.autograd.Variable(torch.zeros(2, self.batch_size, self.hidden_size))
-
         self.no_cuda = config["no_cuda"]
-        if not self.no_cuda:
-            self.h_0_cache = self.h_0_cache.cuda()
-            self.c_0_cache = self.c_0_cache.cuda()
 
         if self.rnn_type.upper() == "LSTM":
             self.bi_rnn = nn.LSTM(embedding_dim, self.hidden_size, 1, batch_first=True, bidirectional=True)
@@ -40,42 +35,39 @@ class ConvRNNModel(nn.Module):
         dataset = np.stack(dataset)
         model_in = dataset[:, 1].reshape(-1)
         model_out = dataset[:, 0].flatten().astype(np.int)
-        model_out = torch.autograd.Variable(torch.from_numpy(model_out))
-        model_in = self.preprocess(model_in)
-        model_in = torch.autograd.Variable(model_in)
+        model_out = torch.from_numpy(model_out)
+        indices, lengths = self.preprocess(model_in)
         if not self.no_cuda:
             model_out = model_out.cuda()
-            model_in = model_in.cuda()
-        return (model_in, model_out)
+            indices = indices.cuda()
+            lengths = lengths.cuda()
+        lengths, sort_idx = torch.sort(lengths, descending=True)
+        indices = indices[sort_idx]
+        model_out = model_out[sort_idx]
+        return ((indices, lengths), model_out)
 
     def preprocess(self, sentences):
-        return torch.from_numpy(np.array(self.word_model.lookup(sentences)))
+        indices, lengths = self.word_model.lookup(sentences)
+        return torch.LongTensor(indices), torch.LongTensor(lengths)
 
-    def forward(self, x):
-        x = self.word_model(x) # shape: (batch, max sent, embed dim)
-        if x.size(0) == self.batch_size:
-            h_0 = self.h_0_cache
-            c_0 = self.c_0_cache
-        else:
-            h_0 = torch.autograd.Variable(torch.zeros(2, x.size(0), self.hidden_size))
-            c_0 = torch.autograd.Variable(torch.zeros(2, x.size(0), self.hidden_size))
-            if not self.no_cuda:
-                h_0 = h_0.cuda()
-                c_0 = c_0.cuda()
+    def forward(self, x, lengths):
+        x = self.word_model(x)
+        x = rnn_utils.pack_padded_sequence(x, lengths, batch_first=True)
+        rnn_seq, rnn_out = self.bi_rnn(x)
         if self.rnn_type.upper() == "LSTM":
-            rnn_seq, rnn_out = self.bi_rnn(x, (h_0, c_0)) # shape: (batch, seq len, 2 * hidden_size), (2, batch, hidden_size)
-            rnn_out = rnn_out[0] # (h_0, c_0)
-        else:
-            rnn_seq, rnn_out = self.bi_rnn(x, h_0) # shape: (batch, 2, hidden_size)
+            rnn_out = rnn_out[0]
+        
+        rnn_seq, _ = rnn_utils.pad_packed_sequence(rnn_seq, batch_first=True)
         rnn_out.data = rnn_out.data.permute(1, 0, 2)
-        x = self.conv(rnn_seq.unsqueeze(1)).squeeze(3) # shape: (batch, channels, seq len)
-        x = nn_func.relu(x) # shape: (batch, channels, seq len)
-        x = nn_func.max_pool1d(x, x.size(2)) # shape: (batch, channels)
+        x = self.conv(rnn_seq.unsqueeze(1)).squeeze(3)
+        x = F.relu(x)
+        x = F.max_pool1d(x, x.size(2))
         out = [t.squeeze(1) for t in rnn_out.chunk(2, 1)]
         out.append(x.squeeze(-1))
         x = torch.cat(out, 1)
-        x = nn_func.relu(self.fc1(x))
+        x = F.relu(self.fc1(x))
         return self.fc2(x)
+
 
 class WordEmbeddingModel(nn.Module):
     def __init__(self, id_dict, weights, unknown_vocab=[], static=True, padding_idx=0):
@@ -123,9 +115,10 @@ class SSTWordEmbeddingModel(WordEmbeddingModel):
             indices_list.append(indices)
             if len(indices) > max_len:
                 max_len = len(indices)
+        lengths = [len(x) for x in indices_list]
         for indices in indices_list:
             indices.extend([self.padding_idx] * (max_len - len(indices))) 
-        return indices_list
+        return indices_list, lengths
 
 def set_seed(seed=0, no_cuda=False):
     np.random.seed(seed)

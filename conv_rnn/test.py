@@ -27,8 +27,8 @@ def main():
 
     conv_rnn.eval()
     for test_in, test_out in test_loader:
-        scores = conv_rnn(test_in)
-        n_correct = (torch.max(scores, 1)[1].view(-1).data == test_out.data).sum()
+        scores = conv_rnn(*test_in)
+        n_correct = (torch.max(scores, 1)[1].view(-1).data == test_out.data).float().sum()
         accuracy = n_correct / len(test_set)
     print("Test set accuracy: {}".format(accuracy))
 
