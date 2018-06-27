@@ -12,7 +12,7 @@ Please ensure you have followed instructions in the main [README](../README.md) 
 To run VDPWI on the SICK dataset, use the following command. If you have any problems running it check the Troubleshooting section below.
 
 ```
-python -m vdpwi vdpwi.sick.model.castor --dataset sick --epochs 19 --epsilon 1e-7
+python -m vdpwi vdpwi.sick.model.castor --dataset sick --lr 5e-4 --optimizer rmsprop --epochs 15 --batch-size 8 --rnn-hidden-dim 256 --epsilon 1e-7
 ```
 
 ## MSRVID Dataset
