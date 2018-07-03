@@ -7,22 +7,20 @@ import torch.nn.functional as F
 class KimCNN(nn.Module):
     def __init__(self, config):
         super(KimCNN, self).__init__()
+        dataset = config.dataset
         output_channel = config.output_channel
         target_class = config.target_class
         words_num = config.words_num
         words_dim = config.words_dim
-        embed_num = config.embed_num
-        embed_dim = config.embed_dim
         self.mode = config.mode
-        Ks = 3 # There are three conv net here
+        Ks = 3 # There are three conv nets here
         if config.mode == 'multichannel':
             input_channel = 2
         else:
             input_channel = 1
         self.embed = nn.Embedding(words_num, words_dim)
-        self.static_embed = nn.Embedding(embed_num, embed_dim)
-        self.non_static_embed = nn.Embedding(embed_num, embed_dim)
-        self.static_embed.weight.requires_grad = False
+        self.static_embed = nn.Embedding.from_pretrained(dataset.TEXT_FIELD.vocab.vectors, freeze=True)
+        self.non_static_embed = nn.Embedding.from_pretrained(dataset.TEXT_FIELD.vocab.vectors, freeze=False)
 
         self.conv1 = nn.Conv2d(input_channel, output_channel, (3, words_dim), padding=(2,0))
         self.conv2 = nn.Conv2d(input_channel, output_channel, (4, words_dim), padding=(3,0))

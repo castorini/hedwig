@@ -10,56 +10,35 @@ Implementation for Convolutional Neural Networks for Sentence Classification of 
 - multichannel: A model with two sets of word vectors. Each set of vectors is treated as a 'channel' and each filter is applied to both channels, but gradients are back-propagated only through one of the channels. Hence the model is able to fine-tune one set of vectors while keeping the other static. Both channels are initialized with word2vec.# text-classification-cnn
 Implementation for Convolutional Neural Networks for Sentence Classification of [Kim (2014)](https://arxiv.org/abs/1408.5882) with PyTorch.
 
-## Requirement
-
-Assuming you already have PyTorch, just install torchtext (`pip install torchtext==0.2.0`)
-
 ## Quick Start
 
-To get the dataset, you can run this.
-```
-cd kim_cnn
-bash get_data.sh
-```
-
-To run the model on SST-1 dataset on multichannel, just run the following code.
+To run the model on SST-1 dataset on multichannel, just run the following from the Castor working directory.
 
 ```
-python train.py --mode multichannel
+python -m kim_cnn --mode multichannel
 ```
 
-The file will be saved in 
+The file will be saved in
 
 ```
-saves/best_model.pt
+kim_cnn/saves/best_model.pt
 ```
 
 To test the model, you can use the following command.
 
 ```
-python main.py --trained_model saves/best_model.pt --mode multichannel
+python -m kim_cnn --trained_model kim_cnn/saves/SST-1/multichannel_best_model.pt --mode multichannel
 ```
 
+## Dataset
 
-
-## Dataset and Embeddings 
-
-We experiment the model on the following three datasets.
+We experiment the model on the following datasets.
 
 - SST-1: Keep the original splits and train with phrase level dataset and test on sentence level dataset.
 
-**word2vec.sst-1.pt** is a subset of word2vector. We just select the word appearing in the SST-1 dataset and generate this file with the **vector_preprocess.py**(you will get this after you run get_data.sh or you can download [here](https://raw.githubusercontent.com/Impavidity/kim_cnn/master/vector_preprocess.py)) You can select these from any kind of word embedding text file and generate in following format.
-``` 
-word vector_in_one_line 
-```
-and then run 
-``` 
-python vector_preprocess.py file_in embed.pt 
-``` 
-Here you can get *embed.pt* for the embedding file. Remember change the argument in *args.py* file with your own embedding.
-
 ## Settings
-Adadelta is used for training. 
+
+Adadelta is used for training.
 
 ## Training Time
 
@@ -78,21 +57,40 @@ torch.backends.cudnn.enabled = False
 ```
 but this will take ~6-7x training time.
 
-## Results
+## SST-1 Dataset Results
 
-Deterministic Algorithm for CNN.  
+**Random**
 
-| Dev Accuracy on SST-1 |     rand      |    static    |   non-static  |  multichannel | 
-|:--------------------------:|:-----------:|:-----------:|:-------------:|:---------------:| 
-| My-Implementation      | 42.597639| 48.773842| 48.864668   | 49.046322  |  
+```
+python -m kim_cnn --mode rand --lr 0.8337 --weight_decay 0.0008987 --dropout 0.4
+```
 
-| Test Accuracy on SST-1|      rand      |    static    |    non-static |  multichannel | 
-|:--------------------------:|:-----------:|:-----------:|:-------------:|:---------------:| 
-| Kim-Implementation    | 45.0            | 45.5        | 48.0             | 47.4                 | 
-| My- Implementation    | 39.683258  | 45.972851| 48.914027|  47.330317       |
+**Static**
+
+```
+python -m kim_cnn --mode static --lr 0.8641 --weight_decay 1.44e-05 --dropout 0.3
+```
+
+**Non-static**
+
+```
+python -m kim_cnn --mode non-static --lr 0.371 --weight_decay 1.84e-05 --dropout 0.4
+```
+
+**Multichannel**
+
+```
+python -m kim_cnn --mode multichannel --lr 0.2532 --weight_decay 3.95e-05 --dropout 0.1
+```
+
+Using deterministic algorithm for cuDNN.
+
+| Test Accuracy on SST-1         |    rand    |    static    |    non-static  |  multichannel   |
+|:------------------------------:|:----------:|:------------:|:--------------:|:---------------:|
+| Paper                          |    45.0    |     45.5     |      48.0      |      47.4       |
+| PyTorch using above configs    |    41.5    |     44.7     |      47.4      |      47.5       |
 
 ## TODO
 
 - More experiments on SST-2 and subjectivity
 - Parameters tuning
-
