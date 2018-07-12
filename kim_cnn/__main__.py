@@ -12,6 +12,22 @@ from datasets.sst import SST2
 from kim_cnn.args import get_args
 from kim_cnn.model import KimCNN
 
+class UnknownWordVecCache(object):
+    """
+    Caches the first randomly generated word vector for a certain size to make it is reused.
+    """
+    cache = {}
+
+    @classmethod
+    def unk(cls, tensor):
+        size_tup = tuple(tensor.size())
+        if size_tup not in cls.cache:
+            cls.cache[size_tup] = torch.Tensor(tensor.size())
+            # choose 0.25 so unknown vectors have approximately same variance as pre-trained ones
+            # same as original implementation: https://github.com/yoonkim/CNN_sentence/blob/0a626a048757d5272a7e8ccede256a434a6529be/process_data.py#L95
+            cls.cache[size_tup].uniform_(-0.25, 0.25)
+        return cls.cache[size_tup]
+
 
 def get_logger():
     logger = logging.getLogger(__name__)
@@ -55,10 +71,10 @@ if __name__ == '__main__':
 
     # Set up the data for training SST-1
     if args.dataset == 'SST-1':
-        train_iter, dev_iter, test_iter = SST1.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu)
+        train_iter, dev_iter, test_iter = SST1.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
     # Set up the data for training SST-2
     elif args.dataset == 'SST-2':
-        train_iter, dev_iter, test_iter = SST2.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu)
+        train_iter, dev_iter, test_iter = SST2.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
     else:
         raise ValueError('Unrecognized dataset')
 

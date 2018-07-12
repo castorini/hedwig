@@ -35,6 +35,7 @@ python -m kim_cnn --trained_model kim_cnn/saves/SST-1/multichannel_best_model.pt
 We experiment the model on the following datasets.
 
 - SST-1: Keep the original splits and train with phrase level dataset and test on sentence level dataset.
+- SST-2: Same as SST-1 but with neutral reviews removed and binary labels.
 
 ## Settings
 
@@ -62,25 +63,25 @@ but this will take ~6-7x training time.
 **Random**
 
 ```
-python -m kim_cnn --mode rand --lr 0.8337 --weight_decay 0.0008987 --dropout 0.4
+python -m kim_cnn --dataset SST-1 --mode rand --lr 0.5777 --weight_decay 0.0007 --dropout 0
 ```
 
 **Static**
 
 ```
-python -m kim_cnn --mode static --lr 0.8641 --weight_decay 1.44e-05 --dropout 0.3
+python -m kim_cnn --dataset SST-1 --mode static --lr 0.3213 --weight_decay 0.0002 --dropout 0.4
 ```
 
 **Non-static**
 
 ```
-python -m kim_cnn --mode non-static --lr 0.371 --weight_decay 1.84e-05 --dropout 0.4
+python -m kim_cnn --dataset SST-1 --mode non-static --lr 0.388 --weight_decay 0.0004 --dropout 0.2
 ```
 
 **Multichannel**
 
 ```
-python -m kim_cnn --mode multichannel --lr 0.2532 --weight_decay 3.95e-05 --dropout 0.1
+python -m kim_cnn --dataset SST-1 --mode multichannel --lr 0.3782 --weight_decay 0.0002 --dropout 0.4
 ```
 
 Using deterministic algorithm for cuDNN.
@@ -88,9 +89,42 @@ Using deterministic algorithm for cuDNN.
 | Test Accuracy on SST-1         |    rand    |    static    |    non-static  |  multichannel   |
 |:------------------------------:|:----------:|:------------:|:--------------:|:---------------:|
 | Paper                          |    45.0    |     45.5     |      48.0      |      47.4       |
-| PyTorch using above configs    |    41.5    |     44.7     |      47.4      |      47.5       |
+| PyTorch using above configs    |    44.3    |     47.9     |      48.6      |      49.2       |
+
+## SST-2 Dataset Results
+
+**Random**
+
+```
+python -m kim_cnn --dataset SST-2 --mode rand --lr 0.564 --weight_decay 0.0007 --dropout 0.5
+```
+
+**Static**
+
+```
+python -m kim_cnn --dataset SST-2 --mode static --lr 0.5589 --weight_decay 0.0004 --dropout 0.5
+```
+
+**Non-static**
+
+```
+python -m kim_cnn --dataset SST-2 --mode non-static --lr 0.5794 --weight_decay 0.0003 --dropout 0.3
+```
+
+**Multichannel**
+
+```
+python -m kim_cnn --dataset SST-2 --mode multichannel --lr 0.7373 --weight_decay 0.0001 --dropout 0.1
+```
+
+Using deterministic algorithm for cuDNN.
+
+| Test Accuracy on SST-2         |    rand    |    static    |    non-static  |  multichannel   |
+|:------------------------------:|:----------:|:------------:|:--------------:|:---------------:|
+| Paper                          |    82.7    |     86.8     |      87.2      |      88.1       |
+| PyTorch using above configs    |    83.0    |     86.4     |      87.3      |      87.4       |
 
 ## TODO
 
-- More experiments on SST-2 and subjectivity
+- More experiments on subjectivity
 - Parameters tuning

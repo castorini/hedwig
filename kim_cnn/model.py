@@ -18,7 +18,8 @@ class KimCNN(nn.Module):
             input_channel = 2
         else:
             input_channel = 1
-        self.embed = nn.Embedding(words_num, words_dim)
+        rand_embed_init = torch.Tensor(words_num, words_dim).uniform_(-0.25, 0.25)
+        self.embed = nn.Embedding.from_pretrained(rand_embed_init, freeze=False)
         self.static_embed = nn.Embedding.from_pretrained(dataset.TEXT_FIELD.vocab.vectors, freeze=True)
         self.non_static_embed = nn.Embedding.from_pretrained(dataset.TEXT_FIELD.vocab.vectors, freeze=False)
 
