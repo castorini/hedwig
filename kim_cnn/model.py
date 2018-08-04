@@ -14,14 +14,22 @@ class KimCNN(nn.Module):
         words_dim = config.words_dim
         self.mode = config.mode
         Ks = 3 # There are three conv nets here
-        if config.mode == 'multichannel':
+
+        input_channel = 1
+        if config.mode == 'rand':
+            rand_embed_init = torch.Tensor(words_num, words_dim).uniform_(-0.25, 0.25)
+            self.embed = nn.Embedding.from_pretrained(rand_embed_init, freeze=False)
+        elif config.mode == 'static':
+            self.static_embed = nn.Embedding.from_pretrained(dataset.TEXT_FIELD.vocab.vectors, freeze=True)
+        elif config.mode == 'non-static':
+            self.non_static_embed = nn.Embedding.from_pretrained(dataset.TEXT_FIELD.vocab.vectors, freeze=False)
+        elif config.mode == 'multichannel':
+            self.static_embed = nn.Embedding.from_pretrained(dataset.TEXT_FIELD.vocab.vectors, freeze=True)
+            self.non_static_embed = nn.Embedding.from_pretrained(dataset.TEXT_FIELD.vocab.vectors, freeze=False)
             input_channel = 2
         else:
-            input_channel = 1
-        rand_embed_init = torch.Tensor(words_num, words_dim).uniform_(-0.25, 0.25)
-        self.embed = nn.Embedding.from_pretrained(rand_embed_init, freeze=False)
-        self.static_embed = nn.Embedding.from_pretrained(dataset.TEXT_FIELD.vocab.vectors, freeze=True)
-        self.non_static_embed = nn.Embedding.from_pretrained(dataset.TEXT_FIELD.vocab.vectors, freeze=False)
+            print("Unsupported Mode")
+            exit()
 
         self.conv1 = nn.Conv2d(input_channel, output_channel, (3, words_dim), padding=(2,0))
         self.conv2 = nn.Conv2d(input_channel, output_channel, (4, words_dim), padding=(3,0))
@@ -31,7 +39,6 @@ class KimCNN(nn.Module):
         self.fc1 = nn.Linear(Ks * output_channel, target_class)
 
     def forward(self, x):
-        x = x.text
         if self.mode == 'rand':
             word_input = self.embed(x) # (batch, sent_len, embed_dim)
             x = word_input.unsqueeze(1) # (batch, channel_input, sent_len, embed_dim)

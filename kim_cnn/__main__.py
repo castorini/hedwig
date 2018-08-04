@@ -4,6 +4,7 @@ import random
 
 import numpy as np
 import torch
+import torch.onnx
 
 from common.evaluation import EvaluatorFactory
 from common.train import TrainerFactory
@@ -60,11 +61,11 @@ if __name__ == '__main__':
     if not args.cuda:
         args.gpu = -1
     if torch.cuda.is_available() and args.cuda:
-        print("Note: You are using GPU for training")
+        print('Note: You are using GPU for training')
         torch.cuda.set_device(args.gpu)
         torch.cuda.manual_seed(args.seed)
     if torch.cuda.is_available() and not args.cuda:
-        print("Warning: You have Cuda but not use it. You are using CPU for training.")
+        print('Warning: You have Cuda but not use it. You are using CPU for training.')
     np.random.seed(args.seed)
     random.seed(args.seed)
     logger = get_logger()
@@ -83,12 +84,12 @@ if __name__ == '__main__':
     config.target_class = train_iter.dataset.NUM_CLASSES
     config.words_num = len(train_iter.dataset.TEXT_FIELD.vocab)
 
-    print("Dataset {}    Mode {}".format(args.dataset, args.mode))
-    print("VOCAB num",len(train_iter.dataset.TEXT_FIELD.vocab))
-    print("LABEL.target_class:", train_iter.dataset.NUM_CLASSES)
-    print("Train instance", len(train_iter.dataset))
-    print("Dev instance", len(dev_iter.dataset))
-    print("Test instance", len(test_iter.dataset))
+    print('Dataset {}    Mode {}'.format(args.dataset, args.mode))
+    print('VOCAB num',len(train_iter.dataset.TEXT_FIELD.vocab))
+    print('LABEL.target_class:', train_iter.dataset.NUM_CLASSES)
+    print('Train instance', len(train_iter.dataset))
+    print('Dev instance', len(dev_iter.dataset))
+    print('Test instance', len(test_iter.dataset))
 
     if args.resume_snapshot:
         if args.cuda:
@@ -99,7 +100,7 @@ if __name__ == '__main__':
         model = KimCNN(config)
         if args.cuda:
             model.cuda()
-            print("Shift model to GPU")
+            print('Shift model to GPU')
 
     parameter = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = torch.optim.Adadelta(parameter, lr=args.lr, weight_decay=args.weight_decay)
@@ -143,3 +144,9 @@ if __name__ == '__main__':
     else:
         raise ValueError('Unrecognized dataset')
 
+    if args.onnx:
+        device = torch.device('cuda') if torch.cuda.is_available() and args.cuda else torch.device('cpu')
+        dummy_input = torch.zeros(args.onnx_batch_size, args.onnx_sent_len, dtype=torch.long, device=device)
+        onnx_filename = 'kimcnn_{}.onnx'.format(args.mode)
+        torch.onnx.export(model, dummy_input, onnx_filename)
+        print('Exported model in ONNX format as {}'.format(onnx_filename))

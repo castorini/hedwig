@@ -28,7 +28,7 @@ class SSTTrainer(Trainer):
             self.iterations += 1
             self.model.train()
             self.optimizer.zero_grad()
-            scores = self.model(batch)
+            scores = self.model(batch.text)
             n_correct += (torch.max(scores, 1)[1].view(batch.label.size()).data == batch.label.data).sum().item()
             n_total += batch.batch_size
             train_acc = 100. * n_correct / n_total

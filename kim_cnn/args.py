@@ -29,7 +29,10 @@ def get_args():
                         default=os.path.join(os.pardir, 'Castor-data', 'embeddings', 'word2vec'))
     parser.add_argument('--word_vectors_file', help='word vectors filename', default='GoogleNews-vectors-negative300.txt')
     parser.add_argument('--trained_model', type=str, default="")
-    parser.add_argument('--weight_decay',type=float, default=0)
+    parser.add_argument('--weight_decay', type=float, default=0)
+    parser.add_argument('--onnx', action='store_true', default=False, help='Export model in ONNX format')
+    parser.add_argument('--onnx_batch_size', type=int, default=1024, help='Batch size for ONNX export')
+    parser.add_argument('--onnx_sent_len', type=int, default=32, help='Sentence length for ONNX export')
 
     args = parser.parse_args()
     return args
