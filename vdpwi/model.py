@@ -40,7 +40,7 @@ class VDPWIConvNet(nn.Module):
         def make_conv(n_in, n_out):
             conv = nn.Conv2d(n_in, n_out, 3, padding=1)
             conv.bias.data.zero_()
-            nn.init.xavier_normal(conv.weight)
+            nn.init.xavier_normal_(conv.weight)
             return conv
         self.conv1 = make_conv(12, 128)
         self.conv2 = make_conv(128, 164)

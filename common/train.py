@@ -2,6 +2,7 @@ from .trainers.sick_trainer import SICKTrainer
 from .trainers.msrvid_trainer import MSRVIDTrainer
 from .trainers.trecqa_trainer import TRECQATrainer
 from .trainers.wikiqa_trainer import WikiQATrainer
+from .trainers.pit2015_trainer import PIT2015Trainer
 from .trainers.sst_trainer import SSTTrainer
 from nce.nce_pairwise_mp.trainers.trecqa_trainer import TRECQATrainerNCE
 from nce.nce_pairwise_mp.trainers.wikiqa_trainer import WikiQATrainerNCE
@@ -17,7 +18,8 @@ class TrainerFactory(object):
         'SST-1': SSTTrainer,
         'SST-2': SSTTrainer,
         'trecqa': TRECQATrainer,
-        'wikiqa': WikiQATrainer
+        'wikiqa': WikiQATrainer,
+        'pit2015': PIT2015Trainer
     }
 
     trainer_map_nce = {

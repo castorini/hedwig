@@ -17,7 +17,7 @@ def get_map_mrr(qids, predictions, labels, device=0, keep_results=False):
     qrel_fname = 'trecqa_{}_{}.qrel'.format(time.time(), device)
     results_fname = 'trecqa_{}_{}.results'.format(time.time(), device)
     qrel_template = '{qid} 0 {docno} {rel}\n'
-    results_template = '{qid} 0 {docno} 0 {sim} mpcnn\n'
+    results_template = '{qid} 0 {docno} 0 {sim} castor-model\n'
     with open(qrel_fname, 'w') as f1, open(results_fname, 'w') as f2:
         docnos = range(len(qids))
         for qid, docno, predicted, actual in zip(qids, docnos, predictions, labels):

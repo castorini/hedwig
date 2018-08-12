@@ -3,6 +3,7 @@ from .evaluators.msrvid_evaluator import MSRVIDEvaluator
 from .evaluators.sst_evaluator import SSTEvaluator
 from .evaluators.trecqa_evaluator import TRECQAEvaluator
 from .evaluators.wikiqa_evaluator import WikiQAEvaluator
+from .evaluators.pit2015_evaluator import PIT2015Evaluator
 from nce.nce_pairwise_mp.evaluators.trecqa_evaluator import TRECQAEvaluatorNCE
 from nce.nce_pairwise_mp.evaluators.wikiqa_evaluator import WikiQAEvaluatorNCE
 
@@ -17,7 +18,8 @@ class EvaluatorFactory(object):
         'SST-1': SSTEvaluator,
         'SST-2': SSTEvaluator,
         'trecqa': TRECQAEvaluator,
-        'wikiqa': WikiQAEvaluator
+        'wikiqa': WikiQAEvaluator,
+        'pit2015': PIT2015Evaluator
     }
 
     evaluator_map_nce = {
