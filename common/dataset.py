@@ -51,15 +51,18 @@ class DatasetFactory(object):
             return TRECQA, embedding, train_loader, test_loader, dev_loader
         elif dataset_name == 'wikiqa':
             if not os.path.exists(os.path.join(castor_dir, utils_trecqa)):
-                raise FileNotFoundError('TrecQA requires the trec_eval tool to run. Please run get_trec_eval.sh inside Castor/utils (as working directory) before continuing.')
+                raise FileNotFoundError('WikiQA requires the trec_eval tool to run. Please run get_trec_eval.sh inside Castor/utils (as working directory) before continuing.')
             dataset_root = os.path.join(castor_dir, os.pardir, 'Castor-data', 'datasets', 'WikiQA/')
             train_loader, dev_loader, test_loader = WikiQA.iters(dataset_root, word_vectors_file, word_vectors_dir, batch_size, device=device, unk_init=UnknownWordVecCache.unk)
             embedding = nn.Embedding.from_pretrained(WikiQA.TEXT_FIELD.vocab.vectors)
             return WikiQA, embedding, train_loader, test_loader, dev_loader
         elif dataset_name == 'pit2015':
-            if not os.path.exists(os.path.join(castor_dir, utils_trecqa)):
-                raise FileNotFoundError('TrecQA requires the trec_eval tool to run. Please run get_trec_eval.sh inside Castor/utils (as working directory) before continuing.')
             dataset_root = os.path.join(castor_dir, os.pardir, 'Castor-data', 'datasets', 'SemEval-PIT2015/')
+            train_loader, dev_loader, test_loader = PIT2015.iters(dataset_root, word_vectors_file, word_vectors_dir, batch_size, device=device, unk_init=UnknownWordVecCache.unk)
+            embedding = nn.Embedding.from_pretrained(PIT2015.TEXT_FIELD.vocab.vectors)
+            return PIT2015, embedding, train_loader, test_loader, dev_loader
+        elif dataset_name == 'twitterurl':
+            dataset_root = os.path.join(castor_dir, os.pardir, 'Castor-data', 'datasets', 'Twitter-URL/')
             train_loader, dev_loader, test_loader = PIT2015.iters(dataset_root, word_vectors_file, word_vectors_dir, batch_size, device=device, unk_init=UnknownWordVecCache.unk)
             embedding = nn.Embedding.from_pretrained(PIT2015.TEXT_FIELD.vocab.vectors)
             return PIT2015, embedding, train_loader, test_loader, dev_loader

@@ -21,8 +21,10 @@ class PIT2015Evaluator(Evaluator):
             n_dev_correct += (prediction == gold_label).sum().item()
             acc_total += ((prediction == batch.label.data) * (prediction == 1)).sum().item()
             total_loss += F.nll_loss(scores, batch.label, size_average=False).item()
-            rel_total += batch.label.data.sum().item()
-            pre_total += torch.max(scores, 1)[1].view(batch.label.size()).data.sum().item()
+            rel_total += gold_label.sum().item()
+            pre_total += prediction.sum().item()
+
+            del scores
 
         precision = acc_total / pre_total
         recall = acc_total / rel_total

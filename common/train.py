@@ -19,7 +19,8 @@ class TrainerFactory(object):
         'SST-2': SSTTrainer,
         'trecqa': TRECQATrainer,
         'wikiqa': WikiQATrainer,
-        'pit2015': PIT2015Trainer
+        'pit2015': PIT2015Trainer,
+        'twitterurl': PIT2015Trainer
     }
 
     trainer_map_nce = {

@@ -19,7 +19,8 @@ class EvaluatorFactory(object):
         'SST-2': SSTEvaluator,
         'trecqa': TRECQAEvaluator,
         'wikiqa': WikiQAEvaluator,
-        'pit2015': PIT2015Evaluator
+        'pit2015': PIT2015Evaluator,
+        'twitterurl': PIT2015Evaluator
     }
 
     evaluator_map_nce = {
