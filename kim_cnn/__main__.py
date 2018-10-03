@@ -10,8 +10,10 @@ from common.evaluation import EvaluatorFactory
 from common.train import TrainerFactory
 from datasets.sst import SST1
 from datasets.sst import SST2
+from datasets.reuters import Reuters
 from kim_cnn.args import get_args
 from kim_cnn.model import KimCNN
+
 
 class UnknownWordVecCache(object):
     """
@@ -76,6 +78,8 @@ if __name__ == '__main__':
     # Set up the data for training SST-2
     elif args.dataset == 'SST-2':
         train_iter, dev_iter, test_iter = SST2.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
+    elif args.dataset == 'Reuters':
+        train_iter, dev_iter, test_iter = Reuters.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
     else:
         raise ValueError('Unrecognized dataset')
 
@@ -113,6 +117,10 @@ if __name__ == '__main__':
         train_evaluator = EvaluatorFactory.get_evaluator(SST2, model, None, train_iter, args.batch_size, args.gpu)
         test_evaluator = EvaluatorFactory.get_evaluator(SST2, model, None, test_iter, args.batch_size, args.gpu)
         dev_evaluator = EvaluatorFactory.get_evaluator(SST2, model, None, dev_iter, args.batch_size, args.gpu)
+    elif args.dataset == 'Reuters':
+        train_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, train_iter, args.batch_size, args.gpu)
+        test_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, test_iter, args.batch_size, args.gpu)
+        dev_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, dev_iter, args.batch_size, args.gpu)
     else:
         raise ValueError('Unrecognized dataset')
 
@@ -141,6 +149,9 @@ if __name__ == '__main__':
     elif args.dataset == 'SST-2':
         evaluate_dataset('dev', SST2, model, None, dev_iter, args.batch_size, args.gpu)
         evaluate_dataset('test', SST2, model, None, test_iter, args.batch_size, args.gpu)
+    elif args.dataset == 'Reuters':
+        evaluate_dataset('dev', Reuters, model, None, dev_iter, args.batch_size, args.gpu)
+        evaluate_dataset('test', Reuters, model, None, test_iter, args.batch_size, args.gpu)
     else:
         raise ValueError('Unrecognized dataset')
 

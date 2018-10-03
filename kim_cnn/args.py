@@ -12,7 +12,7 @@ def get_args():
     parser.add_argument('--mode', type=str, default='multichannel', choices=['rand', 'static', 'non-static', 'multichannel'])
     parser.add_argument('--lr', type=float, default=1.0)
     parser.add_argument('--seed', type=int, default=3435)
-    parser.add_argument('--dataset', type=str, default='SST-1', choices=['SST-1', 'SST-2'])
+    parser.add_argument('--dataset', type=str, default='SST-1', choices=['SST-1', 'SST-2', 'Reuters'])
     parser.add_argument('--resume_snapshot', type=str, default=None)
     parser.add_argument('--dev_every', type=int, default=30)
     parser.add_argument('--log_every', type=int, default=10)
@@ -24,7 +24,7 @@ def get_args():
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--epoch_decay', type=int, default=15)
     parser.add_argument('--data_dir', help='word vectors directory',
-                        default=os.path.join(os.pardir, 'Castor-data', 'datasets', 'SST'))
+                        default=os.path.join(os.pardir, 'Castor-data', 'datasets'))
     parser.add_argument('--word_vectors_dir', help='word vectors directory',
                         default=os.path.join(os.pardir, 'Castor-data', 'embeddings', 'word2vec'))
     parser.add_argument('--word_vectors_file', help='word vectors filename', default='GoogleNews-vectors-negative300.txt')

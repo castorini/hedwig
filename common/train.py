@@ -4,6 +4,7 @@ from .trainers.trecqa_trainer import TRECQATrainer
 from .trainers.wikiqa_trainer import WikiQATrainer
 from .trainers.pit2015_trainer import PIT2015Trainer
 from .trainers.sst_trainer import SSTTrainer
+from .trainers.reuters_trainer import ReutersTrainer
 from nce.nce_pairwise_mp.trainers.trecqa_trainer import TRECQATrainerNCE
 from nce.nce_pairwise_mp.trainers.wikiqa_trainer import WikiQATrainerNCE
 
@@ -20,7 +21,8 @@ class TrainerFactory(object):
         'trecqa': TRECQATrainer,
         'wikiqa': WikiQATrainer,
         'pit2015': PIT2015Trainer,
-        'twitterurl': PIT2015Trainer
+        'twitterurl': PIT2015Trainer,
+        'Reuters': ReutersTrainer
     }
 
     trainer_map_nce = {

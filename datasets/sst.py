@@ -1,3 +1,4 @@
+import os
 import re
 
 import torch
@@ -68,7 +69,8 @@ class SST2(TabularDataset):
         return len(ex.text)
 
     @classmethod
-    def splits(cls, path, train='stsa.binary.phrases.train', validation='stsa.binary.dev', test='stsa.binary.test', **kwargs):
+    def splits(cls, path, train=os.path.join('SST', 'stsa.binary.phrases.train'),
+               validation=os.path.join('SST', 'stsa.binary.dev'), test=os.path.join('SST', 'stsa.binary.test'), **kwargs):
         return super(SST2, cls).splits(
                                        path, train=train, validation=validation, test=test,
                                        format='tsv', fields=[('label', cls.LABEL_FIELD), ('text', cls.TEXT_FIELD)]
