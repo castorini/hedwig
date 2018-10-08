@@ -14,20 +14,21 @@ def get_class_probs(sim, *args):
     """
     Convert a single label into class probabilities.
     """
-    class_probs = np.zeros(SICK.NUM_CLASSES)
+    class_probs = np.zeros(STS2014.NUM_CLASSES)
     ceil, floor = math.ceil(sim), math.floor(sim)
+
     if ceil == floor:
-        class_probs[floor - 1] = 1
+        class_probs[ceil] = 1
     else:
-        class_probs[floor - 1] = ceil - sim
-        class_probs[ceil - 1] = sim - floor
+        class_probs[floor] = ceil - sim
+        class_probs[ceil] = sim - floor
 
     return class_probs
 
 
-class SICK(CastorPairDataset):
-    NAME = 'sick'
-    NUM_CLASSES = 5
+class STS2014(CastorPairDataset):
+    NAME = 'sts2014'
+    NUM_CLASSES = 6
     ID_FIELD = Field(sequential=False, use_vocab=False, batch_first=True)
     TEXT_FIELD = Field(batch_first=True, tokenize=lambda x: x)  # tokenizer is identity since we already tokenized it to compute external features
     EXT_FEATS_FIELD = Field(tensor_type=torch.FloatTensor, use_vocab=False, batch_first=True, tokenize=lambda x: x)
@@ -40,13 +41,13 @@ class SICK(CastorPairDataset):
 
     def __init__(self, path):
         """
-        Create a SICK dataset instance
+        Create a STS2014 dataset instance
         """
-        super(SICK, self).__init__(path)
+        super(STS2014, self).__init__(path)
 
     @classmethod
     def splits(cls, path, train='train', validation='dev', test='test', **kwargs):
-        return super(SICK, cls).splits(path, train=train, validation=validation, test=test, **kwargs)
+        return super(STS2014, cls).splits(path, train=train, validation=validation, test=test, **kwargs)
 
     @classmethod
     def iters(cls, path, vectors_name, vectors_cache, batch_size=64, shuffle=True, device=0, vectors=None, unk_init=torch.Tensor.zero_):

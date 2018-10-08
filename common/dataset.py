@@ -8,6 +8,9 @@ from datasets.msrvid import MSRVID
 from datasets.trecqa import TRECQA
 from datasets.wikiqa import WikiQA
 from datasets.pit2015 import PIT2015
+from datasets.snli import SNLI
+from datasets.sts2014 import STS2014
+from datasets.quora import Quora
 from datasets.reuters import Reuters
 
 class UnknownWordVecCache(object):
@@ -66,7 +69,22 @@ class DatasetFactory(object):
             train_loader, dev_loader, test_loader = PIT2015.iters(dataset_root, word_vectors_file, word_vectors_dir, batch_size, device=device, unk_init=UnknownWordVecCache.unk)
             embedding = nn.Embedding.from_pretrained(PIT2015.TEXT_FIELD.vocab.vectors)
             return PIT2015, embedding, train_loader, test_loader, dev_loader
-	elif dataset_name == 'reuters':
+        elif dataset_name == 'snli':
+            dataset_root = os.path.join(castor_dir, os.pardir, 'Castor-data', 'datasets', 'snli_1.0/')
+            train_loader, dev_loader, test_loader = SNLI.iters(dataset_root, word_vectors_file, word_vectors_dir, batch_size, device=device, unk_init=UnknownWordVecCache.unk)
+            embedding = nn.Embedding.from_pretrained(SNLI.TEXT_FIELD.vocab.vectors)
+            return SNLI, embedding, train_loader, test_loader, dev_loader
+        elif dataset_name == 'sts2014':
+            dataset_root = os.path.join(castor_dir, os.pardir, 'Castor-data', 'datasets', 'STS-2014')
+            train_loader, dev_loader, test_loader = STS2014.iters(dataset_root, word_vectors_file, word_vectors_dir, batch_size, device=device, unk_init=UnknownWordVecCache.unk)
+            embedding = nn.Embedding.from_pretrained(STS2014.TEXT_FIELD.vocab.vectors)
+            return STS2014, embedding, train_loader, test_loader, dev_loader
+        elif dataset_name == "quora":
+            dataset_root = os.path.join(castor_dir, os.pardir, 'Castor-data', 'datasets', 'quora/')
+            train_loader, dev_loader, test_loader = Quora.iters(dataset_root, word_vectors_file, word_vectors_dir, batch_size, device=device, unk_init=UnknownWordVecCache.unk)
+            embedding = nn.Embedding.from_pretrained(Quora.TEXT_FIELD.vocab.vectors)
+            return Quora, embedding, train_loader, test_loader, dev_loader
+        elif dataset_name == 'reuters':
             dataset_root = os.path.join(castor_dir, os.pardir, 'Castor-data', 'datasets', 'Reuters-21578/')
             train_loader, dev_loader, test_loader = Reuters.iters(dataset_root, word_vectors_file, word_vectors_dir, batch_size, device=device, unk_init=UnknownWordVecCache.unk)
             embedding = nn.Embedding.from_pretrained(Reuters.TEXT_FIELD.vocab.vectors)
