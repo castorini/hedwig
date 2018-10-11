@@ -4,7 +4,6 @@ import random
 
 import numpy as np
 import torch
-import torch.onnx
 import torch.nn.functional as F
 from sklearn import metrics
 
@@ -13,8 +12,8 @@ from common.train import TrainerFactory
 from datasets.sst import SST1
 from datasets.sst import SST2
 from datasets.reuters import Reuters
-from kim_cnn.args import get_args
-from kim_cnn.model import KimCNN
+from lstm_baseline.args import get_args
+from lstm_baseline.model import LSTMBaseline
 
 
 class UnknownWordVecCache(object):
@@ -103,13 +102,13 @@ if __name__ == '__main__':
         else:
             model = torch.load(args.resume_snapshot, map_location=lambda storage, location: storage)
     else:
-        model = KimCNN(config)
+        model = LSTMBaseline(config)
         if args.cuda:
             model.cuda()
             print('Shift model to GPU')
 
     parameter = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = torch.optim.Adadelta(parameter, lr=args.lr, weight_decay=args.weight_decay)
+    optimizer = torch.optim.Adam(parameter, lr=args.lr, weight_decay=args.weight_decay)
 
     if args.dataset == 'SST-1':
         train_evaluator = EvaluatorFactory.get_evaluator(SST1, model, None, train_iter, args.batch_size, args.gpu)
@@ -176,10 +175,3 @@ if __name__ == '__main__':
         else:
             print("Test metrics:")
         print(accuracy, precision, recall, f1)
-
-    if args.onnx:
-        device = torch.device('cuda') if torch.cuda.is_available() and args.cuda else torch.device('cpu')
-        dummy_input = torch.zeros(args.onnx_batch_size, args.onnx_sent_len, dtype=torch.long, device=device)
-        onnx_filename = 'kimcnn_{}.onnx'.format(args.mode)
-        torch.onnx.export(model, dummy_input, onnx_filename)
-        print('Exported model in ONNX format as {}'.format(onnx_filename))
