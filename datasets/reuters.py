@@ -2,7 +2,7 @@ import re
 import os
 
 import torch
-from torchtext.data import Field, TabularDataset
+from torchtext.data import NestedField ,Field, TabularDataset
 from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
 
@@ -15,6 +15,10 @@ def clean_string(string):
     string = re.sub(r"\s{2,}", " ", string)
     return string.lower().strip().split()
 
+def split_sents(string):
+    string = re.sub(r"[!?]"," ", string)
+    return string.strip().split('.')
+    
 
 def clean_string_fl(string):
     """
@@ -39,8 +43,8 @@ def process_labels(string):
 class Reuters(TabularDataset):
     NAME = 'Reuters'
     NUM_CLASSES = 90
-
-    TEXT_FIELD = Field(batch_first=True, tokenize=clean_string_fl)
+    
+    TEXT_FIELD = Field(batch_first=True, tokenize=clean_string)
     LABEL_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=process_labels)
 
     @staticmethod
@@ -76,3 +80,8 @@ class Reuters(TabularDataset):
         cls.TEXT_FIELD.build_vocab(train, val, test, vectors=vectors)
         return BucketIterator.splits((train, val, test), batch_size=batch_size, repeat=False, shuffle=shuffle,
                                      sort_within_batch=True, device=device)
+
+class Reuters_hierarchical(Reuters):
+
+    In_FIELD = Field(batch_first = True, tokenize = clean_string)
+    TEXT_FIELD = NestedField(In_FIELD, tokenize = split_sents)
