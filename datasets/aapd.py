@@ -2,33 +2,10 @@ import re
 import os
 
 import torch
-from torchtext.data import NestedField ,Field, TabularDataset
+from datasets.reuters import clean_string, clean_string_fl
+from torchtext.data import Field, TabularDataset
 from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
-
-
-def clean_string(string):
-    """
-    Performs tokenization and string cleaning for the Reuters dataset
-    """
-    string = re.sub(r"[^A-Za-z0-9(),!?\'`]", " ", string)
-    string = re.sub(r"\s{2,}", " ", string)
-    return string.lower().strip().split()
-
-def split_sents(string):
-    string = re.sub(r"[!?]"," ", string)
-    return string.strip().split('.')
-    
-
-def clean_string_fl(string):
-    """
-    Returns only the title and first line (excluding the title) for every Reuters article, then calls clean_string
-    """
-    split_string = string.split('.')
-    if len(split_string) > 1:
-            return clean_string(split_string[0] + ". " + split_string[1])
-    else:
-        return clean_string(string)
 
 
 def process_labels(string):
@@ -40,9 +17,9 @@ def process_labels(string):
     return [float(x) for x in string]
 
 
-class Reuters(TabularDataset):
-    NAME = 'Reuters'
-    NUM_CLASSES = 90
+class AAPD(TabularDataset):
+    NAME = 'AAPD'
+    NUM_CLASSES = 54
 
     TEXT_FIELD = Field(batch_first=True, tokenize=clean_string, include_lengths=True)
     LABEL_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=process_labels)
@@ -52,10 +29,10 @@ class Reuters(TabularDataset):
         return len(ex.text)
 
     @classmethod
-    def splits(cls, path, train=os.path.join('Reuters-21578', 'data', 'reuters_train.tsv'),
-               validation=os.path.join('Reuters-21578', 'data', 'reuters_validation.tsv'),
-               test=os.path.join('Reuters-21578', 'data','reuters_test.tsv'), **kwargs):
-        return super(Reuters, cls).splits(
+    def splits(cls, path, train=os.path.join('AAPD', 'data', 'aapd_train.tsv'),
+               validation=os.path.join('AAPD', 'data', 'aapd_validation.tsv'),
+               test=os.path.join('AAPD', 'data','aapd_test.tsv'), **kwargs):
+        return super(AAPD, cls).splits(
             path, train=train, validation=validation, test=test,
             format='tsv', fields=[('label', cls.LABEL_FIELD), ('text', cls.TEXT_FIELD)]
         )
@@ -80,8 +57,3 @@ class Reuters(TabularDataset):
         cls.TEXT_FIELD.build_vocab(train, val, test, vectors=vectors)
         return BucketIterator.splits((train, val, test), batch_size=batch_size, repeat=False, shuffle=shuffle,
                                      sort_within_batch=True, device=device)
-
-class Reuters_hierarchical(Reuters):
-
-    In_FIELD = Field(batch_first = True, tokenize = clean_string)
-    TEXT_FIELD = NestedField(In_FIELD, tokenize = split_sents)

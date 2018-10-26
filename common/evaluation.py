@@ -26,6 +26,7 @@ class EvaluatorFactory(object):
         'pit2015': PIT2015Evaluator,
         'twitterurl': PIT2015Evaluator,
         'Reuters': ReutersEvaluator,
+        'AAPD': ReutersEvaluator,
         'SNLI': SNLIEvaluator,
         'sts2014': STS2014Evaluator,
         'Quora': QuoraEvaluator

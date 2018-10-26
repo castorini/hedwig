@@ -1,12 +1,13 @@
 import time
-import os
 
+import datetime
+import numpy as np
+import os
 import torch
 import torch.nn.functional as F
-import numpy as np
+from tensorboardX import SummaryWriter
 
 from .trainer import Trainer
-from utils.serialization import save_checkpoint
 
 
 class ReutersTrainer(Trainer):
@@ -21,6 +22,7 @@ class ReutersTrainer(Trainer):
         self.log_template = ' '.join(
             '{:>6.0f},{:>5.0f},{:>9.0f},{:>5.0f}/{:<5.0f} {:>7.0f}%,{:>8.6f},{},{:12.4f},{}'.split(','))
         self.dev_log_template = ' '.join('{:>6.0f},{:>5.0f},{:>9.0f},{:>5.0f}/{:<5.0f} {:>7.0f}%,{:>8.6f},{:8.6f},{:12.4f},{:12.4f}'.split(','))
+        self.writer = SummaryWriter(log_dir="tensorboard_logs/" + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
 
     def train_epoch(self, epoch):
         self.train_loader.init_epoch()
@@ -29,7 +31,7 @@ class ReutersTrainer(Trainer):
             self.iterations += 1
             self.model.train()
             self.optimizer.zero_grad()
-            scores = self.model(batch.text)
+            scores = self.model(batch.text[0], lengths=batch.text[1])
             # Using binary accuracy
             for tensor1, tensor2 in zip(F.sigmoid(scores).round().long(), batch.label):
                 if np.array_equal(tensor1, tensor2):
@@ -44,6 +46,11 @@ class ReutersTrainer(Trainer):
             # Evaluate performance on validation set
             if self.iterations % self.dev_log_interval == 1:
                 dev_acc, dev_loss = self.dev_evaluator.get_scores()[0]
+                niter = epoch * len(self.train_loader) + batch_idx
+                self.writer.add_scalar('Train/Loss', loss.data[0], niter)
+                self.writer.add_scalar('Dev/Loss', dev_loss, niter)
+                self.writer.add_scalar('Train/Accuracy', train_acc, niter)
+                self.writer.add_scalar('Dev/Accuracy', dev_acc, niter)
                 print(self.dev_log_template.format(time.time() - self.start,
                       epoch, self.iterations, 1 + batch_idx, len(self.train_loader),
                       100. * (1 + batch_idx) / len(self.train_loader), loss.item(),

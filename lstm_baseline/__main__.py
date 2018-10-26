@@ -12,6 +12,7 @@ from common.train import TrainerFactory
 from datasets.sst import SST1
 from datasets.sst import SST2
 from datasets.reuters import Reuters
+from datasets.aapd import AAPD
 from lstm_baseline.args import get_args
 from lstm_baseline.model import LSTMBaseline
 
@@ -81,6 +82,8 @@ if __name__ == '__main__':
         train_iter, dev_iter, test_iter = SST2.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
     elif args.dataset == 'Reuters':
         train_iter, dev_iter, test_iter = Reuters.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
+    elif args.dataset == 'AAPD':
+        train_iter, dev_iter, test_iter = AAPD.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
     else:
         raise ValueError('Unrecognized dataset')
 
@@ -122,6 +125,10 @@ if __name__ == '__main__':
         train_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, train_iter, args.batch_size, args.gpu)
         test_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, test_iter, args.batch_size, args.gpu)
         dev_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, dev_iter, args.batch_size, args.gpu)
+    elif args.dataset == 'AAPD':
+        train_evaluator = EvaluatorFactory.get_evaluator(AAPD, model, None, train_iter, args.batch_size, args.gpu)
+        test_evaluator = EvaluatorFactory.get_evaluator(AAPD, model, None, test_iter, args.batch_size, args.gpu)
+        dev_evaluator = EvaluatorFactory.get_evaluator(AAPD, model, None, dev_iter, args.batch_size, args.gpu)
     else:
         raise ValueError('Unrecognized dataset')
 
@@ -153,6 +160,9 @@ if __name__ == '__main__':
     elif args.dataset == 'Reuters':
         evaluate_dataset('dev', Reuters, model, None, dev_iter, args.batch_size, args.gpu)
         evaluate_dataset('test', Reuters, model, None, test_iter, args.batch_size, args.gpu)
+    elif args.dataset == 'AAPD':
+        evaluate_dataset('dev', AAPD, model, None, dev_iter, args.batch_size, args.gpu)
+        evaluate_dataset('test', AAPD, model, None, test_iter, args.batch_size, args.gpu)
     else:
         raise ValueError('Unrecognized dataset')
 

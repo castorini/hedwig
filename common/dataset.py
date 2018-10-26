@@ -12,6 +12,7 @@ from datasets.snli import SNLI
 from datasets.sts2014 import STS2014
 from datasets.quora import Quora
 from datasets.reuters import Reuters
+from datasets.aapd import AAPD
 
 class UnknownWordVecCache(object):
     """
@@ -92,6 +93,11 @@ class DatasetFactory(object):
             train_loader, dev_loader, test_loader = Reuters.iters(dataset_root, word_vectors_file, word_vectors_dir, batch_size, device=device, unk_init=UnknownWordVecCache.unk)
             embedding = nn.Embedding.from_pretrained(Reuters.TEXT_FIELD.vocab.vectors)
             return Reuters, embedding, train_loader, test_loader, dev_loader
+        elif dataset_name == 'aapd':
+            dataset_root = os.path.join(castor_dir, os.pardir, 'Castor-data', 'datasets', 'AAPD/')
+            train_loader, dev_loader, test_loader = AAPD.iters(dataset_root, word_vectors_file, word_vectors_dir, batch_size, device=device, unk_init=UnknownWordVecCache.unk)
+            embedding = nn.Embedding.from_pretrained(AAPD.TEXT_FIELD.vocab.vectors)
+            return AAPD, embedding, train_loader, test_loader, dev_loader
         else:
             raise ValueError('{} is not a valid dataset.'.format(dataset_name))
 
