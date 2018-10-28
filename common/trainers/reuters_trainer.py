@@ -14,6 +14,7 @@ class ReutersTrainer(Trainer):
 
     def __init__(self, model, embedding, train_loader, trainer_config, train_evaluator, test_evaluator, dev_evaluator):
         super(ReutersTrainer, self).__init__(model, embedding, train_loader, trainer_config, train_evaluator, test_evaluator, dev_evaluator)
+        self.config = trainer_config
         self.early_stop = False
         self.best_dev_acc = 0
         self.iterations = 0
@@ -31,7 +32,11 @@ class ReutersTrainer(Trainer):
             self.iterations += 1
             self.model.train()
             self.optimizer.zero_grad()
-            scores = self.model(batch.text[0], lengths=batch.text[1])
+            if 'ignore_lengths' in self.config and self.config['ignore_lengths'] == True:
+                scores = self.model(batch.text, lengths=batch.text)
+            else:
+                scores = self.model(batch.text[0], lengths=batch.text[1])
+            
             # Using binary accuracy
             for tensor1, tensor2 in zip(F.sigmoid(scores).round().long(), batch.label):
                 if np.array_equal(tensor1, tensor2):
@@ -60,7 +65,7 @@ class ReutersTrainer(Trainer):
                 if dev_acc > self.best_dev_acc:
                     self.iters_not_improved = 0
                     self.best_dev_acc = dev_acc
-                    snapshot_path = os.path.join(self.model_outfile, self.train_loader.dataset.NAME, self.model.mode + '_best_model.pt')
+                    snapshot_path = os.path.join(self.model_outfile, self.train_loader.dataset.NAME, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '_reuters_best_model.pt')
                     torch.save(self.model, snapshot_path)
                 else:
                     self.iters_not_improved += 1

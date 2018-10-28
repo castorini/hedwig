@@ -7,6 +7,10 @@ from .evaluator import Evaluator
 
 class ReutersEvaluator(Evaluator):
 
+    def __init__(self, dataset_cls, model, embedding, data_loader, batch_size, device, keep_results=False):
+        super().__init__(dataset_cls, model, embedding, data_loader, batch_size, device, keep_results)
+        self.ignore_lengths = False
+
     def get_scores(self):
         self.model.eval()
         self.data_loader.init_epoch()
@@ -14,7 +18,10 @@ class ReutersEvaluator(Evaluator):
         total_loss = 0
 
         for batch_idx, batch in enumerate(self.data_loader):
-            scores = self.model(batch.text[0], lengths=batch.text[1])
+            if self.ignore_lengths:
+                scores = self.model(batch.text, lengths=batch.text)
+            else:
+                scores = self.model(batch.text[0], lengths=batch.text[1])
             scores_rounded = F.sigmoid(scores).round().long()
 
             # Using binary accuracy

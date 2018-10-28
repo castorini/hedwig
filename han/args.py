@@ -18,7 +18,7 @@ def get_args():
     parser.add_argument('--mode', type=str, default='static', choices=['rand', 'static', 'non-static'])
     parser.add_argument('--lr', type=float, default=1.0)
     parser.add_argument('--seed', type=int, default=3435)
-    parser.add_argument('--dataset', type=str, default='SST-1', choices=['SST-1', 'SST-2', 'Reuters'])
+    parser.add_argument('--dataset', type=str, default='SST-1', choices=['SST-1', 'SST-2', 'Reuters', 'AAPD'])
     parser.add_argument('--resume_snapshot', type=str, default=None)
     parser.add_argument('--dev_every', type=int, default=30)
     parser.add_argument('--log_every', type=int, default=10)

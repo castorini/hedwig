@@ -1,20 +1,19 @@
-from copy import deepcopy
-import logging
-import random
 from sklearn import metrics
+
+import logging
 import numpy as np
+import random
 import torch
-import torch.onnx
+import torch.nn.functional as F
+from copy import deepcopy
 
 from common.evaluation import EvaluatorFactory
 from common.train import TrainerFactory
-from datasets.sst import SST1
-from datasets.sst import SST2
-from datasets.reuters import ReutersHierarchical as Reuters
-from datasets.aapd import AAPDHierarchical as AAPD
-from han.args import get_args
-from han.model import HAN
-import torch.nn.functional as F
+from datasets.aapd import AAPDCharQuantized as AAPD
+from datasets.reuters import ReutersCharQuantized as Reuters
+from char_cnn.args import get_args
+from char_cnn.model import CharCNN
+
 
 class UnknownWordVecCache(object):
     """
@@ -75,12 +74,7 @@ if __name__ == '__main__':
     logger = get_logger()
 
     # Set up the data for training SST-1
-    if args.dataset == 'SST-1':
-        train_iter, dev_iter, test_iter = SST1.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
-    # Set up the data for training SST-2
-    elif args.dataset == 'SST-2':
-        train_iter, dev_iter, test_iter = SST2.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
-    elif args.dataset == 'Reuters':
+    if args.dataset == 'Reuters':
         train_iter, dev_iter, test_iter = Reuters.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
     elif args.dataset == 'AAPD':
         train_iter, dev_iter, test_iter = AAPD.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
@@ -90,10 +84,7 @@ if __name__ == '__main__':
     config = deepcopy(args)
     config.dataset = train_iter.dataset
     config.target_class = train_iter.dataset.NUM_CLASSES
-    config.words_num = len(train_iter.dataset.TEXT_FIELD.vocab)
 
-    print('Dataset {}    Mode {}'.format(args.dataset, args.mode))
-    print('VOCAB num',len(train_iter.dataset.TEXT_FIELD.vocab))
     print('LABEL.target_class:', train_iter.dataset.NUM_CLASSES)
     print('Train instance', len(train_iter.dataset))
     print('Dev instance', len(dev_iter.dataset))
@@ -105,25 +96,15 @@ if __name__ == '__main__':
         else:
             model = torch.load(args.resume_snapshot, map_location=lambda storage, location: storage)
     else:
-        model = HAN(config)
+        model = CharCNN(config)
         if args.cuda:
             model.cuda()
             print('Shift model to GPU')
 
     parameter = filter(lambda p: p.requires_grad, model.parameters())
-    print(parameter)
-    #optimizer = torch.optim.Adadelta(parameter, lr=args.lr, weight_decay=args.weight_decay)
-    #optimizer = torch.optim.SGD(parameter, lr = args.lr, momentum = 0.9)
-    optimizer = torch.optim.Adam(parameter, lr = args.lr)
-    if args.dataset == 'SST-1':
-        train_evaluator = EvaluatorFactory.get_evaluator(SST1, model, None, train_iter, args.batch_size, args.gpu)
-        test_evaluator = EvaluatorFactory.get_evaluator(SST1, model, None, test_iter, args.batch_size, args.gpu)
-        dev_evaluator = EvaluatorFactory.get_evaluator(SST1, model, None, dev_iter, args.batch_size, args.gpu)
-    elif args.dataset == 'SST-2':
-        train_evaluator = EvaluatorFactory.get_evaluator(SST2, model, None, train_iter, args.batch_size, args.gpu)
-        test_evaluator = EvaluatorFactory.get_evaluator(SST2, model, None, test_iter, args.batch_size, args.gpu)
-        dev_evaluator = EvaluatorFactory.get_evaluator(SST2, model, None, dev_iter, args.batch_size, args.gpu)
-    elif args.dataset == 'Reuters':
+    optimizer = torch.optim.Adam(parameter, lr=args.lr, weight_decay=args.weight_decay)
+
+    if args.dataset == 'Reuters':
         train_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, train_iter, args.batch_size, args.gpu)
         test_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, test_iter, args.batch_size, args.gpu)
         dev_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, dev_iter, args.batch_size, args.gpu)
@@ -156,23 +137,14 @@ if __name__ == '__main__':
         else:
             model = torch.load(args.trained_model, map_location=lambda storage, location: storage)
 
-    if args.dataset == 'SST-1':
-        evaluate_dataset('dev', SST1, model, None, dev_iter, args.batch_size, args.gpu)
-        evaluate_dataset('test', SST1, model, None, test_iter, args.batch_size, args.gpu)
-    elif args.dataset == 'SST-2':
-        evaluate_dataset('dev', SST2, model, None, dev_iter, args.batch_size, args.gpu)
-        evaluate_dataset('test', SST2, model, None, test_iter, args.batch_size, args.gpu)
-    elif args.dataset == 'Reuters':
+    if args.dataset == 'Reuters':
         evaluate_dataset('dev', Reuters, model, None, dev_iter, args.batch_size, args.gpu)
         evaluate_dataset('test', Reuters, model, None, test_iter, args.batch_size, args.gpu)
     elif args.dataset == 'AAPD':
-        train_evaluator = EvaluatorFactory.get_evaluator(AAPD, model, None, train_iter, args.batch_size, args.gpu)
-        test_evaluator = EvaluatorFactory.get_evaluator(AAPD, model, None, test_iter, args.batch_size, args.gpu)
-        dev_evaluator = EvaluatorFactory.get_evaluator(AAPD, model, None, dev_iter, args.batch_size, args.gpu)
+        evaluate_dataset('dev', AAPD, model, None, dev_iter, args.batch_size, args.gpu)
+        evaluate_dataset('test', AAPD, model, None, test_iter, args.batch_size, args.gpu)
     else:
         raise ValueError('Unrecognized dataset')
-
-
 
     # Calculate dev and test metrics
     for data_loader in [dev_iter, test_iter]:
@@ -193,12 +165,3 @@ if __name__ == '__main__':
         else:
             print("Test metrics:")
         print(accuracy, precision, recall, f1)
-
-
-
-    if args.onnx:
-        device = torch.device('cuda') if torch.cuda.is_available() and args.cuda else torch.device('cpu')
-        dummy_input = torch.zeros(args.onnx_batch_size, args.onnx_sent_len, dtype=torch.long, device=device)
-        onnx_filename = 'han_{}.onnx'.format(args.mode)
-        torch.onnx.export(model, dummy_input, onnx_filename)
-        print('Exported model in ONNX format as {}'.format(onnx_filename))
