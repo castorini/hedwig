@@ -28,7 +28,8 @@ class SST1(TabularDataset):
         return len(ex.text)
 
     @classmethod
-    def splits(cls, path, train='stsa.fine.phrases.train', validation='stsa.fine.dev', test='stsa.fine.test', **kwargs):
+    def splits(cls, path, train=os.path.join('SST', 'stsa.fine.phrases.train'),
+               validation=os.path.join('SST', 'stsa.fine.dev'), test= os.path.join('SST', 'stsa.fine.test'), **kwargs):
         return super(SST1, cls).splits(
             path, train=train, validation=validation, test=test,
             format='tsv', fields=[('label', cls.LABEL_FIELD), ('text', cls.TEXT_FIELD)]
@@ -56,6 +57,7 @@ class SST1(TabularDataset):
 
         return BucketIterator.splits((train, val, test), batch_size=batch_size, repeat=False, shuffle=shuffle,
                                      sort_within_batch=True, device=device)
+
 
 class SST2(TabularDataset):
     NAME = 'SST-2'

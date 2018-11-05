@@ -38,7 +38,7 @@ class KimCNN(nn.Module):
         self.dropout = nn.Dropout(config.dropout)
         self.fc1 = nn.Linear(Ks * output_channel, target_class)
 
-    def forward(self, x):
+    def forward(self, x, **kwargs):
         if self.mode == 'rand':
             word_input = self.embed(x) # (batch, sent_len, embed_dim)
             x = word_input.unsqueeze(1) # (batch, channel_input, sent_len, embed_dim)

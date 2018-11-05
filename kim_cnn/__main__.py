@@ -12,10 +12,10 @@ from common.evaluation import EvaluatorFactory
 from common.train import TrainerFactory
 from datasets.sst import SST1
 from datasets.sst import SST2
+from datasets.aapd import AAPD
 from datasets.reuters import Reuters
 from kim_cnn.args import get_args
 from kim_cnn.model import KimCNN
-
 
 class UnknownWordVecCache(object):
     """
@@ -82,6 +82,8 @@ if __name__ == '__main__':
         train_iter, dev_iter, test_iter = SST2.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
     elif args.dataset == 'Reuters':
         train_iter, dev_iter, test_iter = Reuters.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
+    elif args.dataset == 'AAPD':
+        train_iter, dev_iter, test_iter = AAPD.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
     else:
         raise ValueError('Unrecognized dataset')
 
@@ -123,6 +125,10 @@ if __name__ == '__main__':
         train_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, train_iter, args.batch_size, args.gpu)
         test_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, test_iter, args.batch_size, args.gpu)
         dev_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, dev_iter, args.batch_size, args.gpu)
+    elif args.dataset == 'AAPD':
+        train_evaluator = EvaluatorFactory.get_evaluator(AAPD, model, None, train_iter, args.batch_size, args.gpu)
+        test_evaluator = EvaluatorFactory.get_evaluator(AAPD, model, None, test_iter, args.batch_size, args.gpu)
+        dev_evaluator = EvaluatorFactory.get_evaluator(AAPD, model, None, dev_iter, args.batch_size, args.gpu)
     else:
         raise ValueError('Unrecognized dataset')
 
@@ -154,28 +160,11 @@ if __name__ == '__main__':
     elif args.dataset == 'Reuters':
         evaluate_dataset('dev', Reuters, model, None, dev_iter, args.batch_size, args.gpu)
         evaluate_dataset('test', Reuters, model, None, test_iter, args.batch_size, args.gpu)
+    elif args.dataset == 'AAPD':
+        evaluate_dataset('dev', AAPD, model, None, dev_iter, args.batch_size, args.gpu)
+        evaluate_dataset('test', AAPD, model, None, test_iter, args.batch_size, args.gpu)
     else:
         raise ValueError('Unrecognized dataset')
-
-    # Calculate dev and test metrics
-    for data_loader in [dev_iter, test_iter]:
-        predicted_labels = list()
-        target_labels = list()
-        for batch_idx, batch in enumerate(data_loader):
-            scores_rounded = F.sigmoid(model(batch.text)).round().long()
-            predicted_labels.extend(scores_rounded.cpu().detach().numpy())
-            target_labels.extend(batch.label.cpu().detach().numpy())
-        predicted_labels = np.array(predicted_labels)
-        target_labels = np.array(target_labels)
-        accuracy = metrics.accuracy_score(target_labels, predicted_labels)
-        precision = metrics.precision_score(target_labels, predicted_labels, average='micro')
-        recall = metrics.recall_score(target_labels, predicted_labels, average='micro')
-        f1 = metrics.f1_score(target_labels, predicted_labels, average='micro')
-        if data_loader == dev_iter:
-            print("Dev metrics:")
-        else:
-            print("Test metrics:")
-        print(accuracy, precision, recall, f1)
 
     if args.onnx:
         device = torch.device('cuda') if torch.cuda.is_available() and args.cuda else torch.device('cpu')
