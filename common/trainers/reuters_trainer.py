@@ -32,11 +32,16 @@ class ReutersTrainer(Trainer):
             self.iterations += 1
             self.model.train()
             self.optimizer.zero_grad()
-            if 'ignore_lengths' in self.config and self.config['ignore_lengths'] == True:
-                scores = self.model(batch.text, lengths=batch.text)
+            if hasattr(self.model, 'TAR') and self.model.TAR:
+                if 'ignore_lengths' in self.config and self.config['ignore_lengths'] == True:
+                    scores, rnn_outs = self.model(batch.text, lengths=batch.text)
+                else:
+                    scores, rnn_outs = self.model(batch.text[0], lengths=batch.text[1])
             else:
-                scores = self.model(batch.text[0], lengths=batch.text[1])
-            
+                if 'ignore_lengths' in self.config and self.config['ignore_lengths'] == True:
+                    scores = self.model(batch.text, lengths=batch.text)
+                else:
+                    scores = self.model(batch.text[0], lengths=batch.text[1])
             # Using binary accuracy
             for tensor1, tensor2 in zip(F.sigmoid(scores).round().long(), batch.label):
                 if np.array_equal(tensor1, tensor2):
@@ -44,9 +49,16 @@ class ReutersTrainer(Trainer):
             n_total += batch.batch_size
             train_acc = 100. * n_correct / n_total
             loss = F.binary_cross_entropy_with_logits(scores, batch.label.float())
+            if hasattr(self.model, 'TAR') and self.model.TAR:
+                loss = loss + (rnn_outs[1:] - rnn_outs[:-1]).pow(2).mean()
             loss.backward()
 
             self.optimizer.step()
+            #############
+            ## Temp Ave
+            if hasattr(self.model, 'beta_ema') and self.model.beta_ema > 0:
+                self.model.update_ema()
+            #############
 
             # Evaluate performance on validation set
             if self.iterations % self.dev_log_interval == 1:
