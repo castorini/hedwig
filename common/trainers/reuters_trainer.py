@@ -16,7 +16,7 @@ class ReutersTrainer(Trainer):
         super(ReutersTrainer, self).__init__(model, embedding, train_loader, trainer_config, train_evaluator, test_evaluator, dev_evaluator)
         self.config = trainer_config
         self.early_stop = False
-        self.best_dev_acc = 0
+        self.best_dev_f1 = 0
         self.iterations = 0
         self.iters_not_improved = 0
         self.start = None
@@ -24,6 +24,7 @@ class ReutersTrainer(Trainer):
             '{:>6.0f},{:>5.0f},{:>9.0f},{:>5.0f}/{:<5.0f} {:>7.0f}%,{:>8.6f},{},{:12.4f},{}'.split(','))
         self.dev_log_template = ' '.join('{:>6.0f},{:>5.0f},{:>9.0f},{:>5.0f}/{:<5.0f} {:>7.0f}%,{:>8.6f},{:8.6f},{:12.4f},{:12.4f}'.split(','))
         self.writer = SummaryWriter(log_dir="tensorboard_logs/" + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+        self.snapshot_path = os.path.join(self.model_outfile, self.train_loader.dataset.NAME, 'best_model.pt')
 
     def train_epoch(self, epoch):
         self.train_loader.init_epoch()
@@ -54,31 +55,32 @@ class ReutersTrainer(Trainer):
             loss.backward()
 
             self.optimizer.step()
-            #############
-            ## Temp Ave
+
+            # Temp Ave
             if hasattr(self.model, 'beta_ema') and self.model.beta_ema > 0:
                 self.model.update_ema()
-            #############
 
             # Evaluate performance on validation set
             if self.iterations % self.dev_log_interval == 1:
-                dev_acc, dev_loss = self.dev_evaluator.get_scores()[0]
+                dev_acc, dev_precision, dev_recall, dev_f1, dev_loss = self.dev_evaluator.get_scores()[0]
                 niter = epoch * len(self.train_loader) + batch_idx
                 self.writer.add_scalar('Train/Loss', loss.data[0], niter)
                 self.writer.add_scalar('Dev/Loss', dev_loss, niter)
                 self.writer.add_scalar('Train/Accuracy', train_acc, niter)
                 self.writer.add_scalar('Dev/Accuracy', dev_acc, niter)
+                self.writer.add_scalar('Dev/Precision', dev_precision, niter)
+                self.writer.add_scalar('Dev/Recall', dev_recall, niter)
+                self.writer.add_scalar('Dev/F-measure', dev_f1, niter)
                 print(self.dev_log_template.format(time.time() - self.start,
                       epoch, self.iterations, 1 + batch_idx, len(self.train_loader),
                       100. * (1 + batch_idx) / len(self.train_loader), loss.item(),
                       dev_loss, train_acc, dev_acc))
 
                 # Update validation results
-                if dev_acc > self.best_dev_acc:
+                if dev_f1 > self.best_dev_f1:
                     self.iters_not_improved = 0
-                    self.best_dev_acc = dev_acc
-                    snapshot_path = os.path.join(self.model_outfile, self.train_loader.dataset.NAME, datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '_reuters_best_model.pt')
-                    torch.save(self.model, snapshot_path)
+                    self.best_dev_f1 = dev_f1
+                    torch.save(self.model.state_dict(), self.snapshot_path)
                 else:
                     self.iters_not_improved += 1
                     if self.iters_not_improved >= self.patience:
@@ -102,6 +104,6 @@ class ReutersTrainer(Trainer):
 
         for epoch in range(1, epochs + 1):
             if self.early_stop:
-                print("Early Stopping. Epoch: {}, Best Dev Acc: {}".format(epoch, self.best_dev_acc))
+                print("Early Stopping. Epoch: {}, Best Dev F1: {}".format(epoch, self.best_dev_f1))
                 break
             self.train_epoch(epoch)

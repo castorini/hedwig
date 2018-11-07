@@ -22,7 +22,7 @@ class CharCNN(nn.Module):
         self.conv5 = nn.Conv1d(num_conv_filters, num_conv_filters, kernel_size=3)
         self.conv6 = nn.Conv1d(num_conv_filters, output_channel, kernel_size=3)
         self.dropout = nn.Dropout(config.dropout)
-        self.fc1 = nn.Linear(num_conv_filters, num_affine_neurons)
+        self.fc1 = nn.Linear(output_channel, num_affine_neurons)
         self.fc2 = nn.Linear(num_affine_neurons, num_affine_neurons)
         self.fc3 = nn.Linear(num_affine_neurons, target_class)
 
