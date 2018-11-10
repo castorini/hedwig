@@ -41,7 +41,7 @@ class WordLevelRNN(nn.Module):
         h,_ = self.GRU(x)
         x = torch.tanh(self.linear(h))
         x = torch.matmul(x, self.word_context_wghts)
-        x = x.squeeze()
+        x = x.squeeze(dim=2)
         x = self.soft_word(x.transpose(1,0))
         x = torch.mul(h.permute(2,0,1), x.transpose(1,0))
         x = torch.sum(x, dim = 1).transpose(1,0).unsqueeze(0)

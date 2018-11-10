@@ -23,7 +23,7 @@ class SentLevelRNN(nn.Module):
             sentence_h,_ = self.sentence_GRU(x)
             x = torch.tanh(self.sentence_linear(sentence_h))
             x = torch.matmul(x, self.sentence_context_wghts)
-            x = x.squeeze()
+            x = x.squeeze(dim=2)
             x = self.soft_sent(x.transpose(1,0))
             x = torch.mul(sentence_h.permute(2,0,1), x.transpose(1,0))
             x = torch.sum(x,dim = 1).transpose(1,0).unsqueeze(0)
