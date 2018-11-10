@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 
 
 def get_args():
-    parser = ArgumentParser(description="Kim CNN")
+    parser = ArgumentParser(description="XML CNN")
     parser.add_argument('--no_cuda', action='store_false', help='do not use cuda', dest='cuda')
     parser.add_argument('--gpu', type=int, default=0) # Use -1 for CPU
     parser.add_argument('--epochs', type=int, default=30)
@@ -12,12 +12,12 @@ def get_args():
     parser.add_argument('--mode', type=str, default='multichannel', choices=['rand', 'static', 'non-static', 'multichannel'])
     parser.add_argument('--lr', type=float, default=1.0)
     parser.add_argument('--seed', type=int, default=3435)
-    parser.add_argument('--dataset', type=str, default='SST-1', choices=['SST-1', 'SST-2', 'Reuters'])
+    parser.add_argument('--dataset', type=str, default='SST-1', choices=['SST-1', 'SST-2', 'Reuters','AAPD'])
     parser.add_argument('--resume_snapshot', type=str, default=None)
     parser.add_argument('--dev_every', type=int, default=30)
     parser.add_argument('--log_every', type=int, default=10)
     parser.add_argument('--patience', type=int, default=50)
-    parser.add_argument('--save_path', type=str, default='kim_cnn/saves')
+    parser.add_argument('--save_path', type=str, default='xml_cnn/saves')
     parser.add_argument('--output_channel', type=int, default=100)
     parser.add_argument('--words_dim', type=int, default=300)
     parser.add_argument('--embed_dim', type=int, default=300)
