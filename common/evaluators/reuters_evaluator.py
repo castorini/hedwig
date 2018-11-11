@@ -11,6 +11,7 @@ class ReutersEvaluator(Evaluator):
     def __init__(self, dataset_cls, model, embedding, data_loader, batch_size, device, keep_results=False):
         super().__init__(dataset_cls, model, embedding, data_loader, batch_size, device, keep_results)
         self.ignore_lengths = False
+        self.single_label = False
 
     def get_scores(self):
         self.model.eval()
@@ -36,13 +37,18 @@ class ReutersEvaluator(Evaluator):
                 else:
                     scores = self.model(batch.text[0], lengths=batch.text[1])
 
-            total_loss += F.binary_cross_entropy_with_logits(scores, batch.label.float(), size_average=False).item()
-            if hasattr(self.model, 'TAR') and self.model.TAR:  # TAR condition
-                total_loss += (rnn_outs[1:]-rnn_outs[:-1]).pow(2).mean()
+            if self.single_label:
+                predicted_labels.extend(torch.argmax(scores, dim=1).cpu().detach().numpy())
+                target_labels.extend(torch.argmax(batch.label, dim=1).cpu().detach().numpy())
+                total_loss += F.cross_entropy(scores, torch.argmax(batch.label, dim=1), size_average=False).item()
+            else:
+                scores_rounded = F.sigmoid(scores).round().long()
+                predicted_labels.extend(scores_rounded.cpu().detach().numpy())
+                target_labels.extend(batch.label.cpu().detach().numpy())
+                total_loss += F.binary_cross_entropy_with_logits(scores, batch.label.float(), size_average=False).item()
 
-            scores_rounded = F.sigmoid(scores).round().long()
-            predicted_labels.extend(scores_rounded.cpu().detach().numpy())
-            target_labels.extend(batch.label.cpu().detach().numpy())
+            if hasattr(self.model, 'TAR') and self.model.TAR:  # TAR condition
+                total_loss += (rnn_outs[1:] - rnn_outs[:-1]).pow(2).mean()
 
         predicted_labels = np.array(predicted_labels)
         target_labels = np.array(target_labels)

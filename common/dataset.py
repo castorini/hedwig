@@ -13,6 +13,8 @@ from datasets.sts2014 import STS2014
 from datasets.quora import Quora
 from datasets.reuters import Reuters
 from datasets.aapd import AAPD
+from datasets.imdb import IMDB
+
 
 class UnknownWordVecCache(object):
     """
@@ -71,8 +73,6 @@ class DatasetFactory(object):
             embedding = nn.Embedding.from_pretrained(PIT2015.TEXT_FIELD.vocab.vectors)
             return PIT2015, embedding, train_loader, test_loader, dev_loader
 
-
-
         elif dataset_name == 'snli':
             dataset_root = os.path.join(castor_dir, os.pardir, 'Castor-data', 'datasets', 'snli_1.0/')
             train_loader, dev_loader, test_loader = SNLI.iters(dataset_root, word_vectors_file, word_vectors_dir, batch_size, device=device, unk_init=UnknownWordVecCache.unk)
@@ -98,6 +98,11 @@ class DatasetFactory(object):
             train_loader, dev_loader, test_loader = AAPD.iters(dataset_root, word_vectors_file, word_vectors_dir, batch_size, device=device, unk_init=UnknownWordVecCache.unk)
             embedding = nn.Embedding.from_pretrained(AAPD.TEXT_FIELD.vocab.vectors)
             return AAPD, embedding, train_loader, test_loader, dev_loader
+        elif dataset_name == 'imdb':
+            dataset_root = os.path.join(castor_dir, os.pardir, 'Castor-data', 'datasets', 'IMDB/')
+            train_loader, dev_loader, test_loader = AAPD.iters(dataset_root, word_vectors_file, word_vectors_dir, batch_size, device=device, unk_init=UnknownWordVecCache.unk)
+            embedding = nn.Embedding.from_pretrained(AAPD.TEXT_FIELD.vocab.vectors)
+            return IMDB, embedding, train_loader, test_loader, dev_loader
         else:
             raise ValueError('{} is not a valid dataset.'.format(dataset_name))
 

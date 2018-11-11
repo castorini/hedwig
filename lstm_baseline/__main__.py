@@ -12,6 +12,7 @@ from common.train import TrainerFactory
 from datasets.sst import SST1
 from datasets.sst import SST2
 from datasets.reuters import Reuters
+from datasets.imdb import IMDB
 from datasets.aapd import AAPD
 from lstm_baseline.args import get_args
 from lstm_baseline.model import LSTMBaseline
@@ -78,7 +79,8 @@ if __name__ == '__main__':
         'SST-1': SST1,
         'SST-2': SST2,
         'Reuters': Reuters,
-        'AAPD': AAPD
+        'AAPD': AAPD,
+        'IMDB': IMDB
     }
 
     if args.dataset not in dataset_map:
@@ -118,6 +120,9 @@ if __name__ == '__main__':
         train_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, train_iter, args.batch_size, args.gpu)
         test_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, test_iter, args.batch_size, args.gpu)
         dev_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, dev_iter, args.batch_size, args.gpu)
+        train_evaluator.single_label = args.single_label
+        test_evaluator.single_label = args.single_label
+        dev_evaluator.single_label = args.single_label
 
     trainer_config = {
         'optimizer': optimizer,
@@ -126,7 +131,8 @@ if __name__ == '__main__':
         'dev_log_interval': args.dev_every,
         'patience': args.patience,
         'model_outfile': args.save_path,   # actually a directory, using model_outfile to conform to Trainer naming convention
-        'logger': logger
+        'logger': logger,
+        'single_label': args.single_label
     }
     trainer = TrainerFactory.get_trainer(args.dataset, model, None, train_iter, trainer_config, train_evaluator, test_evaluator, dev_evaluator)
 
