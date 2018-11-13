@@ -77,14 +77,14 @@ class VDPWIModel(nn.Module):
 
     def create_pad_cube(self, sent1, sent2):
         pad_cube = []
-        max_len1 = max([len(s.split()) for s in sent1])
-        max_len2 = max([len(s.split()) for s in sent2])
+        sent1_lengths = [len(s.split()) for s in sent1]
+        sent2_lengths = [len(s.split()) for s in sent2]
+        max_len1 = max(sent1_lengths)
+        max_len2 = max(sent2_lengths)
 
-        for s1, s2 in zip(sent1, sent2):
-            pad1 = (max_len1 - len(s1.split()))
-            pad2 = (max_len2 - len(s2.split()))
+        for s1_length, s2_length in zip(sent1_lengths, sent2_lengths):
             pad_mask = np.ones((max_len1, max_len2))
-            pad_mask[:len(s1), :len(s2)] = 0
+            pad_mask[:s1_length, :s2_length] = 0
             pad_cube.append(pad_mask)
 
         pad_cube = np.array(pad_cube)
