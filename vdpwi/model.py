@@ -77,8 +77,8 @@ class VDPWIModel(nn.Module):
 
     def create_pad_cube(self, sent1, sent2):
         pad_cube = []
-        sent1_lengths = [len(s.split()) for s in sent1]
-        sent2_lengths = [len(s.split()) for s in sent2]
+        sent1_lengths = [len(s.split(" ")) for s in sent1]
+        sent2_lengths = [len(s.split(" ")) for s in sent2]
         max_len1 = max(sent1_lengths)
         max_len2 = max(sent2_lengths)
 
