@@ -1,18 +1,22 @@
-from sklearn import metrics
-
+from copy import deepcopy
 import logging
-import numpy as np
 import random
+
+import numpy as np
+from sklearn import metrics
 import torch
 import torch.nn.functional as F
-from copy import deepcopy
 
+from char_cnn.args import get_args
+from char_cnn.model import CharCNN
 from common.evaluation import EvaluatorFactory
 from common.train import TrainerFactory
 from datasets.aapd import AAPDCharQuantized as AAPD
+from datasets.imdb import IMDBCharQuantized as IMDB
 from datasets.reuters import ReutersCharQuantized as Reuters
-from char_cnn.args import get_args
-from char_cnn.model import CharCNN
+from datasets.yelp2014 import Yelp2014CharQuantized as Yelp2014
+
+
 
 
 class UnknownWordVecCache(object):
@@ -45,13 +49,14 @@ def get_logger():
     return logger
 
 
-def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_size, device):
+def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_size, device, single_label):
     saved_model_evaluator = EvaluatorFactory.get_evaluator(dataset_cls, model, embedding, loader, batch_size, device)
     saved_model_evaluator.ignore_lengths = True
+    saved_model_evaluator.single_label = single_label
     scores, metric_names = saved_model_evaluator.get_scores()
-    logger.info('Evaluation metrics for {}'.format(split_name))
-    logger.info('\t'.join([' '] + metric_names))
-    logger.info('\t'.join([split_name] + list(map(str, scores))))
+    print('Evaluation metrics for', split_name)
+    print(metric_names)
+    print(scores)
 
 
 if __name__ == '__main__':
@@ -73,13 +78,20 @@ if __name__ == '__main__':
     random.seed(args.seed)
     logger = get_logger()
 
-    # Set up the data for training SST-1
-    if args.dataset == 'Reuters':
-        train_iter, dev_iter, test_iter = Reuters.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
-    elif args.dataset == 'AAPD':
-        train_iter, dev_iter, test_iter = AAPD.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
-    else:
+    dataset_map = {
+        'Reuters': Reuters,
+        'AAPD': AAPD,
+        'IMDB': IMDB,
+        'Yelp2014': Yelp2014
+    }
+
+    if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
+    else:
+        train_iter, dev_iter, test_iter = dataset_map[args.dataset].iters(args.data_dir, args.word_vectors_file,
+                                                                          args.word_vectors_dir,
+                                                                          batch_size=args.batch_size, device=args.gpu,
+                                                                          unk_init=UnknownWordVecCache.unk)
 
     config = deepcopy(args)
     config.dataset = train_iter.dataset
@@ -104,19 +116,18 @@ if __name__ == '__main__':
     parameter = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = torch.optim.Adam(parameter, lr=args.lr, weight_decay=args.weight_decay)
 
-    if args.dataset == 'Reuters':
-        train_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, train_iter, args.batch_size, args.gpu)
-        test_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, test_iter, args.batch_size, args.gpu)
-        dev_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, dev_iter, args.batch_size, args.gpu)
-    elif args.dataset == 'AAPD':
-        train_evaluator = EvaluatorFactory.get_evaluator(AAPD, model, None, train_iter, args.batch_size, args.gpu)
-        test_evaluator = EvaluatorFactory.get_evaluator(AAPD, model, None, test_iter, args.batch_size, args.gpu)
-        dev_evaluator = EvaluatorFactory.get_evaluator(AAPD, model, None, dev_iter, args.batch_size, args.gpu)
-    else:
+    if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
+    else:
+        train_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, train_iter, args.batch_size, args.gpu)
+        test_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, test_iter, args.batch_size, args.gpu)
+        dev_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, dev_iter, args.batch_size, args.gpu)
+        train_evaluator.single_label = args.single_label
+        test_evaluator.single_label = args.single_label
+        dev_evaluator.single_label = args.single_label
+        dev_evaluator.ignore_lengths = True
+        test_evaluator.ignore_lengths = True
 
-    dev_evaluator.ignore_lengths = True
-    test_evaluator.ignore_lengths = True
     trainer_config = {
         'optimizer': optimizer,
         'batch_size': args.batch_size,
@@ -125,7 +136,8 @@ if __name__ == '__main__':
         'patience': args.patience,
         'model_outfile': args.save_path,   # actually a directory, using model_outfile to conform to Trainer naming convention
         'logger': logger,
-        'ignore_lengths': True
+        'ignore_lengths': True,
+        'single_label': args.single_label
     }
     trainer = TrainerFactory.get_trainer(args.dataset, model, None, train_iter, trainer_config, train_evaluator, test_evaluator, dev_evaluator)
 
@@ -137,31 +149,10 @@ if __name__ == '__main__':
         else:
             model = torch.load(args.trained_model, map_location=lambda storage, location: storage)
 
-    if args.dataset == 'Reuters':
-        evaluate_dataset('dev', Reuters, model, None, dev_iter, args.batch_size, args.gpu)
-        evaluate_dataset('test', Reuters, model, None, test_iter, args.batch_size, args.gpu)
-    elif args.dataset == 'AAPD':
-        evaluate_dataset('dev', AAPD, model, None, dev_iter, args.batch_size, args.gpu)
-        evaluate_dataset('test', AAPD, model, None, test_iter, args.batch_size, args.gpu)
-    else:
-        raise ValueError('Unrecognized dataset')
-
     # Calculate dev and test metrics
-    for data_loader in [dev_iter, test_iter]:
-        predicted_labels = list()
-        target_labels = list()
-        for batch_idx, batch in enumerate(data_loader):
-            scores_rounded = F.sigmoid(model(batch.text)).round().long()
-            predicted_labels.extend(scores_rounded.cpu().detach().numpy())
-            target_labels.extend(batch.label.cpu().detach().numpy())
-        predicted_labels = np.array(predicted_labels)
-        target_labels = np.array(target_labels)
-        accuracy = metrics.accuracy_score(target_labels, predicted_labels)
-        precision = metrics.precision_score(target_labels, predicted_labels, average='micro')
-        recall = metrics.recall_score(target_labels, predicted_labels, average='micro')
-        f1 = metrics.f1_score(target_labels, predicted_labels, average='micro')
-        if data_loader == dev_iter:
-            print("Dev metrics:")
-        else:
-            print("Test metrics:")
-        print(accuracy, precision, recall, f1)
+    model = torch.load(trainer.snapshot_path)
+    if args.dataset not in dataset_map:
+        raise ValueError('Unrecognized dataset')
+    else:
+        evaluate_dataset('dev', dataset_map[args.dataset], model, None, dev_iter, args.batch_size, args.gpu, args.single_label)
+        evaluate_dataset('test', dataset_map[args.dataset], model, None, test_iter, args.batch_size, args.gpu, args.single_label)

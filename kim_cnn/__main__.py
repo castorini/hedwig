@@ -14,8 +14,11 @@ from datasets.sst import SST1
 from datasets.sst import SST2
 from datasets.aapd import AAPD
 from datasets.reuters import Reuters
+from datasets.yelp2014 import Yelp2014
+from datasets.imdb import IMDB
 from kim_cnn.args import get_args
 from kim_cnn.model import KimCNN
+
 
 class UnknownWordVecCache(object):
     """
@@ -47,8 +50,10 @@ def get_logger():
     return logger
 
 
-def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_size, device):
+def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_size, device, single_label):
     saved_model_evaluator = EvaluatorFactory.get_evaluator(dataset_cls, model, embedding, loader, batch_size, device)
+    if hasattr(saved_model_evaluator, 'single_label'):
+        saved_model_evaluator.single_label = single_label
     scores, metric_names = saved_model_evaluator.get_scores()
     logger.info('Evaluation metrics for {}'.format(split_name))
     logger.info('\t'.join([' '] + metric_names))
@@ -74,18 +79,22 @@ if __name__ == '__main__':
     random.seed(args.seed)
     logger = get_logger()
 
-    # Set up the data for training SST-1
-    if args.dataset == 'SST-1':
-        train_iter, dev_iter, test_iter = SST1.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
-    # Set up the data for training SST-2
-    elif args.dataset == 'SST-2':
-        train_iter, dev_iter, test_iter = SST2.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
-    elif args.dataset == 'Reuters':
-        train_iter, dev_iter, test_iter = Reuters.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
-    elif args.dataset == 'AAPD':
-        train_iter, dev_iter, test_iter = AAPD.iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
-    else:
+    dataset_map = {
+        'SST-1': SST1,
+        'SST-2': SST2,
+        'Reuters': Reuters,
+        'AAPD': AAPD,
+        'IMDB': IMDB,
+        'Yelp2014': Yelp2014
+    }
+
+    if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
+    else:
+        train_iter, dev_iter, test_iter = dataset_map[args.dataset].iters(args.data_dir, args.word_vectors_file,
+                                                                          args.word_vectors_dir,
+                                                                          batch_size=args.batch_size, device=args.gpu,
+                                                                          unk_init=UnknownWordVecCache.unk)
 
     config = deepcopy(args)
     config.dataset = train_iter.dataset
@@ -113,24 +122,18 @@ if __name__ == '__main__':
     parameter = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = torch.optim.Adadelta(parameter, lr=args.lr, weight_decay=args.weight_decay)
 
-    if args.dataset == 'SST-1':
-        train_evaluator = EvaluatorFactory.get_evaluator(SST1, model, None, train_iter, args.batch_size, args.gpu)
-        test_evaluator = EvaluatorFactory.get_evaluator(SST1, model, None, test_iter, args.batch_size, args.gpu)
-        dev_evaluator = EvaluatorFactory.get_evaluator(SST1, model, None, dev_iter, args.batch_size, args.gpu)
-    elif args.dataset == 'SST-2':
-        train_evaluator = EvaluatorFactory.get_evaluator(SST2, model, None, train_iter, args.batch_size, args.gpu)
-        test_evaluator = EvaluatorFactory.get_evaluator(SST2, model, None, test_iter, args.batch_size, args.gpu)
-        dev_evaluator = EvaluatorFactory.get_evaluator(SST2, model, None, dev_iter, args.batch_size, args.gpu)
-    elif args.dataset == 'Reuters':
-        train_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, train_iter, args.batch_size, args.gpu)
-        test_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, test_iter, args.batch_size, args.gpu)
-        dev_evaluator = EvaluatorFactory.get_evaluator(Reuters, model, None, dev_iter, args.batch_size, args.gpu)
-    elif args.dataset == 'AAPD':
-        train_evaluator = EvaluatorFactory.get_evaluator(AAPD, model, None, train_iter, args.batch_size, args.gpu)
-        test_evaluator = EvaluatorFactory.get_evaluator(AAPD, model, None, test_iter, args.batch_size, args.gpu)
-        dev_evaluator = EvaluatorFactory.get_evaluator(AAPD, model, None, dev_iter, args.batch_size, args.gpu)
-    else:
+    if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
+    else:
+        train_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, train_iter, args.batch_size, args.gpu)
+        test_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, test_iter, args.batch_size, args.gpu)
+        dev_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, dev_iter, args.batch_size, args.gpu)
+        if hasattr(train_evaluator, 'single_label'):
+            train_evaluator.single_label = args.single_label
+        if hasattr(test_evaluator, 'single_label'):
+            test_evaluator.single_label = args.single_label
+        if hasattr(dev_evaluator, 'single_label'):
+            dev_evaluator.single_label = args.single_label
 
     trainer_config = {
         'optimizer': optimizer,
@@ -138,9 +141,11 @@ if __name__ == '__main__':
         'log_interval': args.log_every,
         'dev_log_interval': args.dev_every,
         'patience': args.patience,
-        'model_outfile': args.save_path,   # actually a directory, using model_outfile to conform to Trainer naming convention
-        'logger': logger
+        'model_outfile': args.save_path,  # actually a directory, using model_outfile to conform to Trainer naming convention
+        'logger': logger,
+        'single_label': args.single_label
     }
+
     trainer = TrainerFactory.get_trainer(args.dataset, model, None, train_iter, trainer_config, train_evaluator, test_evaluator, dev_evaluator)
 
     if not args.trained_model:
@@ -151,20 +156,14 @@ if __name__ == '__main__':
         else:
             model = torch.load(args.trained_model, map_location=lambda storage, location: storage)
 
-    if args.dataset == 'SST-1':
-        evaluate_dataset('dev', SST1, model, None, dev_iter, args.batch_size, args.gpu)
-        evaluate_dataset('test', SST1, model, None, test_iter, args.batch_size, args.gpu)
-    elif args.dataset == 'SST-2':
-        evaluate_dataset('dev', SST2, model, None, dev_iter, args.batch_size, args.gpu)
-        evaluate_dataset('test', SST2, model, None, test_iter, args.batch_size, args.gpu)
-    elif args.dataset == 'Reuters':
-        evaluate_dataset('dev', Reuters, model, None, dev_iter, args.batch_size, args.gpu)
-        evaluate_dataset('test', Reuters, model, None, test_iter, args.batch_size, args.gpu)
-    elif args.dataset == 'AAPD':
-        evaluate_dataset('dev', AAPD, model, None, dev_iter, args.batch_size, args.gpu)
-        evaluate_dataset('test', AAPD, model, None, test_iter, args.batch_size, args.gpu)
-    else:
+    # Calculate dev and test metrics
+    if hasattr(trainer, 'snapshot_path'):
+        model = torch.load(trainer.snapshot_path)
+    if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
+    else:
+        evaluate_dataset('dev', dataset_map[args.dataset], model, None, dev_iter, args.batch_size, args.gpu, args.single_label)
+        evaluate_dataset('test', dataset_map[args.dataset], model, None, test_iter, args.batch_size, args.gpu, args.single_label)
 
     if args.onnx:
         device = torch.device('cuda') if torch.cuda.is_available() and args.cuda else torch.device('cpu')

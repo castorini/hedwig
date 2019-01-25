@@ -28,6 +28,7 @@ class TrainerFactory(object):
         'Reuters': ReutersTrainer,
         'AAPD': ReutersTrainer,
         'IMDB': ReutersTrainer,
+        'Yelp2014': ReutersTrainer,
         'snli': SNLITrainer,
         'sts2014': STS2014Trainer,
         'quora': QuoraTrainer

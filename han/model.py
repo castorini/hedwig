@@ -10,7 +10,7 @@ from han.word_level_rnn import WordLevelRNN
 class HAN(nn.Module):
         def __init__(self, config):
                 super(HAN, self).__init__()	
-                self.dataset = config.dataset
+                dataset = config.dataset
                 self.mode = config.mode
                 self.word_attention_rnn = WordLevelRNN(config)
                 self.sentence_attention_rnn = SentLevelRNN(config)

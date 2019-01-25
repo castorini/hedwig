@@ -35,12 +35,12 @@ class ReutersTrainer(Trainer):
             self.optimizer.zero_grad()
             if hasattr(self.model, 'TAR') and self.model.TAR:
                 if 'ignore_lengths' in self.config and self.config['ignore_lengths']:
-                    scores, rnn_outs = self.model(batch.text, lengths=batch.text)
+                    scores, rnn_outs = self.model(batch.text)
                 else:
                     scores, rnn_outs = self.model(batch.text[0], lengths=batch.text[1])
             else:
                 if 'ignore_lengths' in self.config and self.config['ignore_lengths']:
-                    scores = self.model(batch.text, lengths=batch.text)
+                    scores = self.model(batch.text)
                 else:
                     scores = self.model(batch.text[0], lengths=batch.text[1])
 
@@ -85,9 +85,9 @@ class ReutersTrainer(Trainer):
         # model_outfile is actually a directory, using model_outfile to conform to Trainer naming convention
         os.makedirs(self.model_outfile, exist_ok=True)
         os.makedirs(os.path.join(self.model_outfile, self.train_loader.dataset.NAME), exist_ok=True)
-        print(header)
 
         for epoch in range(1, epochs + 1):
+            print('\n' + header)
             self.train_epoch(epoch)
 
             # Evaluate performance on validation set
@@ -100,13 +100,12 @@ class ReutersTrainer(Trainer):
             print('\n' + dev_header)
             print(self.dev_log_template.format(time.time() - self.start, epoch, self.iterations, epoch, epochs,
                                                dev_acc, dev_precision, dev_recall, dev_f1, dev_loss))
-            print('\n' + header)
 
             # Update validation results
             if dev_f1 > self.best_dev_f1:
                 self.iters_not_improved = 0
                 self.best_dev_f1 = dev_f1
-                torch.save(self.model.state_dict(), self.snapshot_path)
+                torch.save(self.model, self.snapshot_path)
             else:
                 self.iters_not_improved += 1
                 if self.iters_not_improved >= self.patience:

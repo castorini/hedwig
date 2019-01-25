@@ -61,6 +61,7 @@ class LSTMBaseline(nn.Module):
         x = self.dropout(x)
         if self.has_bottleneck_layer:
             x = F.relu(self.fc1(x))
+            # x = self.dropout(x)
             return self.fc2(x)
         else:
             return self.fc1(x)

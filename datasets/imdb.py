@@ -1,14 +1,16 @@
-import numpy as np
 import os
 import re
+
+import numpy as np
 import torch
-from datasets.reuters import clean_string, clean_string_fl, split_sents
 from torchtext.data import NestedField, Field, TabularDataset
 from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
 
+from datasets.reuters import clean_string, clean_string_fl, split_sents
 
-def char_quantize(string, max_length=1000):
+
+def char_quantize(string, max_length=500):
     identity = np.identity(len(IMDBCharQuantized.ALPHABET))
     quantized_string = np.array([identity[IMDBCharQuantized.ALPHABET[char]] for char in list(string.lower()) if char in IMDBCharQuantized.ALPHABET], dtype=np.float32)
     if len(quantized_string) > max_length:
@@ -85,5 +87,5 @@ class IMDBCharQuantized(IMDB):
 
 
 class IMDBHierarchical(IMDB):
-    In_FIELD = Field(batch_first=True, tokenize=clean_string)
-    TEXT_FIELD = NestedField(In_FIELD, tokenize=split_sents)
+    NESTING_FIELD = Field(batch_first=True, tokenize=clean_string)
+    TEXT_FIELD = NestedField(NESTING_FIELD, tokenize=split_sents)

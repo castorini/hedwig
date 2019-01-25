@@ -28,6 +28,7 @@ class EvaluatorFactory(object):
         'Reuters': ReutersEvaluator,
         'AAPD': ReutersEvaluator,
         'IMDB': ReutersEvaluator,
+        'Yelp2014': ReutersEvaluator,
         'SNLI': SNLIEvaluator,
         'sts2014': STS2014Evaluator,
         'Quora': QuoraEvaluator

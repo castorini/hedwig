@@ -14,6 +14,8 @@ from datasets.sst import SST1
 from datasets.sst import SST2
 from datasets.reuters import Reuters
 from datasets.aapd import AAPD
+from datasets.yelp2014 import Yelp2014
+from datasets.imdb import IMDB
 from xml_cnn.args import get_args
 from xml_cnn.model import XmlCNN
 
@@ -48,12 +50,13 @@ def get_logger():
     return logger
 
 
-def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_size, device):
+def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_size, device, single_label):
     saved_model_evaluator = EvaluatorFactory.get_evaluator(dataset_cls, model, embedding, loader, batch_size, device)
+    saved_model_evaluator.single_label = single_label
     scores, metric_names = saved_model_evaluator.get_scores()
-    logger.info('Evaluation metrics for {}'.format(split_name))
-    logger.info('\t'.join([' '] + metric_names))
-    logger.info('\t'.join([split_name] + list(map(str, scores))))
+    print('Evaluation metrics for', split_name)
+    print(metric_names)
+    print(scores)
 
 
 if __name__ == '__main__':
@@ -79,7 +82,9 @@ if __name__ == '__main__':
         'SST-1': SST1,
         'SST-2': SST2,
         'Reuters': Reuters,
-        'AAPD': AAPD
+        'AAPD': AAPD,
+        'IMDB': IMDB,
+        'Yelp2014':Yelp2014
     }
     if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
@@ -119,6 +124,9 @@ if __name__ == '__main__':
         train_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, train_iter, args.batch_size, args.gpu)
         test_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, test_iter, args.batch_size, args.gpu)
         dev_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, dev_iter, args.batch_size, args.gpu)
+        train_evaluator.single_label = args.single_label
+        test_evaluator.single_label = args.single_label
+        dev_evaluator.single_label = args.single_label
     trainer_config = {
         'optimizer': optimizer,
         'batch_size': args.batch_size,
@@ -126,7 +134,8 @@ if __name__ == '__main__':
         'dev_log_interval': args.dev_every,
         'patience': args.patience,
         'model_outfile': args.save_path,   # actually a directory, using model_outfile to conform to Trainer naming convention
-        'logger': logger
+        'logger': logger,
+        'single_label': args.single_label
     }
     trainer = TrainerFactory.get_trainer(args.dataset, model, None, train_iter, trainer_config, train_evaluator, test_evaluator, dev_evaluator)
 
@@ -141,28 +150,8 @@ if __name__ == '__main__':
     if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
     else:
-        evaluate_dataset('dev', dataset_map[args.dataset], model, None, dev_iter, args.batch_size, args.gpu)
-        evaluate_dataset('test', dataset_map[args.dataset], model, None, test_iter, args.batch_size, args.gpu)
-
-    # Calculate dev and test metrics
-    for data_loader in [dev_iter, test_iter]:
-        predicted_labels = list()
-        target_labels = list()
-        for batch_idx, batch in enumerate(data_loader):
-            scores_rounded = F.sigmoid(model(batch.text)).round().long()
-            predicted_labels.extend(scores_rounded.cpu().detach().numpy())
-            target_labels.extend(batch.label.cpu().detach().numpy())
-        predicted_labels = np.array(predicted_labels)
-        target_labels = np.array(target_labels)
-        accuracy = metrics.accuracy_score(target_labels, predicted_labels)
-        precision = metrics.precision_score(target_labels, predicted_labels, average='micro')
-        recall = metrics.recall_score(target_labels, predicted_labels, average='micro')
-        f1 = metrics.f1_score(target_labels, predicted_labels, average='micro')
-        if data_loader == dev_iter:
-            print("Dev metrics:")
-        else:
-            print("Test metrics:")
-        print(accuracy, precision, recall, f1)
+        evaluate_dataset('dev', dataset_map[args.dataset], model, None, dev_iter, args.batch_size, args.gpu, args.single_label)
+        evaluate_dataset('test', dataset_map[args.dataset], model, None, test_iter, args.batch_size, args.gpu, args.single_label)
 
     if args.onnx:
         device = torch.device('cuda') if torch.cuda.is_available() and args.cuda else torch.device('cpu')

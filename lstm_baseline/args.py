@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 def get_args():
     parser = ArgumentParser(description="Baseline LSTM for text classification")
     parser.add_argument('--no_cuda', action='store_false', help='do not use cuda', dest='cuda')
-    parser.add_argument('--gpu', type=int, default=0) # Use -1 for CPU
+    parser.add_argument('--gpu', type=int, default=0, help="Use -1 for CPU")
     parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--batch_size', type=int, default=1024)
     parser.add_argument('--bidirectional', action='store_true'),
@@ -17,11 +17,11 @@ def get_args():
     parser.add_argument('--mode', type=str, default='static', choices=['rand', 'static', 'non-static'])
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--seed', type=int, default=3435)
-    parser.add_argument('--dataset', type=str, default='Reuters', choices=['SST-1', 'SST-2', 'Reuters', 'AAPD', 'IMDB'])
+    parser.add_argument('--dataset', type=str, default='Reuters', choices=['SST-1', 'SST-2', 'Reuters', 'AAPD', 'IMDB', 'Yelp2014'])
     parser.add_argument('--resume_snapshot', type=str, default=None)
     parser.add_argument('--dev_every', type=int, default=30)
     parser.add_argument('--log_every', type=int, default=10)
-    parser.add_argument('--patience', type=int, default=50)
+    parser.add_argument('--patience', type=int, default=5)
     parser.add_argument('--save_path', type=str, default='lstm_baseline/saves')
     parser.add_argument('--words_dim', type=int, default=300)
     parser.add_argument('--embed_dim', type=int, default=300)
