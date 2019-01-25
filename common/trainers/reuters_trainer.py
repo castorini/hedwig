@@ -58,7 +58,9 @@ class ReutersTrainer(Trainer):
                 loss = F.binary_cross_entropy_with_logits(scores, batch.label.float())
 
             if hasattr(self.model, 'TAR') and self.model.TAR:
-                loss = loss + (rnn_outs[1:] - rnn_outs[:-1]).pow(2).mean()
+                loss = loss + self.model.TAR*(rnn_outs[1:] - rnn_outs[:-1]).pow(2).mean()
+            if hasattr(self.model, 'AR') and self.model.AR:
+                loss = loss + self.model.AR*(rnn_outs[:]).pow(2).mean()
 
             n_total += batch.batch_size
             train_acc = 100. * n_correct / n_total
