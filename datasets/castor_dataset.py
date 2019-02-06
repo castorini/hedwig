@@ -53,7 +53,7 @@ class CastorPairDataset(Dataset, metaclass=ABCMeta):
                 example = Example.fromlist(example_list, fields)
                 examples.append(example)
 
-        super(CastorPairDataset, self).__init__(examples, fields)
+        super().__init__(examples, fields)
 
     @classmethod
     def set_vectors(cls, field, vector_path):

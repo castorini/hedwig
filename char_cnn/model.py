@@ -5,8 +5,9 @@ import torch.nn.functional as F
 
 
 class CharCNN(nn.Module):
+
     def __init__(self, config):
-        super(CharCNN, self).__init__()
+        super().__init__()
         self.is_cuda_enabled = config.cuda
         dataset = config.dataset
         num_conv_filters = config.num_conv_filters
@@ -15,7 +16,7 @@ class CharCNN(nn.Module):
         target_class = config.target_class
         input_channel = 68
 
-        self.conv1 = nn.Conv1d(input_channel, num_conv_filters, kernel_size=7) # Default padding=0
+        self.conv1 = nn.Conv1d(input_channel, num_conv_filters, kernel_size=7)
         self.conv2 = nn.Conv1d(num_conv_filters, num_conv_filters, kernel_size=7)
         self.conv3 = nn.Conv1d(num_conv_filters, num_conv_filters, kernel_size=3)
         self.conv4 = nn.Conv1d(num_conv_filters, num_conv_filters, kernel_size=3)

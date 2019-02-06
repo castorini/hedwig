@@ -9,8 +9,9 @@ from lstm_regularization.embed_regularize import embedded_dropout
 
 
 class LSTMBaseline(nn.Module):
+
     def __init__(self, config):
-        super(LSTMBaseline, self).__init__()
+        super().__init__()
         dataset = config.dataset
         target_class = config.target_class
         self.is_bidirectional = config.bidirectional

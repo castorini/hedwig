@@ -31,7 +31,7 @@ class WikiQA(CastorPairDataset):
 
     @classmethod
     def splits(cls, path, train='train', validation='dev', test='test', **kwargs):
-        return super(WikiQA, cls).splits(path, train=train, validation=validation, test=test, **kwargs)
+        return super().splits(path, train=train, validation=validation, test=test, **kwargs)
 
     @classmethod
     def iters(cls, path, vectors_name, vectors_dir, batch_size=64, shuffle=True, device=0, pt_file=False, vectors=None,

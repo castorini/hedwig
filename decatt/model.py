@@ -10,6 +10,7 @@ from torch.autograd import Variable
 
 
 class DecAtt(nn.Module):
+
     def __init__(self, num_units, num_classes, embedding_size, dropout, device=0, 
                  training=True, project_input=True,
                  use_intra_attention=False, distance_biases=10, max_sentence_length=30):

@@ -20,7 +20,6 @@ from han.args import get_args
 from han.model import HAN
 
 
-
 class UnknownWordVecCache(object):
     """
     Caches the first randomly generated word vector for a certain size to make it is reused.

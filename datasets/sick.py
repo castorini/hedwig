@@ -42,7 +42,7 @@ class SICK(CastorPairDataset):
         """
         Create a SICK dataset instance
         """
-        super(SICK, self).__init__(path)
+        super().__init__(path)
 
     @classmethod
     def splits(cls, path, train='train', validation='dev', test='test', **kwargs):

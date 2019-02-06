@@ -22,6 +22,7 @@ def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_si
     logger.info('\t'.join([' '] + metric_names))
     logger.info('\t'.join([split_name] + list(map(str, scores))))
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch implementation of VDPWI')
     parser.add_argument('model_outfile', help='file to save final model')

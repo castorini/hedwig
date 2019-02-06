@@ -1,7 +1,8 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import numpy as np
+
 
 def hard_pad2d(x, pad):
     def pad_side(idx):
@@ -12,7 +13,9 @@ def hard_pad2d(x, pad):
     x = F.pad(x, padding)
     return x[:, :, :pad, :pad]
 
+
 class ResNet(nn.Module):
+
     def __init__(self, config):
         super().__init__()
         n_layers = config['res_layers']
@@ -34,7 +37,9 @@ class ResNet(nn.Module):
         x = torch.mean(x.view(x.size(0), x.size(1), -1), 2)
         return F.log_softmax(self.output(x), 1)
 
+
 class VDPWIConvNet(nn.Module):
+
     def __init__(self, config):
         super().__init__()
         def make_conv(n_in, n_out):
@@ -63,7 +68,9 @@ class VDPWIConvNet(nn.Module):
         x = F.relu(self.dnn(x.view(x.size(0), -1)))
         return F.log_softmax(self.output(x), 1)
 
+
 class VDPWIModel(nn.Module):
+
     def __init__(self, dim, config):
         super().__init__()
         self.arch = 'vdpwi'

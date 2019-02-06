@@ -17,8 +17,6 @@ from datasets.reuters import ReutersCharQuantized as Reuters
 from datasets.yelp2014 import Yelp2014CharQuantized as Yelp2014
 
 
-
-
 class UnknownWordVecCache(object):
     """
     Caches the first randomly generated word vector for a certain size to make it is reused.

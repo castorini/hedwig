@@ -10,6 +10,7 @@ import data
 
 
 class ConvRNNModel(nn.Module):
+
     def __init__(self, word_model, **config):
         super().__init__()
         embedding_dim = word_model.dim
@@ -97,7 +98,9 @@ class WordEmbeddingModel(nn.Module):
     def lookup(self, sentences):
         raise NotImplementedError
 
+
 class SSTWordEmbeddingModel(WordEmbeddingModel):
+
     def __init__(self, id_dict, weights, unknown_vocab=[]):
         super().__init__(id_dict, weights, unknown_vocab, padding_idx=16259)
 
@@ -119,6 +122,7 @@ class SSTWordEmbeddingModel(WordEmbeddingModel):
         for indices in indices_list:
             indices.extend([self.padding_idx] * (max_len - len(indices))) 
         return indices_list, lengths
+
 
 def set_seed(seed=0, no_cuda=False):
     np.random.seed(seed)

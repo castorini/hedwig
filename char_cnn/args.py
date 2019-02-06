@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 def get_args():
     parser = ArgumentParser(description="Kim CNN")
     parser.add_argument('--no_cuda', action='store_false', help='do not use cuda', dest='cuda')
-    parser.add_argument('--gpu', type=int, default=0) # Use -1 for CPU
+    parser.add_argument('--gpu', type=int, default=0, help='Use -1 for CPU')
     parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--batch_size', type=int, default=128)
     parser.add_argument('--lr', type=float, default=0.001)

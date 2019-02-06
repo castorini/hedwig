@@ -5,6 +5,7 @@ import itertools
 import shlex
 import subprocess
 
+
 class Setting(object):
     def __init__(self, label, value_flag_map):
         self.label = label
@@ -21,6 +22,7 @@ class Setting(object):
         for key in self.choice_flags.keys():
             options.append("{}:{}".format(self.label, key))
         return options
+
 
 class Experiments(object):
     def __init__(self, qa_dataset):
@@ -51,7 +53,7 @@ class Experiments(object):
                                 bufsize=1, universal_newlines=True)
         pout, perr = p.communicate()
         return pout, perr
-    
+
     def _run_eval(self):
         for split in ['train-all', 'raw-dev', 'raw-test']:
             cmd = '{} {}/{}.qrel run.{}.idfsim'.format(self.eval_cmd_root,
@@ -67,7 +69,6 @@ class Experiments(object):
                 fields = line.strip().split()
                 metrics.append(fields[0])
                 scores.append(fields[-1])
-            
             # rbp_eval scores
             cmd = '{} {}/{}.qrel run.{}.idfsim'.format(self.rbp_cmd_root,
                                                        self.qa_data, split, split)
@@ -80,7 +81,6 @@ class Experiments(object):
             
             print('\t'.join(metrics))
             print('\t'.join(scores))
-
 
     def run(self, indices):
         """

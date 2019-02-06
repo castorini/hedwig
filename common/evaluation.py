@@ -44,11 +44,7 @@ class EvaluatorFactory(object):
         if data_loader is None:
             return None
 
-        if nce:
-            evaluator_map = EvaluatorFactory.evaluator_map_nce
-        else:
-            evaluator_map = EvaluatorFactory.evaluator_map
-
+        evaluator_map = EvaluatorFactory.evaluator_map_nce if nce else EvaluatorFactory.evaluator_map
         if not hasattr(dataset_cls, 'NAME'):
             raise ValueError('Invalid dataset. Dataset should have NAME attribute.')
 

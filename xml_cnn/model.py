@@ -1,12 +1,12 @@
 import torch
 import torch.nn as nn
-
 import torch.nn.functional as F
 
 
 class XmlCNN(nn.Module):
+
     def __init__(self, config):
-        super(XmlCNN, self).__init__()
+        super().__init__()
         dataset = config.dataset
         self.output_channel = config.output_channel
         target_class = config.target_class
@@ -15,7 +15,7 @@ class XmlCNN(nn.Module):
         self.mode = config.mode
         self.num_bottleneck_hidden = config.num_bottleneck_hidden
         self.dynamic_pool_length = config.dynamic_pool_length
-        self.Ks = 3 # There are three conv nets here
+        self.ks = 3 # There are three conv nets here
 
         input_channel = 1
         if config.mode == 'rand':
@@ -34,19 +34,15 @@ class XmlCNN(nn.Module):
             exit()
 
         ## Different filter sizes in xml_cnn than kim_cnn
-
         self.conv1 = nn.Conv2d(input_channel, self.output_channel, (2, words_dim), padding=(1,0))
         self.conv2 = nn.Conv2d(input_channel, self.output_channel, (4, words_dim), padding=(3,0))
         self.conv3 = nn.Conv2d(input_channel, self.output_channel, (8, words_dim), padding=(7,0))
 
-
         self.dropout = nn.Dropout(config.dropout)
-        self.bottleneck = nn.Linear(self.Ks*self.output_channel*self.dynamic_pool_length, self.num_bottleneck_hidden)
+        self.bottleneck = nn.Linear(self.ks * self.output_channel * self.dynamic_pool_length, self.num_bottleneck_hidden)
         self.fc1 = nn.Linear(self.num_bottleneck_hidden, target_class)
 
         self.pool = nn.AdaptiveMaxPool1d(self.dynamic_pool_length) #Adaptive pooling
-
-
 
     def forward(self, x, **kwargs):
         if self.mode == 'rand':
@@ -67,10 +63,10 @@ class XmlCNN(nn.Module):
             exit()
         x = [F.relu(self.conv1(x)).squeeze(3), F.relu(self.conv2(x)).squeeze(3), F.relu(self.conv3(x)).squeeze(3)]
         x = [self.pool(i).squeeze(2) for i in x]
-     
-        # (batch, channel_output) * Ks
-        x = torch.cat(x, 1) # (batch, channel_output * Ks)
-        x = F.relu(self.bottleneck(x.view(-1, self.Ks*self.output_channel*self.dynamic_pool_length)))
+
+        # (batch, channel_output) * ks
+        x = torch.cat(x, 1) # (batch, channel_output * ks)
+        x = F.relu(self.bottleneck(x.view(-1, self.ks * self.output_channel * self.dynamic_pool_length)))
         x = self.dropout(x)
         logit = self.fc1(x) # (batch, target_size)
         return logit

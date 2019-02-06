@@ -1,6 +1,5 @@
-import os
-
 from argparse import ArgumentParser
+import os
 
 
 def get_args():

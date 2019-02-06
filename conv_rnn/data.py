@@ -4,10 +4,13 @@ import re
 import numpy as np
 import torch.utils.data as data
 
+
 def sst_tokenize(sentence):
     return sentence.split()
 
+
 class SSTEmbeddingLoader(object):
+
     def __init__(self, dirname, fmt="stsa.fine.{}", word2vec_file="word2vec.sst-1"):
         self.dirname = dirname
         self.fmt = fmt
@@ -30,7 +33,9 @@ class SSTEmbeddingLoader(object):
                         unk_vocab_set.add(word)
         return (id_dict, np.array(weights), list(unk_vocab_set))
 
+
 class SSTDataset(data.Dataset):
+
     def __init__(self, sentences):
         super().__init__()
         self.sentences = sentences

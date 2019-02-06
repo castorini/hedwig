@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.utils.data as data
 
 class Configs(object):
+
     @staticmethod
     def base_config():
         parser = argparse.ArgumentParser()
@@ -39,6 +40,7 @@ class Configs(object):
         parser.add_argument("--sick_data", type=str, default="local_data/sick")
         return parser.parse_known_args()[0]
 
+
 class LabeledEmbeddedDataset(data.Dataset):
     def __init__(self, sentence_indices1, sentence_indices2, labels, compare_labels=None):
         assert len(sentence_indices1) == len(labels) == len(sentence_indices2)
@@ -53,6 +55,7 @@ class LabeledEmbeddedDataset(data.Dataset):
 
     def __len__(self):
         return len(self.labels)
+
 
 def load_sick():
     config = Configs.sick_config()
@@ -98,7 +101,9 @@ def load_sick():
     embedding.weight.requires_grad = False
     return embedding, sets
 
+
 def load_dataset(dataset):
     return _loaders[dataset]()
+
 
 _loaders = dict(sick=load_sick)

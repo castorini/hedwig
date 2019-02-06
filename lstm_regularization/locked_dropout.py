@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
-from torch.autograd import Variable
+
 
 class LockedDropout(nn.Module):
+
     def __init__(self):
         super().__init__()
 

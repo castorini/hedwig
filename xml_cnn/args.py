@@ -6,7 +6,7 @@ from argparse import ArgumentParser
 def get_args():
     parser = ArgumentParser(description="XML CNN")
     parser.add_argument('--no_cuda', action='store_false', help='do not use cuda', dest='cuda')
-    parser.add_argument('--gpu', type=int, default=0) # Use -1 for CPU
+    parser.add_argument('--gpu', type=int, default=0, help='Use -1 for CPU')
     parser.add_argument('--epochs', type=int, default=30)
     parser.add_argument('--batch_size', type=int, default=1024)
     parser.add_argument('--mode', type=str, default='multichannel', choices=['rand', 'static', 'non-static', 'multichannel'])
@@ -24,9 +24,8 @@ def get_args():
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--epoch_decay', type=int, default=15)
 
-    parser.add_argument('--num_bottleneck_hidden', type=int, default=512) #bottleneck layer
-    parser.add_argument('--dynamic_pool_length', type=int, default=32)  #dynamic pool length
-
+    parser.add_argument('--num_bottleneck_hidden', type=int, default=512) # bottleneck layer
+    parser.add_argument('--dynamic_pool_length', type=int, default=32) # dynamic pool length
 
     parser.add_argument('--data_dir', help='word vectors directory',
                         default=os.path.join(os.pardir, 'Castor-data', 'datasets'))

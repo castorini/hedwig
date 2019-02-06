@@ -5,8 +5,9 @@ import torch.nn.functional as F
 
 
 class LSTMBaseline(nn.Module):
+
     def __init__(self, config):
-        super(LSTMBaseline, self).__init__()
+        super().__init__()
         dataset = config.dataset
         target_class = config.target_class
         self.is_bidirectional = config.bidirectional
@@ -30,11 +31,11 @@ class LSTMBaseline(nn.Module):
         self.dropout = nn.Dropout(config.dropout)
         if self.has_bottleneck_layer:
             if self.is_bidirectional:
-                self.fc1 = nn.Linear(2 * config.hidden_dim, config.hidden_dim)  # Hidden Bottleneck Layer
+                self.fc1 = nn.Linear(2 * config.hidden_dim, config.hidden_dim) # Hidden Bottleneck Layer
                 self.fc2 = nn.Linear(config.hidden_dim, target_class)
             else:
-                self.fc1 = nn.Linear(config.hidden_dim, config.hidden_dim//2)   # Hidden Bottleneck Layer
-                self.fc2 = nn.Linear(config.hidden_dim//2, target_class)
+                self.fc1 = nn.Linear(config.hidden_dim, config.hidden_dim // 2) # Hidden Bottleneck Layer
+                self.fc2 = nn.Linear(config.hidden_dim // 2, target_class)
         else:
             if self.is_bidirectional:
                 self.fc1 = nn.Linear(2 * config.hidden_dim, target_class)
@@ -61,7 +62,6 @@ class LSTMBaseline(nn.Module):
         x = self.dropout(x)
         if self.has_bottleneck_layer:
             x = F.relu(self.fc1(x))
-            # x = self.dropout(x)
             return self.fc2(x)
         else:
             return self.fc1(x)

@@ -5,15 +5,16 @@ import torch.nn.functional as F
 
 
 class KimCNN(nn.Module):
+
     def __init__(self, config):
-        super(KimCNN, self).__init__()
+        super().__init__()
         dataset = config.dataset
         output_channel = config.output_channel
         target_class = config.target_class
         words_num = config.words_num
         words_dim = config.words_dim
         self.mode = config.mode
-        Ks = 3 # There are three conv nets here
+        ks = 3 # There are three conv nets here
 
         input_channel = 1
         if config.mode == 'rand':
@@ -36,7 +37,7 @@ class KimCNN(nn.Module):
         self.conv3 = nn.Conv2d(input_channel, output_channel, (5, words_dim), padding=(4,0))
 
         self.dropout = nn.Dropout(config.dropout)
-        self.fc1 = nn.Linear(Ks * output_channel, target_class)
+        self.fc1 = nn.Linear(ks * output_channel, target_class)
 
     def forward(self, x, **kwargs):
         if self.mode == 'rand':
@@ -56,10 +57,10 @@ class KimCNN(nn.Module):
             print("Unsupported Mode")
             exit()
         x = [F.relu(self.conv1(x)).squeeze(3), F.relu(self.conv2(x)).squeeze(3), F.relu(self.conv3(x)).squeeze(3)]
-        # (batch, channel_output, ~=sent_len) * Ks
+        # (batch, channel_output, ~=sent_len) * ks
         x = [F.max_pool1d(i, i.size(2)).squeeze(2) for i in x] # max-over-time pooling
-        # (batch, channel_output) * Ks
-        x = torch.cat(x, 1) # (batch, channel_output * Ks)
+        # (batch, channel_output) * ks
+        x = torch.cat(x, 1) # (batch, channel_output * ks)
         x = self.dropout(x)
         logit = self.fc1(x) # (batch, target_size)
         return logit

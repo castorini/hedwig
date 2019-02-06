@@ -7,6 +7,7 @@ from torchtext.data.pipeline import Pipeline
 
 from datasets.castor_dataset import CastorPairDataset
 
+
 def get_class_probs(sim, *args):
     """
     Convert a single label into class probabilities.
