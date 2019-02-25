@@ -8,8 +8,12 @@ This is the common repo for PyTorch deep learning models by the Data Systems Gro
 
 For sentiment analysis, topic classification, etc.
 
-+ [Kim CNN](./kim_cnn/): baseline convolutional neural network for sentence classification [(Kim, EMNLP 2014)](http://www.aclweb.org/anthology/D14-1181)
-+ [conv-RNN](./conv_rnn): convolutional RNN [(Wang et al., KDD 2017)](https://dl.acm.org/citation.cfm?id=3098140)
++ [Kim CNN](./kim_cnn/): Baseline convolutional neural network for sentence classification [(Kim, EMNLP 2014)](http://www.aclweb.org/anthology/D14-1181)
++ [Conv-RNN](./conv_rnn/): Convolutional RNN [(Wang et al., KDD 2017)](https://dl.acm.org/citation.cfm?id=3098140)
++ [HAN](./han/): Hierarchical Attention Networks [(Zichao, et al, NAACL 2016)](https://www.cs.cmu.edu/~hovy/papers/16HLT-hierarchical-attention-networks.pdf)
++ [LSTM-Reg](./lstm_regularization/): Standard LSTM with Regularization [(Merity et al.)](https://arxiv.org/abs/1708.02182)
++ [XML-CNN](./xml_cnn/): CNNs for Extreme Multi-label Text Classification [(Liu et al., SIGIR 2017)](http://nyc.lti.cs.cmu.edu/yiming/Publications/jliu-sigir17.pdf)
++ [Char-CNN](.//): Character-level Convolutional Network [(Zhang et al., NIPS 2015)](http://papers.nips.cc/paper/5782-character-level-convolutional-networks-for-text-classification.pdf)
 
 ### Predictions Over Two Input Text Sequences
 
