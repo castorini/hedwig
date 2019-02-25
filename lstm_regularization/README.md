@@ -1,6 +1,6 @@
-# lstm_baseline with Regularization
+# LSTM with Regularization
 
-Implementation of a standard LSTM using PyTorch and Torchtext for text classification baseline measurements with Regularization.
+Implementation of a standard LSTM using PyTorch and Torchtext for text classification with Regularization.
 
 ## Model Type
 
