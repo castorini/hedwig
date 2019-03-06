@@ -30,13 +30,11 @@ class PIT2015Trainer(Trainer):
                     100. * batch_idx / (len(self.train_loader)), loss.item() / len(batch))
                 )
 
-        accuracy, avg_loss, precision, recall, f1 = self.evaluate(self.train_evaluator, 'train')
+        accuracy, avg_loss, f1 = self.evaluate(self.train_evaluator, 'train')
 
         if self.use_tensorboard:
             self.writer.add_scalar('{}/train/cross_entropy_loss'.format(self.train_loader.dataset.NAME), avg_loss, epoch)
             self.writer.add_scalar('{}/train/accuracy'.format(self.train_loader.dataset.NAME), accuracy, epoch)
-            self.writer.add_scalar('{}/train/precision'.format(self.train_loader.dataset.NAME), precision, epoch)
-            self.writer.add_scalar('{}/train/recall'.format(self.train_loader.dataset.NAME), recall, epoch)
             self.writer.add_scalar('{}/train/f1'.format(self.train_loader.dataset.NAME), f1, epoch)
 
         return total_loss
@@ -54,15 +52,13 @@ class PIT2015Trainer(Trainer):
             self.train_epoch(epoch)
 
             dev_scores = self.evaluate(self.dev_evaluator, 'dev')
-            accuracy, avg_loss, precision, recall, f1 = dev_scores
+            accuracy, avg_loss, f1 = dev_scores
 
             test_scores = self.evaluate(self.test_evaluator, 'test')
             if self.use_tensorboard:
                 self.writer.add_scalar('{}/lr'.format(self.train_loader.dataset.NAME), self.optimizer.param_groups[0]['lr'], epoch)
                 self.writer.add_scalar('{}/dev/cross_entropy_loss'.format(self.train_loader.dataset.NAME), avg_loss, epoch)
                 self.writer.add_scalar('{}/dev/accuracy'.format(self.train_loader.dataset.NAME), accuracy, epoch)
-                self.writer.add_scalar('{}/dev/precision'.format(self.train_loader.dataset.NAME), precision, epoch)
-                self.writer.add_scalar('{}/dev/recall'.format(self.train_loader.dataset.NAME), recall, epoch)
                 self.writer.add_scalar('{}/dev/f1'.format(self.train_loader.dataset.NAME), f1, epoch)
 
             end = time.time()
