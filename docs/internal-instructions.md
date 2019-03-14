@@ -1,7 +1,7 @@
-# Instructions for DSG Castor Contributors
+# Instructions for DSG Hedwig Contributors
 
 Please follow these instructions if you are a graduate student or undergrad research assistant working with the group
-in the Data Systems Lab and want to run Castor on the lab desktop GPU machine (dragon).
+in the Data Systems Lab and want to run Hedwig on the lab desktop GPU machine (dragon).
 
 If you have trouble / questions with instructions on this page, ping @tuzhucheng on Slack.
 
@@ -27,23 +27,23 @@ to take effect.
 
 ## Data and Pre-Trained Models
 
-We use shared cloned versions of the Castor-data and Castor-models repositories.
+We use shared cloned versions of the Hedwig-data and Hedwig-models repositories.
 Instead of making your own cloned copies, you can just create symbolic links to the shared version instead
-in your own working directory to save disk space. Assuming you want to put `Castor`, `Castor-data`, and `Castor-models`
-under a directory called `castorini` and you are currently in the `castorini` directory, you can enter these commands:
+in your own working directory to save disk space. Assuming you want to put `Hedwig`, `Hedwig-data`, and `Hedwig-models`
+under a directory called `Castorini` and you are currently in the `Castorini` directory, you can enter these commands:
 
 ```bash
-ln -s /Castor-data Castor-data
-ln -s /Castor-models Castor-models
+ln -s /Hedwig-data Hedwig-data
+ln -s /Hedwig-models Hedwig-models
 ```
 
-So after you clone Castor, you have a directory structure under `castorini` that looks like this:
+So after you clone Hedwig, you have a directory structure under `Castorini` that looks like this:
 
 ```
 .
-├── Castor
-├── Castor-data
-└── Castor-models
+├── Hedwig
+├── Hedwig-data
+└── Hedwig-models
 ```
 
-where `Castor-data` and `Castor-models` are actually symbolic links to `/Castor-data` and `/Castor-models`.
+where `Hedwig-data` and `Hedwig-models` are actually symbolic links to `/Hedwig-data` and `/Hedwig-models`.

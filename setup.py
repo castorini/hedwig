@@ -1,7 +1,7 @@
 from setuptools import setup
 
-setup(name='castor',
+setup(name='hedwig',
       version='1.0.0',
-      description='models for question answering',
-      packages=['sm_cnn'],
+      description='PyTorch deep learning models for document classification',
+      packages=['char_cnn', 'conv_rnn', 'kim_cnn', 'reg_lstm', 'xml_cnn'],
       )

@@ -1,12 +1,8 @@
 # Castor
 
-This is the common repo for PyTorch deep learning models by the Data Systems Group at the University of Waterloo.
+This repo contains PyTorch deep learning models for document classification, implemented by the Data Systems Group at the University of Waterloo.
 
 ## Models
-
-### Predictions Over One Input Text Sequence
-
-For sentiment analysis, topic classification, etc.
 
 + [Kim CNN](./kim_cnn/): Baseline convolutional neural network for sentence classification [(Kim, EMNLP 2014)](http://www.aclweb.org/anthology/D14-1181)
 + [Conv-RNN](./conv_rnn/): Convolutional RNN [(Wang et al., KDD 2017)](https://dl.acm.org/citation.cfm?id=3098140)
@@ -15,23 +11,13 @@ For sentiment analysis, topic classification, etc.
 + [XML-CNN](./xml_cnn/): CNNs for Extreme Multi-label Text Classification [(Liu et al., SIGIR 2017)](http://nyc.lti.cs.cmu.edu/yiming/Publications/jliu-sigir17.pdf)
 + [Char-CNN](.//): Character-level Convolutional Network [(Zhang et al., NIPS 2015)](http://papers.nips.cc/paper/5782-character-level-convolutional-networks-for-text-classification.pdf)
 
-### Predictions Over Two Input Text Sequences
-
-For paraphrase detection, question answering, etc.
-
-+ [SM-CNN](./sm_cnn/): Siamese CNN for ranking texts [(Severyn and Moschitti, SIGIR 2015)](https://dl.acm.org/citation.cfm?id=2767738)
-+ [MP-CNN](./mp_cnn/): Multi-Perspective CNN [(He et al., EMNLP 2015)](http://anthology.aclweb.org/D/D15/D15-1181.pdf)
-+ [NCE](./nce/): Noise-Contrastive Estimation for answer selection applied on SM-CNN and MP-CNN [(Rao et al., CIKM 2016)](https://dl.acm.org/citation.cfm?id=2983872)
-+ [VDPWI](./vdpwi): Very-Deep Pairwise Word Interaction NNs for modeling textual similarity [(He and Lin, NAACL 2016)](http://www.aclweb.org/anthology/N16-1108)
-+ [IDF Baseline](./idf_baseline/): IDF overlap between question and candidate answers
-
 Each model directory has a `README.md` with further details.
 
 ## Setting up PyTorch
 
-**If you are an internal Castor contributor using GPU machines in the lab, follow the instructions [here](./docs/internal-instructions.md).**
+**If you are an internal Hedwig contributor using GPU machines in the lab, follow the instructions [here](./docs/internal-instructions.md).**
 
-Castor is designed for Python 3.6 and [PyTorch](https://pytorch.org/) 0.4.
+Hedwig is designed for Python 3.6 and [PyTorch](https://pytorch.org/) 0.4.
 PyTorch recommends [Anaconda](https://www.anaconda.com/distribution/) for managing your environment.
 We'd recommend creating a custom environment as follows:
 
@@ -67,7 +53,7 @@ $ ./get_trec_eval.sh
 
 ## Data and Pre-Trained Models
 
-**If you are an internal Castor contributor using GPU machines in the lab, follow the instructions [here](./docs/internal-instructions.md).**
+**If you are an internal Hedwig contributor using GPU machines in the lab, follow the instructions [here](./docs/internal-instructions.md).**
 
 To fully take advantage of code here, clone these other two repos:
 
@@ -78,7 +64,7 @@ Organize your directory structure as follows:
 
 ```
 .
-├── Castor
+├── Hedwig
 ├── Castor-data
 └── Castor-models
 ```
@@ -86,14 +72,14 @@ Organize your directory structure as follows:
 For example (using HTTPS):
 
 ```bash
-$ git clone https://github.com/castorini/Castor.git
+$ git clone https://github.com/castorini/hedwig.git
 $ git clone https://git.uwaterloo.ca/jimmylin/Castor-data.git
 $ git clone https://git.uwaterloo.ca/jimmylin/Castor-models.git
 ```
 
-After cloning the Castor-data repo, you need to unzip embeddings and run data pre-processing scripts. You can choose
-to follow instructions under each dataset and embedding directory separately, or just run the following script in Castor-data
-to do all of the steps for you:
+After cloning the Hedwig-data repo, you need to unzip embeddings and run data pre-processing scripts. You can choose
+to follow instructions under each dataset and embedding directory separately, or just run the following script in 
+Hedwig-data to do all of the steps for you:
 
 ```bash
 $ ./setup.sh
