@@ -1,0 +1,5 @@
+*pyc
+*.pt
+text/
+trained_models/
+data/
