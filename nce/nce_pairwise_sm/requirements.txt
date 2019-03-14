@@ -1,4 +1,0 @@
-nltk==3.2.4
-numpy==1.13.1
-pytorch==0.2.0+5f864ca
-torchtext==0.2.0
