@@ -19,7 +19,6 @@ def get_args():
     parser.add_argument('--seed', type=int, default=3435)
     parser.add_argument('--dataset', type=str, default='SST-1', choices=['SST-1', 'SST-2', 'Reuters', 'AAPD', 'IMDB', 'Yelp2014'])
     parser.add_argument('--resume_snapshot', type=str, default=None)
-    parser.add_argument('--dev_every', type=int, default=30)
     parser.add_argument('--log_every', type=int, default=10)
     parser.add_argument('--patience', type=int, default=50)
     parser.add_argument('--save_path', type=str, default='han/saves')
