@@ -3,9 +3,7 @@ import logging
 import random
 
 import numpy as np
-from sklearn import metrics
 import torch
-import torch.nn.functional as F
 import torch.onnx
 
 from common.evaluation import EvaluatorFactory
@@ -16,8 +14,8 @@ from datasets.sst import SST1
 from datasets.sst import SST2
 from datasets.reuters import ReutersHierarchical as Reuters
 from datasets.yelp2014 import  Yelp2014Hierarchical as Yelp2014
-from han.args import get_args
-from han.model import HAN
+from models.han import get_args
+from models.han import HAN
 
 
 class UnknownWordVecCache(object):

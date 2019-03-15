@@ -1,9 +1,8 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
-from han.sent_level_rnn import SentLevelRNN
-from han.word_level_rnn import WordLevelRNN
+from models.han import SentLevelRNN
+from models.han import WordLevelRNN
 
 
 class HAN(nn.Module):

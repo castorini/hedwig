@@ -11,7 +11,6 @@ class Trainer(object):
         self.train_loader = train_loader
         self.batch_size = trainer_config.get('batch_size')
         self.log_interval = trainer_config.get('log_interval')
-        self.dev_log_interval = trainer_config.get('dev_log_interval')
         self.model_outfile = trainer_config.get('model_outfile')
         self.lr_reduce_factor = trainer_config.get('lr_reduce_factor')
         self.patience = trainer_config.get('patience')
