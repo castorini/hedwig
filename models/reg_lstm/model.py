@@ -17,13 +17,12 @@ class RegLSTM(nn.Module):
         self.is_bidirectional = config.bidirectional
         self.has_bottleneck_layer = config.bottleneck_layer
         self.mode = config.mode
-        self.TAR = config.TAR
-        self.AR = config.AR
+        self.tar = config.tar
+        self.ar = config.ar
         self.beta_ema = config.beta_ema  # Temporal averaging
         self.wdrop = config.wdrop  # Weight dropping
         self.embed_droprate = config.embed_droprate  # Embedding dropout
 
-        input_channel = 1
         if config.mode == 'rand':
             rand_embed_init = torch.Tensor(config.words_num, config.words_dim).uniform_(-0.25, 0.25)
             self.embed = nn.Embedding.from_pretrained(rand_embed_init, freeze=False)
@@ -85,11 +84,11 @@ class RegLSTM(nn.Module):
         if self.has_bottleneck_layer:
             x = F.relu(self.fc1(x))
             # x = self.dropout(x)
-            if self.TAR or self.AR:
+            if self.tar or self.ar:
                 return self.fc2(x), rnn_outs.permute(1,0,2)
             return self.fc2(x)
         else:
-            if self.TAR or self.AR:
+            if self.tar or self.ar:
                 return self.fc1(x), rnn_outs.permute(1,0,2)
             return self.fc1(x)
 
