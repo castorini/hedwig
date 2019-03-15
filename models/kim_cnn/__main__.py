@@ -97,12 +97,11 @@ if __name__ == '__main__':
     config.target_class = train_iter.dataset.NUM_CLASSES
     config.words_num = len(train_iter.dataset.TEXT_FIELD.vocab)
 
-    print('Dataset {}    Mode {}'.format(args.dataset, args.mode))
-    print('VOCAB num',len(train_iter.dataset.TEXT_FIELD.vocab))
-    print('LABEL.target_class:', train_iter.dataset.NUM_CLASSES)
-    print('Train instance', len(train_iter.dataset))
-    print('Dev instance', len(dev_iter.dataset))
-    print('Test instance', len(test_iter.dataset))
+    print('Dataset:', args.dataset)
+    print('No. of target classes:', train_iter.dataset.NUM_CLASSES)
+    print('No. of train instances', len(train_iter.dataset))
+    print('No. of dev instances', len(dev_iter.dataset))
+    print('No. of test instances', len(test_iter.dataset))
 
     if args.resume_snapshot:
         if args.cuda:
@@ -113,7 +112,6 @@ if __name__ == '__main__':
         model = KimCNN(config)
         if args.cuda:
             model.cuda()
-            print('Shift model to GPU')
 
     parameter = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = torch.optim.Adadelta(parameter, lr=args.lr, weight_decay=args.weight_decay)
@@ -136,7 +134,7 @@ if __name__ == '__main__':
         'batch_size': args.batch_size,
         'log_interval': args.log_every,
         'patience': args.patience,
-        'model_outfile': args.save_path,  # actually a directory, using model_outfile to conform to Trainer naming convention
+        'model_outfile': args.save_path,
         'logger': logger,
         'single_label': args.single_label
     }
