@@ -1,23 +1,21 @@
-from copy import deepcopy
 import logging
 import random
+from copy import deepcopy
 
 import numpy as np
 import torch
 import torch.onnx
-import torch.nn.functional as F
-from sklearn import metrics
 
 from common.evaluation import EvaluatorFactory
 from common.train import TrainerFactory
+from datasets.aapd import AAPD
+from datasets.imdb import IMDB
+from datasets.reuters import Reuters
 from datasets.sst import SST1
 from datasets.sst import SST2
-from datasets.aapd import AAPD
-from datasets.reuters import Reuters
 from datasets.yelp2014 import Yelp2014
-from datasets.imdb import IMDB
-from kim_cnn.args import get_args
-from kim_cnn.model import KimCNN
+from models.kim_cnn.args import get_args
+from models.kim_cnn.model import KimCNN
 
 
 class UnknownWordVecCache(object):
@@ -31,8 +29,6 @@ class UnknownWordVecCache(object):
         size_tup = tuple(tensor.size())
         if size_tup not in cls.cache:
             cls.cache[size_tup] = torch.Tensor(tensor.size())
-            # choose 0.25 so unknown vectors have approximately same variance as pre-trained ones
-            # same as original implementation: https://github.com/yoonkim/CNN_sentence/blob/0a626a048757d5272a7e8ccede256a434a6529be/process_data.py#L95
             cls.cache[size_tup].uniform_(-0.25, 0.25)
         return cls.cache[size_tup]
 
@@ -74,7 +70,7 @@ if __name__ == '__main__':
         torch.cuda.set_device(args.gpu)
         torch.cuda.manual_seed(args.seed)
     if torch.cuda.is_available() and not args.cuda:
-        print('Warning: You have Cuda but not use it. You are using CPU for training.')
+        print('Warning: Using CPU for training')
     np.random.seed(args.seed)
     random.seed(args.seed)
     logger = get_logger()
@@ -139,7 +135,6 @@ if __name__ == '__main__':
         'optimizer': optimizer,
         'batch_size': args.batch_size,
         'log_interval': args.log_every,
-        'dev_log_interval': args.dev_every,
         'patience': args.patience,
         'model_outfile': args.save_path,  # actually a directory, using model_outfile to conform to Trainer naming convention
         'logger': logger,
@@ -164,10 +159,3 @@ if __name__ == '__main__':
     else:
         evaluate_dataset('dev', dataset_map[args.dataset], model, None, dev_iter, args.batch_size, args.gpu, args.single_label)
         evaluate_dataset('test', dataset_map[args.dataset], model, None, test_iter, args.batch_size, args.gpu, args.single_label)
-
-    if args.onnx:
-        device = torch.device('cuda') if torch.cuda.is_available() and args.cuda else torch.device('cpu')
-        dummy_input = torch.zeros(args.onnx_batch_size, args.onnx_sent_len, dtype=torch.long, device=device)
-        onnx_filename = 'kimcnn_{}.onnx'.format(args.mode)
-        torch.onnx.export(model, dummy_input, onnx_filename)
-        print('Exported model in ONNX format as {}'.format(onnx_filename))
