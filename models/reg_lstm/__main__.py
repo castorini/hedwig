@@ -1,22 +1,21 @@
-from copy import deepcopy
 import logging
 import random
+from copy import deepcopy
 
 import numpy as np
 import torch
-import torch.nn.functional as F
-from sklearn import metrics
 
 from common.evaluation import EvaluatorFactory
 from common.train import TrainerFactory
-from datasets.sst import SST1
-from datasets.sst import SST2
-from datasets.reuters import Reuters
 from datasets.aapd import AAPD
 from datasets.imdb import IMDB
+from datasets.reuters import Reuters
+from datasets.sst import SST1
+from datasets.sst import SST2
 from datasets.yelp2014 import Yelp2014
-from lstm_regularization.args import get_args
-from lstm_regularization.model import LSTMBaseline
+from models.reg_lstm.args import get_args
+from models.reg_lstm.model import RegLSTM
+
 
 class UnknownWordVecCache(object):
     """
@@ -29,8 +28,6 @@ class UnknownWordVecCache(object):
         size_tup = tuple(tensor.size())
         if size_tup not in cls.cache:
             cls.cache[size_tup] = torch.Tensor(tensor.size())
-            # choose 0.25 so unknown vectors have approximately same variance as pre-trained ones
-            # same as original implementation: https://github.com/yoonkim/CNN_sentence/blob/0a626a048757d5272a7e8ccede256a434a6529be/process_data.py#L95
             cls.cache[size_tup].uniform_(-0.25, 0.25)
         return cls.cache[size_tup]
 
@@ -60,10 +57,14 @@ def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_si
 if __name__ == '__main__':
     # Set default configuration in : args.py
     args = get_args()
+    logger = get_logger()
 
     # Set random seed for reproducibility
     torch.manual_seed(args.seed)
     torch.backends.cudnn.deterministic = True
+    np.random.seed(args.seed)
+    random.seed(args.seed)
+
     if not args.cuda:
         args.gpu = -1
     if torch.cuda.is_available() and args.cuda:
@@ -71,10 +72,7 @@ if __name__ == '__main__':
         torch.cuda.set_device(args.gpu)
         torch.cuda.manual_seed(args.seed)
     if torch.cuda.is_available() and not args.cuda:
-        print('Warning: You have Cuda but not use it. You are using CPU for training.')
-    np.random.seed(args.seed)
-    random.seed(args.seed)
-    logger = get_logger()
+        print('Warning: Using CPU for training')
 
     dataset_map = {
         'SST-1': SST1,
@@ -88,7 +86,12 @@ if __name__ == '__main__':
     if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
     else:
-        train_iter, dev_iter, test_iter = dataset_map[args.dataset].iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
+        train_iter, dev_iter, test_iter = dataset_map[args.dataset].iters(args.data_dir,
+                                                                          args.word_vectors_file,
+                                                                          args.word_vectors_dir,
+                                                                          batch_size=args.batch_size,
+                                                                          device=args.gpu,
+                                                                          unk_init=UnknownWordVecCache.unk)
 
     config = deepcopy(args)
     config.dataset = train_iter.dataset
@@ -96,7 +99,7 @@ if __name__ == '__main__':
     config.words_num = len(train_iter.dataset.TEXT_FIELD.vocab)
 
     print('Dataset {}    Mode {}'.format(args.dataset, args.mode))
-    print('VOCAB num',len(train_iter.dataset.TEXT_FIELD.vocab))
+    print('VOCAB num', len(train_iter.dataset.TEXT_FIELD.vocab))
     print('LABEL.target_class:', train_iter.dataset.NUM_CLASSES)
     print('Train instance', len(train_iter.dataset))
     print('Dev instance', len(dev_iter.dataset))
@@ -108,7 +111,7 @@ if __name__ == '__main__':
         else:
             model = torch.load(args.resume_snapshot, map_location=lambda storage, location: storage)
     else:
-        model = LSTMBaseline(config)
+        model = RegLSTM(config)
         if args.cuda:
             model.cuda()
             print('Shift model to GPU')
@@ -129,9 +132,8 @@ if __name__ == '__main__':
         'optimizer': optimizer,
         'batch_size': args.batch_size,
         'log_interval': args.log_every,
-        'dev_log_interval': args.dev_every,
         'patience': args.patience,
-        'model_outfile': args.save_path,   # actually a directory, using model_outfile to conform to Trainer naming convention
+        'model_outfile': args.save_path,
         'logger': logger,
         'single_label': args.single_label
     }

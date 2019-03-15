@@ -4,11 +4,11 @@ import torch.nn as nn
 
 import torch.nn.functional as F
 
-from lstm_regularization.weight_drop import WeightDrop
-from lstm_regularization.embed_regularize import embedded_dropout
+from models.reg_lstm.weight_drop import WeightDrop
+from models.reg_lstm.embed_regularize import embedded_dropout
 
 
-class LSTMBaseline(nn.Module):
+class RegLSTM(nn.Module):
 
     def __init__(self, config):
         super().__init__()
@@ -19,9 +19,9 @@ class LSTMBaseline(nn.Module):
         self.mode = config.mode
         self.TAR = config.TAR
         self.AR = config.AR
-        self.beta_ema = config.beta_ema  ## Temporal averaging
-        self.wdrop = config.wdrop ## Weight dropping
-        self.embed_droprate = config.embed_droprate ## Embedding dropout 
+        self.beta_ema = config.beta_ema  # Temporal averaging
+        self.wdrop = config.wdrop  # Weight dropping
+        self.embed_droprate = config.embed_droprate  # Embedding dropout
 
         input_channel = 1
         if config.mode == 'rand':
@@ -37,7 +37,7 @@ class LSTMBaseline(nn.Module):
 
         self.lstm = nn.LSTM(config.words_dim, config.hidden_dim, dropout=config.dropout, num_layers=config.num_layers,
                             bidirectional=self.is_bidirectional, batch_first=True)
-        ## Wdrop
+
         if self.wdrop:
             self.lstm = WeightDrop(self.lstm, ['weight_hh_l0'], dropout=self.wdrop)
         self.dropout = nn.Dropout(config.dropout)
@@ -74,7 +74,6 @@ class LSTMBaseline(nn.Module):
             x = torch.nn.utils.rnn.pack_padded_sequence(x, lengths, batch_first=True)
         rnn_outs, _ = self.lstm(x)
         rnn_outs_temp = rnn_outs
-        #rnn_outs,_ = torch.nn.utils.rnn.pad_packed_sequence(rnn_outs, batch_first = True)
 
         if lengths is not None:
             rnn_outs,_ = torch.nn.utils.rnn.pad_packed_sequence(rnn_outs, batch_first=True)
