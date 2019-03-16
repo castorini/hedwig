@@ -1,6 +1,6 @@
-from copy import deepcopy
 import logging
 import random
+from copy import deepcopy
 
 import numpy as np
 import torch
@@ -10,12 +10,12 @@ from common.evaluation import EvaluatorFactory
 from common.train import TrainerFactory
 from datasets.aapd import AAPDHierarchical as AAPD
 from datasets.imdb import IMDBHierarchical as IMDB
+from datasets.reuters import ReutersHierarchical as Reuters
 from datasets.sst import SST1
 from datasets.sst import SST2
-from datasets.reuters import ReutersHierarchical as Reuters
-from datasets.yelp2014 import  Yelp2014Hierarchical as Yelp2014
-from models.han import get_args
-from models.han import HAN
+from datasets.yelp2014 import Yelp2014Hierarchical as Yelp2014
+from models.han.model import HAN
+from models.han.args import get_args
 
 
 class UnknownWordVecCache(object):
@@ -136,7 +136,6 @@ if __name__ == '__main__':
         'optimizer': optimizer,
         'batch_size': args.batch_size,
         'log_interval': args.log_every,
-        'dev_log_interval': args.dev_every,
         'patience': args.patience,
         'model_outfile': args.save_path,   # actually a directory, using model_outfile to conform to Trainer naming convention
         'logger': logger,

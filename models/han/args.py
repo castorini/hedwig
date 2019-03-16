@@ -29,9 +29,8 @@ def get_args():
     parser.add_argument('--epoch_decay', type=int, default=15)
     parser.add_argument('--data_dir', help='word vectors directory',
                         default=os.path.join(os.pardir, 'Castor-data', 'datasets'))
-    parser.add_argument('--word_vectors_dir', help='word vectors directory',
-                        default=os.path.join(os.pardir, 'Castor-data', 'embeddings', 'word2vec'))
-    parser.add_argument('--word_vectors_file', help='word vectors filename', default='/data/GoogleNews-vectors-negative300.txt')
+    parser.add_argument('--word-vectors-dir', default=os.path.join(os.pardir, 'Castor-data', 'embeddings', 'word2vec'))
+    parser.add_argument('--word-vectors-file', default='GoogleNews-vectors-negative300.txt')
     parser.add_argument('--trained_model', type=str, default="")
     parser.add_argument('--weight_decay', type=float, default=0)
     parser.add_argument('--onnx', action='store_true', default=False, help='Export model in ONNX format')
