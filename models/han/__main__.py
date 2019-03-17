@@ -1,23 +1,21 @@
-from copy import deepcopy
 import logging
 import random
+from copy import deepcopy
 
 import numpy as np
 import torch
 import torch.onnx
-import torch.nn.functional as F
-from sklearn import metrics
 
 from common.evaluation import EvaluatorFactory
 from common.train import TrainerFactory
+from datasets.aapd import AAPDHierarchical as AAPD
+from datasets.imdb import IMDBHierarchical as IMDB
+from datasets.reuters import ReutersHierarchical as Reuters
 from datasets.sst import SST1
 from datasets.sst import SST2
-from datasets.aapd import AAPD
-from datasets.reuters import Reuters
-from datasets.yelp2014 import Yelp2014
-from datasets.imdb import IMDB
-from kim_cnn.args import get_args
-from kim_cnn.model import KimCNN
+from datasets.yelp2014 import Yelp2014Hierarchical as Yelp2014
+from models.han.model import HAN
+from models.han.args import get_args
 
 
 class UnknownWordVecCache(object):
@@ -52,12 +50,12 @@ def get_logger():
 
 def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_size, device, single_label):
     saved_model_evaluator = EvaluatorFactory.get_evaluator(dataset_cls, model, embedding, loader, batch_size, device)
-    if hasattr(saved_model_evaluator, 'single_label'):
-        saved_model_evaluator.single_label = single_label
+    saved_model_evaluator.single_label = single_label
+    saved_model_evaluator.ignore_lengths = True
     scores, metric_names = saved_model_evaluator.get_scores()
-    logger.info('Evaluation metrics for {}'.format(split_name))
-    logger.info('\t'.join([' '] + metric_names))
-    logger.info('\t'.join([split_name] + list(map(str, scores))))
+    print('Evaluation metrics for', split_name)
+    print(metric_names)
+    print(scores)
 
 
 if __name__ == '__main__':
@@ -91,10 +89,7 @@ if __name__ == '__main__':
     if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
     else:
-        train_iter, dev_iter, test_iter = dataset_map[args.dataset].iters(args.data_dir, args.word_vectors_file,
-                                                                          args.word_vectors_dir,
-                                                                          batch_size=args.batch_size, device=args.gpu,
-                                                                          unk_init=UnknownWordVecCache.unk)
+        train_iter, dev_iter, test_iter = dataset_map[args.dataset].iters(args.data_dir, args.word_vectors_file, args.word_vectors_dir, batch_size=args.batch_size, device=args.gpu, unk_init=UnknownWordVecCache.unk)
 
     config = deepcopy(args)
     config.dataset = train_iter.dataset
@@ -114,38 +109,39 @@ if __name__ == '__main__':
         else:
             model = torch.load(args.resume_snapshot, map_location=lambda storage, location: storage)
     else:
-        model = KimCNN(config)
+        model = HAN(config)
         if args.cuda:
             model.cuda()
             print('Shift model to GPU')
 
     parameter = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = torch.optim.Adadelta(parameter, lr=args.lr, weight_decay=args.weight_decay)
-
+    print(parameter)
+    #optimizer = torch.optim.Adadelta(parameter, lr=args.lr, weight_decay=args.weight_decay)
+    #optimizer = torch.optim.SGD(parameter, lr = args.lr, momentum = 0.9)
+    optimizer = torch.optim.Adam(parameter, lr = args.lr)
+    
     if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
     else:
         train_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, train_iter, args.batch_size, args.gpu)
         test_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, test_iter, args.batch_size, args.gpu)
         dev_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, dev_iter, args.batch_size, args.gpu)
-        if hasattr(train_evaluator, 'single_label'):
-            train_evaluator.single_label = args.single_label
-        if hasattr(test_evaluator, 'single_label'):
-            test_evaluator.single_label = args.single_label
-        if hasattr(dev_evaluator, 'single_label'):
-            dev_evaluator.single_label = args.single_label
+        train_evaluator.single_label = args.single_label
+        test_evaluator.single_label = args.single_label
+        dev_evaluator.single_label = args.single_label
 
+    dev_evaluator.ignore_lengths = True
+    test_evaluator.ignore_lengths = True
     trainer_config = {
         'optimizer': optimizer,
         'batch_size': args.batch_size,
         'log_interval': args.log_every,
-        'dev_log_interval': args.dev_every,
         'patience': args.patience,
-        'model_outfile': args.save_path,  # actually a directory, using model_outfile to conform to Trainer naming convention
+        'model_outfile': args.save_path,   # actually a directory, using model_outfile to conform to Trainer naming convention
         'logger': logger,
+        'ignore_lengths': True,
         'single_label': args.single_label
     }
-
     trainer = TrainerFactory.get_trainer(args.dataset, model, None, train_iter, trainer_config, train_evaluator, test_evaluator, dev_evaluator)
 
     if not args.trained_model:
@@ -157,8 +153,7 @@ if __name__ == '__main__':
             model = torch.load(args.trained_model, map_location=lambda storage, location: storage)
 
     # Calculate dev and test metrics
-    if hasattr(trainer, 'snapshot_path'):
-        model = torch.load(trainer.snapshot_path)
+    model = torch.load(trainer.snapshot_path)
     if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
     else:
@@ -168,6 +163,6 @@ if __name__ == '__main__':
     if args.onnx:
         device = torch.device('cuda') if torch.cuda.is_available() and args.cuda else torch.device('cpu')
         dummy_input = torch.zeros(args.onnx_batch_size, args.onnx_sent_len, dtype=torch.long, device=device)
-        onnx_filename = 'kimcnn_{}.onnx'.format(args.mode)
+        onnx_filename = 'han_{}.onnx'.format(args.mode)
         torch.onnx.export(model, dummy_input, onnx_filename)
         print('Exported model in ONNX format as {}'.format(onnx_filename))

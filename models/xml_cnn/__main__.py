@@ -5,8 +5,6 @@ import random
 import numpy as np
 import torch
 import torch.onnx
-import torch.nn.functional as F
-from sklearn import metrics
 
 from common.evaluation import EvaluatorFactory
 from common.train import TrainerFactory
@@ -16,8 +14,8 @@ from datasets.reuters import Reuters
 from datasets.aapd import AAPD
 from datasets.yelp2014 import Yelp2014
 from datasets.imdb import IMDB
-from xml_cnn.args import get_args
-from xml_cnn.model import XmlCNN
+from models.xml_cnn.args import get_args
+from models.xml_cnn.model import XmlCNN
 
 
 class UnknownWordVecCache(object):

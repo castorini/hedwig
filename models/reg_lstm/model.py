@@ -4,11 +4,11 @@ import torch.nn as nn
 
 import torch.nn.functional as F
 
-from lstm_regularization.weight_drop import WeightDrop
-from lstm_regularization.embed_regularize import embedded_dropout
+from models.reg_lstm.weight_drop import WeightDrop
+from models.reg_lstm.embed_regularize import embedded_dropout
 
 
-class LSTMBaseline(nn.Module):
+class RegLSTM(nn.Module):
 
     def __init__(self, config):
         super().__init__()
@@ -17,13 +17,12 @@ class LSTMBaseline(nn.Module):
         self.is_bidirectional = config.bidirectional
         self.has_bottleneck_layer = config.bottleneck_layer
         self.mode = config.mode
-        self.TAR = config.TAR
-        self.AR = config.AR
-        self.beta_ema = config.beta_ema  ## Temporal averaging
-        self.wdrop = config.wdrop ## Weight dropping
-        self.embed_droprate = config.embed_droprate ## Embedding dropout 
+        self.tar = config.tar
+        self.ar = config.ar
+        self.beta_ema = config.beta_ema  # Temporal averaging
+        self.wdrop = config.wdrop  # Weight dropping
+        self.embed_droprate = config.embed_droprate  # Embedding dropout
 
-        input_channel = 1
         if config.mode == 'rand':
             rand_embed_init = torch.Tensor(config.words_num, config.words_dim).uniform_(-0.25, 0.25)
             self.embed = nn.Embedding.from_pretrained(rand_embed_init, freeze=False)
@@ -37,7 +36,7 @@ class LSTMBaseline(nn.Module):
 
         self.lstm = nn.LSTM(config.words_dim, config.hidden_dim, dropout=config.dropout, num_layers=config.num_layers,
                             bidirectional=self.is_bidirectional, batch_first=True)
-        ## Wdrop
+
         if self.wdrop:
             self.lstm = WeightDrop(self.lstm, ['weight_hh_l0'], dropout=self.wdrop)
         self.dropout = nn.Dropout(config.dropout)
@@ -74,7 +73,6 @@ class LSTMBaseline(nn.Module):
             x = torch.nn.utils.rnn.pack_padded_sequence(x, lengths, batch_first=True)
         rnn_outs, _ = self.lstm(x)
         rnn_outs_temp = rnn_outs
-        #rnn_outs,_ = torch.nn.utils.rnn.pad_packed_sequence(rnn_outs, batch_first = True)
 
         if lengths is not None:
             rnn_outs,_ = torch.nn.utils.rnn.pad_packed_sequence(rnn_outs, batch_first=True)
@@ -86,11 +84,11 @@ class LSTMBaseline(nn.Module):
         if self.has_bottleneck_layer:
             x = F.relu(self.fc1(x))
             # x = self.dropout(x)
-            if self.TAR or self.AR:
+            if self.tar or self.ar:
                 return self.fc2(x), rnn_outs.permute(1,0,2)
             return self.fc2(x)
         else:
-            if self.TAR or self.AR:
+            if self.tar or self.ar:
                 return self.fc1(x), rnn_outs.permute(1,0,2)
             return self.fc1(x)
 

@@ -3,12 +3,10 @@ import logging
 import random
 
 import numpy as np
-from sklearn import metrics
 import torch
-import torch.nn.functional as F
 
-from char_cnn.args import get_args
-from char_cnn.model import CharCNN
+from models.char_cnn import get_args
+from models.char_cnn import CharCNN
 from common.evaluation import EvaluatorFactory
 from common.train import TrainerFactory
 from datasets.aapd import AAPDCharQuantized as AAPD
