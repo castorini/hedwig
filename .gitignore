@@ -1,0 +1,15 @@
+.ipynb_checkpoints
+__pycache__
+*.pyc
+.DS_Store
+.idea/
+*idfsim
+*.swp
+trec_eval.9.0/
+trec_eval-9.0.5
+*.pt
+text/
+kim_cnn/data
+.results
+.qrel
+*.onnx
