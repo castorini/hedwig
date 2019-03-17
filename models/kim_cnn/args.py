@@ -14,10 +14,12 @@ def get_args():
     parser.add_argument('--embed-dim', type=int, default=300)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--epoch-decay', type=int, default=15)
-    parser.add_argument('--word-vectors-dir', default=os.path.join(os.pardir, 'Castor-data', 'embeddings', 'word2vec'))
-    parser.add_argument('--word-vectors-file', default='GoogleNews-vectors-negative300.txt')
     parser.add_argument('--trained-model', type=str, default="")
     parser.add_argument('--weight-decay', type=float, default=0)
+
+    parser.add_argument('--word-vectors-dir', default=os.path.join(os.pardir, 'Castor-data', 'embeddings', 'word2vec'))
+    parser.add_argument('--word-vectors-file', default='GoogleNews-vectors-negative300.txt')
+    parser.add_argument('--save-path', type=str, default=os.path.join('kim_cnn', 'saves'))
 
     args = parser.parse_args()
     return args
