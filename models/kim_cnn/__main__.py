@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.onnx
 
-from common.evaluation import EvaluatorFactory
+from common.evaluate import EvaluatorFactory
 from common.train import TrainerFactory
 from datasets.aapd import AAPD
 from datasets.imdb import IMDB

@@ -1,5 +1,5 @@
 from .evaluators.sst_evaluator import SSTEvaluator
-from .evaluators.reuters_evaluator import ReutersEvaluator
+from .evaluators.classification_evaluator import ClassificationEvaluator
 
 
 class EvaluatorFactory(object):
@@ -9,10 +9,10 @@ class EvaluatorFactory(object):
     evaluator_map = {
         'SST-1': SSTEvaluator,
         'SST-2': SSTEvaluator,
-        'Reuters': ReutersEvaluator,
-        'AAPD': ReutersEvaluator,
-        'IMDB': ReutersEvaluator,
-        'Yelp2014': ReutersEvaluator
+        'Reuters': ClassificationEvaluator,
+        'AAPD': ClassificationEvaluator,
+        'IMDB': ClassificationEvaluator,
+        'Yelp2014': ClassificationEvaluator
     }
 
     @staticmethod

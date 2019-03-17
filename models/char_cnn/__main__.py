@@ -7,7 +7,7 @@ import torch
 
 from models.char_cnn import get_args
 from models.char_cnn import CharCNN
-from common.evaluation import EvaluatorFactory
+from common.evaluate import EvaluatorFactory
 from common.train import TrainerFactory
 from datasets.aapd import AAPDCharQuantized as AAPD
 from datasets.imdb import IMDBCharQuantized as IMDB

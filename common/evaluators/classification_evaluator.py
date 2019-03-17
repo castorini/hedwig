@@ -6,7 +6,7 @@ from sklearn import metrics
 from .evaluator import Evaluator
 
 
-class ReutersEvaluator(Evaluator):
+class ClassificationEvaluator(Evaluator):
 
     def __init__(self, dataset_cls, model, embedding, data_loader, batch_size, device, keep_results=False):
         super().__init__(dataset_cls, model, embedding, data_loader, batch_size, device, keep_results)
