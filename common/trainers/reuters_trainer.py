@@ -44,18 +44,17 @@ class ReutersTrainer(Trainer):
                 else:
                     scores = self.model(batch.text[0], lengths=batch.text[1])
 
-            if 'single_label' in self.config and self.config['single_label']:
-                for tensor1, tensor2 in zip(torch.argmax(scores, dim=1), torch.argmax(batch.label.data, dim=1)):
-                    if np.array_equal(tensor1, tensor2):
-                        n_correct += 1
-                loss = F.cross_entropy(scores, torch.argmax(batch.label.data, dim=1))
-            else:
+            if 'is_multilabel' in self.config and self.config['is_multilabel']:
                 predictions = F.sigmoid(scores).round().long()
-                # Computing binary accuracy
                 for tensor1, tensor2 in zip(predictions, batch.label):
                     if np.array_equal(tensor1, tensor2):
                         n_correct += 1
                 loss = F.binary_cross_entropy_with_logits(scores, batch.label.float())
+            else:
+                for tensor1, tensor2 in zip(torch.argmax(scores, dim=1), torch.argmax(batch.label.data, dim=1)):
+                    if np.array_equal(tensor1, tensor2):
+                        n_correct += 1
+                loss = F.cross_entropy(scores, torch.argmax(batch.label.data, dim=1))
 
             if hasattr(self.model, 'TAR') and self.model.TAR:
                 loss = loss + self.model.TAR*(rnn_outs[1:] - rnn_outs[:-1]).pow(2).mean()
@@ -75,10 +74,9 @@ class ReutersTrainer(Trainer):
                 niter = epoch * len(self.train_loader) + batch_idx
                 self.writer.add_scalar('Train/Loss', loss.data.item(), niter)
                 self.writer.add_scalar('Train/Accuracy', train_acc, niter)
-                print(self.log_template.format(time.time() - self.start,
-                                          epoch, self.iterations, 1 + batch_idx, len(self.train_loader),
-                                          100. * (1 + batch_idx) / len(self.train_loader), loss.item(),
-                                          train_acc))
+                print(self.log_template.format(time.time() - self.start, epoch, self.iterations, 1 + batch_idx,
+                                               len(self.train_loader), 100.0 * (1 + batch_idx) / len(self.train_loader),
+                                               loss.item(), train_acc))
 
     def train(self, epochs):
         self.start = time.time()

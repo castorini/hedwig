@@ -54,6 +54,8 @@ def process_labels(string):
 class Reuters(TabularDataset):
     NAME = 'Reuters'
     NUM_CLASSES = 90
+    IS_MULTILABEL = True
+
     TEXT_FIELD = Field(batch_first=True, tokenize=clean_string, include_lengths=True)
     LABEL_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=process_labels)
 

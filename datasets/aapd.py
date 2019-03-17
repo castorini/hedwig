@@ -17,6 +17,7 @@ def char_quantize(string, max_length=1000):
     else:
         return np.concatenate((quantized_string, np.zeros((max_length - len(quantized_string), len(AAPDCharQuantized.ALPHABET)), dtype=np.float32)))
 
+
 def process_labels(string):
     """
     Returns the label string as a list of integers
@@ -29,6 +30,7 @@ def process_labels(string):
 class AAPD(TabularDataset):
     NAME = 'AAPD'
     NUM_CLASSES = 54
+    IS_MULTILABEL = True
 
     TEXT_FIELD = Field(batch_first=True, tokenize=clean_string, include_lengths=True)
     LABEL_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=process_labels)

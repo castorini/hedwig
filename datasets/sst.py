@@ -19,6 +19,7 @@ def clean_str_sst(string):
 class SST1(TabularDataset):
     NAME = 'SST-1'
     NUM_CLASSES = 5
+    IS_MULTILABEL = False
 
     TEXT_FIELD = Field(batch_first=True, tokenize=clean_str_sst)
     LABEL_FIELD = Field(sequential=False, use_vocab=False, batch_first=True)
@@ -62,6 +63,7 @@ class SST1(TabularDataset):
 class SST2(TabularDataset):
     NAME = 'SST-2'
     NUM_CLASSES = 5
+    IS_MULTILABEL = False
 
     TEXT_FIELD = Field(batch_first=True, tokenize=clean_str_sst)
     LABEL_FIELD = Field(sequential=False, use_vocab=False, batch_first=True)

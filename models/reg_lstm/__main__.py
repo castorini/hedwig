@@ -45,9 +45,9 @@ def get_logger():
     return logger
 
 
-def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_size, device, single_label):
+def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_size, device, is_multilabel):
     saved_model_evaluator = EvaluatorFactory.get_evaluator(dataset_cls, model, embedding, loader, batch_size, device)
-    saved_model_evaluator.single_label = single_label
+    saved_model_evaluator.is_multilabel = is_multilabel
     scores, metric_names = saved_model_evaluator.get_scores()
     print('Evaluation metrics for', split_name)
     print(metric_names)
@@ -85,13 +85,15 @@ if __name__ == '__main__':
 
     if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
+
     else:
-        train_iter, dev_iter, test_iter = dataset_map[args.dataset].iters(args.data_dir,
-                                                                          args.word_vectors_file,
-                                                                          args.word_vectors_dir,
-                                                                          batch_size=args.batch_size,
-                                                                          device=args.gpu,
-                                                                          unk_init=UnknownWordVecCache.unk)
+        dataset_class = dataset_map[args.dataset]
+        train_iter, dev_iter, test_iter = dataset_class.iters(args.data_dir,
+                                                              args.word_vectors_file,
+                                                              args.word_vectors_dir,
+                                                              batch_size=args.batch_size,
+                                                              device=args.gpu,
+                                                              unk_init=UnknownWordVecCache.unk)
 
     config = deepcopy(args)
     config.dataset = train_iter.dataset
@@ -116,16 +118,17 @@ if __name__ == '__main__':
 
     parameter = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = torch.optim.Adam(parameter, lr=args.lr, weight_decay=args.weight_decay)
-    
-    if args.dataset not in dataset_map:
-        raise ValueError('Unrecognized dataset')
-    else:
-        train_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, train_iter, args.batch_size, args.gpu)
-        test_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, test_iter, args.batch_size, args.gpu)
-        dev_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, dev_iter, args.batch_size, args.gpu)
-        train_evaluator.single_label = args.single_label
-        test_evaluator.single_label = args.single_label
-        dev_evaluator.single_label = args.single_label
+
+    train_evaluator = EvaluatorFactory.get_evaluator(dataset_class, model, None, train_iter, args.batch_size, args.gpu)
+    test_evaluator = EvaluatorFactory.get_evaluator(dataset_class, model, None, test_iter, args.batch_size, args.gpu)
+    dev_evaluator = EvaluatorFactory.get_evaluator(dataset_class, model, None, dev_iter, args.batch_size, args.gpu)
+
+    if hasattr(train_evaluator, 'is_multilabel'):
+        train_evaluator.is_multilabel = dataset_class.IS_MULTILABEL
+    if hasattr(test_evaluator, 'is_multilabel'):
+        test_evaluator.is_multilabel = dataset_class.IS_MULTILABEL
+    if hasattr(dev_evaluator, 'is_multilabel'):
+        dev_evaluator.is_multilabel = dataset_class.IS_MULTILABEL
 
     trainer_config = {
         'optimizer': optimizer,
@@ -134,7 +137,7 @@ if __name__ == '__main__':
         'patience': args.patience,
         'model_outfile': args.save_path,
         'logger': logger,
-        'single_label': args.single_label
+        'is_multilabel': dataset_class.IS_MULTILABEL
     }
 
     trainer = TrainerFactory.get_trainer(args.dataset, model, None, train_iter, trainer_config, train_evaluator, test_evaluator, dev_evaluator)
@@ -147,17 +150,19 @@ if __name__ == '__main__':
         else:
             model = torch.load(args.trained_model, map_location=lambda storage, location: storage)
 
-    # Calculate dev and test metrics
     model = torch.load(trainer.snapshot_path)
+
     if model.beta_ema > 0:
         old_params = model.get_params()
         model.load_ema_params()
 
-    if args.dataset not in dataset_map:
-        raise ValueError('Unrecognized dataset')
-    else:
-        evaluate_dataset('dev', dataset_map[args.dataset], model, None, dev_iter, args.batch_size, args.gpu, args.single_label)
-        evaluate_dataset('test', dataset_map[args.dataset], model, None, test_iter, args.batch_size, args.gpu, args.single_label)
+    # Calculate dev and test metrics
+    evaluate_dataset('dev', dataset_class, model, None, dev_iter, args.batch_size,
+                     is_multilabel=dataset_class.IS_MULTILABEL,
+                     device=args.gpu)
+    evaluate_dataset('test', dataset_class, model, None, test_iter, args.batch_size,
+                     is_multilabel=dataset_class.IS_MULTILABEL,
+                     device=args.gpu)
 
     if model.beta_ema > 0:
         model.load_params(old_params)
