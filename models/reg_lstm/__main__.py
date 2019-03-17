@@ -10,8 +10,6 @@ from common.train import TrainerFactory
 from datasets.aapd import AAPD
 from datasets.imdb import IMDB
 from datasets.reuters import Reuters
-from datasets.sst import SST1
-from datasets.sst import SST2
 from datasets.yelp2014 import Yelp2014
 from models.reg_lstm.args import get_args
 from models.reg_lstm.model import RegLSTM
@@ -75,8 +73,6 @@ if __name__ == '__main__':
         print('Warning: Using CPU for training')
 
     dataset_map = {
-        'SST-1': SST1,
-        'SST-2': SST2,
         'Reuters': Reuters,
         'AAPD': AAPD,
         'IMDB': IMDB,

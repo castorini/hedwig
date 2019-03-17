@@ -1,5 +1,4 @@
-from .evaluators.sst_evaluator import SSTEvaluator
-from .evaluators.classification_evaluator import ClassificationEvaluator
+from common.evaluators.classification_evaluator import ClassificationEvaluator
 
 
 class EvaluatorFactory(object):
@@ -7,8 +6,6 @@ class EvaluatorFactory(object):
     Get the corresponding Evaluator class for a particular dataset.
     """
     evaluator_map = {
-        'SST-1': SSTEvaluator,
-        'SST-2': SSTEvaluator,
         'Reuters': ClassificationEvaluator,
         'AAPD': ClassificationEvaluator,
         'IMDB': ClassificationEvaluator,

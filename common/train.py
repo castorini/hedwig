@@ -1,5 +1,4 @@
-from .trainers.sst_trainer import SSTTrainer
-from .trainers.classification_trainer import ClassificationTrainer
+from common.trainers.classification_trainer import ClassificationTrainer
 
 
 class TrainerFactory(object):
@@ -7,8 +6,6 @@ class TrainerFactory(object):
     Get the corresponding Trainer class for a particular dataset.
     """
     trainer_map = {
-        'SST-1': SSTTrainer,
-        'SST-2': SSTTrainer,
         'Reuters': ClassificationTrainer,
         'AAPD': ClassificationTrainer,
         'IMDB': ClassificationTrainer,
