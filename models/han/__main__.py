@@ -6,13 +6,11 @@ import numpy as np
 import torch
 import torch.onnx
 
-from common.evaluation import EvaluatorFactory
+from common.evaluate import EvaluatorFactory
 from common.train import TrainerFactory
 from datasets.aapd import AAPDHierarchical as AAPD
 from datasets.imdb import IMDBHierarchical as IMDB
 from datasets.reuters import ReutersHierarchical as Reuters
-from datasets.sst import SST1
-from datasets.sst import SST2
 from datasets.yelp2014 import Yelp2014Hierarchical as Yelp2014
 from models.han.model import HAN
 from models.han.args import get_args
@@ -29,8 +27,6 @@ class UnknownWordVecCache(object):
         size_tup = tuple(tensor.size())
         if size_tup not in cls.cache:
             cls.cache[size_tup] = torch.Tensor(tensor.size())
-            # choose 0.25 so unknown vectors have approximately same variance as pre-trained ones
-            # same as original implementation: https://github.com/yoonkim/CNN_sentence/blob/0a626a048757d5272a7e8ccede256a434a6529be/process_data.py#L95
             cls.cache[size_tup].uniform_(-0.25, 0.25)
         return cls.cache[size_tup]
 
@@ -78,8 +74,6 @@ if __name__ == '__main__':
     logger = get_logger()
 
     dataset_map = {
-        'SST-1': SST1,
-        'SST-2': SST2,
         'Reuters': Reuters,
         'AAPD': AAPD,
         'IMDB': IMDB,

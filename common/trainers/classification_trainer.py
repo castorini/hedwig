@@ -10,10 +10,10 @@ from tensorboardX import SummaryWriter
 from .trainer import Trainer
 
 
-class ReutersTrainer(Trainer):
+class ClassificationTrainer(Trainer):
 
     def __init__(self, model, embedding, train_loader, trainer_config, train_evaluator, test_evaluator, dev_evaluator):
-        super(ReutersTrainer, self).__init__(model, embedding, train_loader, trainer_config, train_evaluator, test_evaluator, dev_evaluator)
+        super().__init__(model, embedding, train_loader, trainer_config, train_evaluator, test_evaluator, dev_evaluator)
         self.config = trainer_config
         self.early_stop = False
         self.best_dev_f1 = 0
@@ -22,7 +22,8 @@ class ReutersTrainer(Trainer):
         self.start = None
         self.log_template = ' '.join(
             '{:>6.0f},{:>5.0f},{:>9.0f},{:>5.0f}/{:<5.0f} {:>7.0f}%,{:>8.6f},{:12.4f}'.split(','))
-        self.dev_log_template = ' '.join('{:>6.0f},{:>5.0f},{:>9.0f},{:>5.0f}/{:<5.0f} {:>7.4f},{:>8.4f},{:8.4f},{:12.4f},{:12.4f}'.split(','))
+        self.dev_log_template = ' '.join(
+            '{:>6.0f},{:>5.0f},{:>9.0f},{:>5.0f}/{:<5.0f} {:>7.4f},{:>8.4f},{:8.4f},{:12.4f},{:12.4f}'.split(','))
         self.writer = SummaryWriter(log_dir="tensorboard_logs/" + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
         self.snapshot_path = os.path.join(self.model_outfile, self.train_loader.dataset.NAME, 'best_model.pt')
 
@@ -44,18 +45,17 @@ class ReutersTrainer(Trainer):
                 else:
                     scores = self.model(batch.text[0], lengths=batch.text[1])
 
-            if 'single_label' in self.config and self.config['single_label']:
-                for tensor1, tensor2 in zip(torch.argmax(scores, dim=1), torch.argmax(batch.label.data, dim=1)):
-                    if np.array_equal(tensor1, tensor2):
-                        n_correct += 1
-                loss = F.cross_entropy(scores, torch.argmax(batch.label.data, dim=1))
-            else:
+            if 'is_multilabel' in self.config and self.config['is_multilabel']:
                 predictions = F.sigmoid(scores).round().long()
-                # Computing binary accuracy
                 for tensor1, tensor2 in zip(predictions, batch.label):
                     if np.array_equal(tensor1, tensor2):
                         n_correct += 1
                 loss = F.binary_cross_entropy_with_logits(scores, batch.label.float())
+            else:
+                for tensor1, tensor2 in zip(torch.argmax(scores, dim=1), torch.argmax(batch.label.data, dim=1)):
+                    if np.array_equal(tensor1, tensor2):
+                        n_correct += 1
+                loss = F.cross_entropy(scores, torch.argmax(batch.label.data, dim=1))
 
             if hasattr(self.model, 'TAR') and self.model.TAR:
                 loss = loss + self.model.TAR*(rnn_outs[1:] - rnn_outs[:-1]).pow(2).mean()
@@ -75,10 +75,9 @@ class ReutersTrainer(Trainer):
                 niter = epoch * len(self.train_loader) + batch_idx
                 self.writer.add_scalar('Train/Loss', loss.data.item(), niter)
                 self.writer.add_scalar('Train/Accuracy', train_acc, niter)
-                print(self.log_template.format(time.time() - self.start,
-                                          epoch, self.iterations, 1 + batch_idx, len(self.train_loader),
-                                          100. * (1 + batch_idx) / len(self.train_loader), loss.item(),
-                                          train_acc))
+                print(self.log_template.format(time.time() - self.start, epoch, self.iterations, 1 + batch_idx,
+                                               len(self.train_loader), 100.0 * (1 + batch_idx) / len(self.train_loader),
+                                               loss.item(), train_acc))
 
     def train(self, epochs):
         self.start = time.time()

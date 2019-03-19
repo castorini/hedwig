@@ -31,6 +31,8 @@ def process_labels(string):
 class Yelp2014(TabularDataset):
     NAME = 'Yelp2014'
     NUM_CLASSES = 5
+    IS_MULTILABEL = False
+
     TEXT_FIELD = Field(batch_first=True, tokenize=clean_string, include_lengths=True)
     LABEL_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=process_labels)
 

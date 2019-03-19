@@ -6,13 +6,11 @@ import numpy as np
 import torch
 import torch.onnx
 
-from common.evaluation import EvaluatorFactory
+from common.evaluate import EvaluatorFactory
 from common.train import TrainerFactory
 from datasets.aapd import AAPD
 from datasets.imdb import IMDB
 from datasets.reuters import Reuters
-from datasets.sst import SST1
-from datasets.sst import SST2
 from datasets.yelp2014 import Yelp2014
 from models.kim_cnn.args import get_args
 from models.kim_cnn.model import KimCNN
@@ -46,14 +44,14 @@ def get_logger():
     return logger
 
 
-def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_size, device, single_label):
+def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_size, device, is_multilabel):
     saved_model_evaluator = EvaluatorFactory.get_evaluator(dataset_cls, model, embedding, loader, batch_size, device)
-    if hasattr(saved_model_evaluator, 'single_label'):
-        saved_model_evaluator.single_label = single_label
+    if hasattr(saved_model_evaluator, 'is_multilabel'):
+        saved_model_evaluator.is_multilabel = is_multilabel
     scores, metric_names = saved_model_evaluator.get_scores()
-    logger.info('Evaluation metrics for {}'.format(split_name))
-    logger.info('\t'.join([' '] + metric_names))
-    logger.info('\t'.join([split_name] + list(map(str, scores))))
+    print('Evaluation metrics for', split_name)
+    print(metric_names)
+    print(scores)
 
 
 if __name__ == '__main__':
@@ -76,8 +74,6 @@ if __name__ == '__main__':
     logger = get_logger()
 
     dataset_map = {
-        'SST-1': SST1,
-        'SST-2': SST2,
         'Reuters': Reuters,
         'AAPD': AAPD,
         'IMDB': IMDB,
@@ -87,6 +83,7 @@ if __name__ == '__main__':
     if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
     else:
+        dataset_class = dataset_map[args.dataset]
         train_iter, dev_iter, test_iter = dataset_map[args.dataset].iters(args.data_dir, args.word_vectors_file,
                                                                           args.word_vectors_dir,
                                                                           batch_size=args.batch_size, device=args.gpu,
@@ -114,20 +111,18 @@ if __name__ == '__main__':
             model.cuda()
 
     parameter = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = torch.optim.Adadelta(parameter, lr=args.lr, weight_decay=args.weight_decay)
+    optimizer = torch.optim.Adam(parameter, lr=args.lr, weight_decay=args.weight_decay)
 
-    if args.dataset not in dataset_map:
-        raise ValueError('Unrecognized dataset')
-    else:
-        train_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, train_iter, args.batch_size, args.gpu)
-        test_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, test_iter, args.batch_size, args.gpu)
-        dev_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, dev_iter, args.batch_size, args.gpu)
-        if hasattr(train_evaluator, 'single_label'):
-            train_evaluator.single_label = args.single_label
-        if hasattr(test_evaluator, 'single_label'):
-            test_evaluator.single_label = args.single_label
-        if hasattr(dev_evaluator, 'single_label'):
-            dev_evaluator.single_label = args.single_label
+    train_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, train_iter, args.batch_size, args.gpu)
+    test_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, test_iter, args.batch_size, args.gpu)
+    dev_evaluator = EvaluatorFactory.get_evaluator(dataset_map[args.dataset], model, None, dev_iter, args.batch_size, args.gpu)
+
+    if hasattr(train_evaluator, 'is_multilabel'):
+        train_evaluator.is_multilabel = dataset_class.IS_MULTILABEL
+    if hasattr(test_evaluator, 'is_multilabel'):
+        test_evaluator.is_multilabel = dataset_class.IS_MULTILABEL
+    if hasattr(dev_evaluator, 'is_multilabel'):
+        dev_evaluator.is_multilabel = dataset_class.IS_MULTILABEL
 
     trainer_config = {
         'optimizer': optimizer,
@@ -136,7 +131,7 @@ if __name__ == '__main__':
         'patience': args.patience,
         'model_outfile': args.save_path,
         'logger': logger,
-        'single_label': args.single_label
+        'is_multilabel': dataset_class.IS_MULTILABEL
     }
 
     trainer = TrainerFactory.get_trainer(args.dataset, model, None, train_iter, trainer_config, train_evaluator, test_evaluator, dev_evaluator)
@@ -152,8 +147,10 @@ if __name__ == '__main__':
     # Calculate dev and test metrics
     if hasattr(trainer, 'snapshot_path'):
         model = torch.load(trainer.snapshot_path)
-    if args.dataset not in dataset_map:
-        raise ValueError('Unrecognized dataset')
-    else:
-        evaluate_dataset('dev', dataset_map[args.dataset], model, None, dev_iter, args.batch_size, args.gpu, args.single_label)
-        evaluate_dataset('test', dataset_map[args.dataset], model, None, test_iter, args.batch_size, args.gpu, args.single_label)
+
+    evaluate_dataset('dev', dataset_map[args.dataset], model, None, dev_iter, args.batch_size,
+                     is_multilabel=dataset_class.IS_MULTILABEL,
+                     device=args.gpu)
+    evaluate_dataset('test', dataset_map[args.dataset], model, None, test_iter, args.batch_size,
+                     is_multilabel=dataset_class.IS_MULTILABEL,
+                     device=args.gpu)

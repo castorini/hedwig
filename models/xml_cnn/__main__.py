@@ -6,10 +6,8 @@ import numpy as np
 import torch
 import torch.onnx
 
-from common.evaluation import EvaluatorFactory
+from common.evaluate import EvaluatorFactory
 from common.train import TrainerFactory
-from datasets.sst import SST1
-from datasets.sst import SST2
 from datasets.reuters import Reuters
 from datasets.aapd import AAPD
 from datasets.yelp2014 import Yelp2014
@@ -77,12 +75,10 @@ if __name__ == '__main__':
     logger = get_logger()
 
     dataset_map = {
-        'SST-1': SST1,
-        'SST-2': SST2,
         'Reuters': Reuters,
         'AAPD': AAPD,
         'IMDB': IMDB,
-        'Yelp2014':Yelp2014
+        'Yelp2014': Yelp2014
     }
     if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
