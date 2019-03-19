@@ -9,7 +9,6 @@ class CharCNN(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.is_cuda_enabled = config.cuda
-        dataset = config.dataset
         num_conv_filters = config.num_conv_filters
         output_channel = config.output_channel
         num_affine_neurons = config.num_affine_neurons
