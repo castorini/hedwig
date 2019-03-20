@@ -46,7 +46,7 @@ def get_logger():
 def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_size, device, is_multilabel):
     saved_model_evaluator = EvaluatorFactory.get_evaluator(dataset_cls, model, embedding, loader, batch_size, device)
     if hasattr(saved_model_evaluator, 'is_multilabel'):
-        saved_model_evaluator.is_multilabel = dataset_class.IS_MULTILABEL
+        saved_model_evaluator.is_multilabel = is_multilabel
 
     scores, metric_names = saved_model_evaluator.get_scores()
     print('Evaluation metrics for', split_name)

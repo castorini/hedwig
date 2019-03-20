@@ -43,14 +43,13 @@ def get_logger():
     return logger
 
 
-def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_size, device, single_label):
+def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_size, device, is_multilabel):
     saved_model_evaluator = EvaluatorFactory.get_evaluator(dataset_cls, model, embedding, loader, batch_size, device)
     if hasattr(saved_model_evaluator, 'is_multilabel'):
-        saved_model_evaluator.is_multilabel = dataset_class.IS_MULTILABEL
+        saved_model_evaluator.is_multilabel = is_multilabel
     if hasattr(saved_model_evaluator, 'ignore_lengths'):
         saved_model_evaluator.ignore_lengths = True
 
-    saved_model_evaluator.single_label = single_label
     scores, metric_names = saved_model_evaluator.get_scores()
     print('Evaluation metrics for', split_name)
     print(metric_names)
@@ -161,5 +160,9 @@ if __name__ == '__main__':
     if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
     else:
-        evaluate_dataset('dev', dataset_map[args.dataset], model, None, dev_iter, args.batch_size, args.gpu, args.single_label)
-        evaluate_dataset('test', dataset_map[args.dataset], model, None, test_iter, args.batch_size, args.gpu, args.single_label)
+        evaluate_dataset('dev', dataset_map[args.dataset], model, None, dev_iter, args.batch_size,
+                         is_multilabel=dataset_class.IS_MULTILABEL,
+                         device=args.gpu)
+        evaluate_dataset('test', dataset_map[args.dataset], model, None, test_iter, args.batch_size,
+                         is_multilabel=dataset_class.IS_MULTILABEL,
+                         device=args.gpu)
