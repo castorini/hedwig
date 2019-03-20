@@ -9,7 +9,6 @@ class HAN(nn.Module):
 
     def __init__(self, config):
         super().__init__()
-        dataset = config.dataset
         self.mode = config.mode
         self.word_attention_rnn = WordLevelRNN(config)
         self.sentence_attention_rnn = SentLevelRNN(config)
