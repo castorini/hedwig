@@ -1,9 +1,9 @@
-from argparse import ArgumentParser
 import os
-
+import models.args
 
 def get_args():
-    parser = ArgumentParser(description="HAN")
+    parser = models.args.get_args()
+
     parser.add_argument('--word-num-hidden', type=int, default=50)
     parser.add_argument('--sentence-num-hidden', type=int, default=50)
 

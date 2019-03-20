@@ -1,10 +1,10 @@
 import os
-
-from argparse import ArgumentParser
+import models.args
 
 
 def get_args():
-    parser = ArgumentParser(description="XML CNN")
+    parser = models.args.get_args()
+
     parser.add_argument('--mode', type=str, default='multichannel', choices=['rand', 'static', 'non-static', 'multichannel'])
     parser.add_argument('--dataset', type=str, default='SST-1', choices=['SST-1', 'SST-2', 'Reuters','AAPD', 'IMDB', 'Yelp2014'])
     parser.add_argument('--resume-snapshot', type=str, default=None)
@@ -26,5 +26,6 @@ def get_args():
     parser.add_argument('--onnx-batch-size', type=int, default=1024, help='Batch size for ONNX export')
     parser.add_argument('--onnx-sent-len', type=int, default=32, help='Sentence length for ONNX export')
     parser.add_argument('--single-label', action='store_true')
+
     args = parser.parse_args()
     return args
