@@ -154,15 +154,13 @@ if __name__ == '__main__':
         else:
             model = torch.load(args.trained_model, map_location=lambda storage, location: storage)
 
-    model = torch.load(trainer.snapshot_path)
-
     # Calculate dev and test metrics
-    if args.dataset not in dataset_map:
-        raise ValueError('Unrecognized dataset')
-    else:
-        evaluate_dataset('dev', dataset_map[args.dataset], model, None, dev_iter, args.batch_size,
-                         is_multilabel=dataset_class.IS_MULTILABEL,
-                         device=args.gpu)
-        evaluate_dataset('test', dataset_map[args.dataset], model, None, test_iter, args.batch_size,
-                         is_multilabel=dataset_class.IS_MULTILABEL,
-                         device=args.gpu)
+    if hasattr(trainer, 'snapshot_path'):
+        model = torch.load(trainer.snapshot_path)
+
+    evaluate_dataset('dev', dataset_map[args.dataset], model, None, dev_iter, args.batch_size,
+                     is_multilabel=dataset_class.IS_MULTILABEL,
+                     device=args.gpu)
+    evaluate_dataset('test', dataset_map[args.dataset], model, None, test_iter, args.batch_size,
+                     is_multilabel=dataset_class.IS_MULTILABEL,
+                     device=args.gpu)
