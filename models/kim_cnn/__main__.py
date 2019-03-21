@@ -48,6 +48,7 @@ def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_si
     saved_model_evaluator = EvaluatorFactory.get_evaluator(dataset_cls, model, embedding, loader, batch_size, device)
     if hasattr(saved_model_evaluator, 'is_multilabel'):
         saved_model_evaluator.is_multilabel = is_multilabel
+
     scores, metric_names = saved_model_evaluator.get_scores()
     print('Evaluation metrics for', split_name)
     print(metric_names)
@@ -55,7 +56,7 @@ def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_si
 
 
 if __name__ == '__main__':
-    # Set default configuration in : args.py
+    # Set default configuration in args.py
     args = get_args()
 
     # Set random seed for reproducibility

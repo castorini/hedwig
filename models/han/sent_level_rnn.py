@@ -6,7 +6,6 @@ class SentLevelRNN(nn.Module):
 
     def __init__(self, config):
         super().__init__()
-        dataset = config.dataset
         sentence_num_hidden = config.sentence_num_hidden
         word_num_hidden = config.word_num_hidden
         target_class = config.target_class
