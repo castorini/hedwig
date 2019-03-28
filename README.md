@@ -5,11 +5,10 @@ This repo contains PyTorch deep learning models for document classification, imp
 ## Models
 
 + [Kim CNN](models/kim_cnn/): CNNs for sentence classification [(Kim, EMNLP 2014)](http://www.aclweb.org/anthology/D14-1181)
-+ [Conv-RNN](models/conv_rnn/): Convolutional RNN [(Wang et al., KDD 2017)](https://dl.acm.org/citation.cfm?id=3098140)
 + [HAN](models/han/): Hierarchical Attention Networks [(Zichao, et al, NAACL 2016)](https://www.cs.cmu.edu/~hovy/papers/16HLT-hierarchical-attention-networks.pdf)
 + [Reg-LSTM](models/reg_lstm/): Regularized LSTM for document classification [(Merity et al.)](https://arxiv.org/abs/1708.02182)
 + [XML-CNN](models/xml_cnn/): CNNs for extreme multi-label text classification [(Liu et al., SIGIR 2017)](http://nyc.lti.cs.cmu.edu/yiming/Publications/jliu-sigir17.pdf)
-+ [Char-CNN](.//): Character-level Convolutional Network [(Zhang et al., NIPS 2015)](http://papers.nips.cc/paper/5782-character-level-convolutional-networks-for-text-classification.pdf)
++ [Char-CNN](models/char_cnn/): Character-level Convolutional Network [(Zhang et al., NIPS 2015)](http://papers.nips.cc/paper/5782-character-level-convolutional-networks-for-text-classification.pdf)
 
 Each model directory has a `README.md` with further details.
 
