@@ -24,6 +24,5 @@ def get_args():
     parser.add_argument('--resume-snapshot', type=str)
     parser.add_argument('--trained-model', type=str)
 
-
     args = parser.parse_args()
     return args
