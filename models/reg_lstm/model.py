@@ -40,6 +40,7 @@ class RegLSTM(nn.Module):
         if self.wdrop:
             self.lstm = WeightDrop(self.lstm, ['weight_hh_l0'], dropout=self.wdrop)
         self.dropout = nn.Dropout(config.dropout)
+
         if self.has_bottleneck_layer:
             if self.is_bidirectional:
                 self.fc1 = nn.Linear(2 * config.hidden_dim, config.hidden_dim)  # Hidden Bottleneck Layer
