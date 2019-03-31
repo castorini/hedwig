@@ -169,7 +169,7 @@ from models.bert.args import get_args
 from models.bert.model import BertForSequenceClassification, BertConfig, WEIGHTS_NAME, CONFIG_NAME
 from __future__ import absolute_import, division, print_function
 from pytorch_pretrained_bert.file_utils import PYTORCH_PRETRAINED_BERT_CACHE
-from datasets.dataset4bert import DataProcessor, SS2Processor, ReutersProcessor, AAPDProcessor
+from datasets.dataset4bert import DataProcessor, Sst2Processor, ReutersProcessor, AAPDProcessor
 from datasets.tokenization4bert import BertTokenizer
 from common.train4bert import TrainerFactory
 from common.evaluate4bert import EvaluatorFactory
@@ -250,10 +250,17 @@ if __name__ == '__main__':
 
 
     ########################
-    ## Trainer Config, Eval config, Trainer, Evaluator
-    trainer_config = {
+    ## Trainer Config, Eval config, Trainer, Evaluator : Just need to modularize trainer and evaluator similar to #hedwig
+    #trainer_config = {
 }
-    trainer = TrainerFactory.get_trainer(args.)
+    #trainer = TrainerFactory.get_trainer(args.)
+
+    #evaluator = EvaluatorFactory.get_evaluator('...')
     ########################
     if args.do_train:
+        trainer.train()
+    else:
+        model = BertForSequenceClassification.from_pretrained(args.bert_model, num_labels=num_labels)
+    if args.do_eval and (args.local_rank == -1 or torch.distributed.get_rank() == 0): # Dont need the second condition here perhaps
         
+
