@@ -253,7 +253,7 @@ if __name__ == '__main__':
     ## Trainer Config, Eval config, Trainer, Evaluator
     trainer_config = {
 }
-    
+    trainer = TrainerFactory.get_trainer(args.)
     ########################
     if args.do_train:
         
