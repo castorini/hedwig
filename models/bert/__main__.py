@@ -1,4 +1,4 @@
-import logging
+"""import logging
 import random
 from copy import deepcopy
 
@@ -19,6 +19,7 @@ class UnknownWordVecCache(object):
     """
     Caches the first randomly generated word vector for a certain size to make it is reused.
     """
+
     cache = {}
 
     @classmethod
@@ -163,4 +164,96 @@ if __name__ == '__main__':
                      device=args.gpu)
 
     if model.beta_ema > 0:
-        model.load_params(old_params)
+        model.load_params(old_params)"""
+from models.bert.args import get_args
+from models.bert.model import BertForSequenceClassification, BertConfig, WEIGHTS_NAME, CONFIG_NAME
+from __future__ import absolute_import, division, print_function
+from pytorch_pretrained_bert.file_utils import PYTORCH_PRETRAINED_BERT_CACHE
+from datasets.dataset4bert import DataProcessor, SS2Processor, ReutersProcessor, AAPDProcessor
+from datasets.tokenization4bert import BertTokenizer
+from common.train4bert import TrainerFactory
+from common.evaluate4bert import EvaluatorFactory
+
+
+if __name__ == '__main__':
+    # Set default configuration in args.py
+    args = get_args()
+    #logger = get_logger()
+
+    # Set random seed for reproducibility
+
+    if args.server_ip and args.server_port:
+        import ptvsd
+        print("Waiting for debugger attach")
+        ptvsd.enable_attach(address=(args.server_ip, args.server_port), redirect_output=True)
+        ptvsd.wait_for_attach()
+
+    processors = {
+        "cola": ColaProcessor,
+        "mnli": MnliProcessor,
+        "mrpc": MrpcProcessor,
+        "sst-2": Sst2Processor,
+    }
+
+    num_labels_task = {
+        "cola": 2,
+        "sst-2": 2,
+        "mnli": 3,
+        "mrpc": 2,
+    }
+
+    if args.local_rank == -1 or args.no_cuda:
+        device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
+        n_gpu = torch.cuda.device_count()
+    else:
+        torch.cuda.set_device(args.local_rank)
+        device = torch.device("cuda", args.local_rank)
+        n_gpu = 1
+        # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
+        torch.distributed.init_process_group(backend='nccl')
+    logger.info("device: {} n_gpu: {}, distributed training: {}, 16-bits training: {}".format(
+        device, n_gpu, bool(args.local_rank != -1), args.fp16))
+
+    if args.gradient_accumulation_steps < 1:
+        raise ValueError("Invalid gradient_accumulation_steps parameter: {}, should be >= 1".format(
+                            args.gradient_accumulation_steps))
+
+    args.train_batch_size = args.train_batch_size // args.gradient_accumulation_steps
+
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    if n_gpu > 0:
+        torch.cuda.manual_seed_all(args.seed)
+
+    if not args.do_train and not args.do_eval:
+        raise ValueError("At least one of `do_train` or `do_eval` must be True.")
+
+    if os.path.exists(args.output_dir) and os.listdir(args.output_dir) and args.do_train:
+        raise ValueError("Output directory ({}) already exists and is not empty.".format(args.output_dir))
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
+
+    task_name = args.task_name.lower()
+
+    if task_name not in processors:
+        raise ValueError("Task not found: %s" % (task_name))
+
+    processor = processors[task_name]()
+    num_labels = num_labels_task[task_name]
+    label_list = processor.get_labels()
+
+    tokenizer = BertTokenizer.from_pretrained(args.bert_model, do_lower_case=args.do_lower_case)
+
+    train_examples = None
+    num_train_optimization_steps = None
+
+
+    ########################
+    ## Trainer Config, Eval config, Trainer, Evaluator
+    trainer_config = {
+}
+    
+    ########################
+    if args.do_train:
+        
