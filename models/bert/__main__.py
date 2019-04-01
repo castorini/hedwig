@@ -169,7 +169,7 @@ from models.bert.args import get_args
 from models.bert.model import BertForSequenceClassification, BertConfig, WEIGHTS_NAME, CONFIG_NAME
 from __future__ import absolute_import, division, print_function
 from pytorch_pretrained_bert.file_utils import PYTORCH_PRETRAINED_BERT_CACHE
-from datasets.dataset4bert import DataProcessor, Sst2Processor, ReutersProcessor, AAPDProcessor
+from datasets.dataset4bert import DataProcessor, Sst2Processor, ReutersProcessor, AAPDProcessor, InputExample, InputFeatures
 from datasets.tokenization4bert import BertTokenizer
 from common.train4bert import TrainerFactory
 from common.evaluate4bert import EvaluatorFactory
