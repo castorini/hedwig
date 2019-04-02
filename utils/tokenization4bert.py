@@ -1,3 +1,4 @@
+# coding=utf-8
 # Copyright 2018 The Google AI Language Team Authors and The HuggingFace Inc. team.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Tokenization classes."""
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
@@ -20,7 +22,7 @@ import os
 import unicodedata
 from io import open
 
-from utils.io import cached_path
+from .file_utils import cached_path
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +35,6 @@ PRETRAINED_VOCAB_ARCHIVE_MAP = {
     'bert-base-multilingual-cased': "https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-multilingual-cased-vocab.txt",
     'bert-base-chinese': "https://s3.amazonaws.com/models.huggingface.co/bert/bert-base-chinese-vocab.txt",
 }
-
 PRETRAINED_VOCAB_POSITIONAL_EMBEDDINGS_SIZE_MAP = {
     'bert-base-uncased': 512,
     'bert-large-uncased': 512,
