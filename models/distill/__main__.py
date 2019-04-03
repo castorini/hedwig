@@ -83,7 +83,6 @@ if __name__ == '__main__':
     tokenizer = BertTokenizer.from_pretrained(args.bert_model, do_lower_case=args.do_lower_case)
 
 
-
     ## Model Preparation
     # Prepare model
     cache_dir = args.cache_dir if args.cache_dir else os.path.join(str(PYTORCH_PRETRAINED_BERT_CACHE), 'distributed_{}'.format(args.local_rank))
@@ -134,7 +133,6 @@ if __name__ == '__main__':
     ###############################
     ## Setup trainer
     trainer = BertTrainer(model, optimizer, processor)
-    evaluotor = BertEvaluator(model, processor)
     ###############################
 
     ###############################
@@ -147,3 +145,4 @@ if __name__ == '__main__':
         model = BertForSequenceClassification.from_pretrained(args.bert_model, num_labels=num_labels)
     if args.do_eval and (args.local_rank == -1 or torch.distributed.get_rank() == 0): # Dont need the second condition here perhaps
         
+
