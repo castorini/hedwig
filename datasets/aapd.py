@@ -9,6 +9,7 @@ from torchtext.vocab import Vectors
 
 from datasets.reuters import clean_string, clean_string_fl, split_sents
 
+
 def char_quantize(string, max_length=1000):
     identity = np.identity(len(AAPDCharQuantized.ALPHABET))
     quantized_string = np.array([identity[AAPDCharQuantized.ALPHABET[char]] for char in list(string.lower()) if char in AAPDCharQuantized.ALPHABET], dtype=np.float32)
