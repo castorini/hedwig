@@ -6,7 +6,7 @@ import torch
 
 from common.evaluators.bert_evaluator import BertEvaluator
 from common.trainers.bert_trainer import BertTrainer
-from datasets.data4bert import Sst2Processor
+from datasets.processors.sst_processor import Sst2Processor
 from models.bert.args import get_args
 from models.bert.model import BertForSequenceClassification
 from utils.io import PYTORCH_PRETRAINED_BERT_CACHE

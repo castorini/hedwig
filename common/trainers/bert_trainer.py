@@ -5,7 +5,7 @@ from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
 from tqdm import trange
 
-from datasets.data4bert import convert_examples_to_features
+from datasets.processors.bert_processor import convert_examples_to_features
 from utils.optimization import warmup_linear
 from utils.tokenization4bert import BertTokenizer
 

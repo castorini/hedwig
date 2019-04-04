@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import DataLoader, SequentialSampler, TensorDataset
 from tqdm import tqdm
 
-from datasets.data4bert import convert_examples_to_features, accuracy
+from datasets.processors.bert_processor import convert_examples_to_features, accuracy
 from utils.tokenization4bert import BertTokenizer
 
 
