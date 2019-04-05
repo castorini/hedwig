@@ -3,32 +3,37 @@ import os
 from datasets.processors.bert_processor import BertProcessor, InputExample
 
 
-class Sst2Processor(BertProcessor):
-    """Processor for the SST-2 data set (GLUE version)."""
+class SST2Processor(BertProcessor):
+    NAME = 'SST-2'
+    NUM_CLASSES = 2
+    IS_MULTILABEL = False
 
     def get_train_examples(self, data_dir):
-        """See base class."""
         return self._create_examples(
-            self._read_tsv(os.path.join(data_dir, "train.tsv")), "train")
+            self._read_tsv(os.path.join(data_dir, 'SST-2', 'train.tsv')), 'train')
 
     def get_dev_examples(self, data_dir):
-        """See base class."""
         return self._create_examples(
-            self._read_tsv(os.path.join(data_dir, "dev.tsv")), "dev")
+            self._read_tsv(os.path.join(data_dir, 'SST-2', 'dev.tsv')), 'dev')
 
-    def get_labels(self):
-        """See base class."""
-        return ["0", "1"]
+    def get_test_examples(self, data_dir):
+        return self._create_examples(
+            self._read_tsv(os.path.join(data_dir, 'SST-2', 'test.tsv')), 'test')
 
-    def _create_examples(self, lines, set_type):
-        """Creates examples for the training and dev sets."""
+    @staticmethod
+    def _create_examples(lines, set_type):
+        """
+        Creates examples for the training and dev sets
+        :param lines:
+        :param set_type:
+        :return:
+        """
         examples = []
         for (i, line) in enumerate(lines):
             if i == 0:
                 continue
-            guid = "%s-%s" % (set_type, i)
-            text_a = line[0]
-            label = line[1]
-            examples.append(
-                InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+            guid = '%s-%s' % (set_type, i)
+            label = line[0]
+            text = line[1]
+            examples.append(InputExample(guid=guid, text_a=text, text_b=None, label=label))
         return examples

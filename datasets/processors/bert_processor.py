@@ -39,20 +39,44 @@ class BertProcessor(object):
     """Base class for data converters for sequence classification data sets."""
 
     def get_train_examples(self, data_dir):
-        """Gets a collection of `InputExample`s for the train set."""
+        """
+        Gets a collection of `InputExample`s for the train set
+        :param data_dir:
+        :return:
+        """
         raise NotImplementedError()
 
     def get_dev_examples(self, data_dir):
-        """Gets a collection of `InputExample`s for the dev set."""
+        """
+        Gets a collection of `InputExample`s for the dev set
+        :param data_dir:
+        :return:
+        """
+        raise NotImplementedError()
+
+    def get_test_examples(self, data_dir):
+        """
+        Gets a collection of `InputExample`s for the test set
+        :param data_dir:
+        :return:
+        """
         raise NotImplementedError()
 
     def get_labels(self):
-        """Gets the list of labels for this data set."""
+        """
+        Gets a list of possible labels in the dataset
+        :return:
+        """
         raise NotImplementedError()
 
     @classmethod
     def _read_tsv(cls, input_file, quotechar=None):
-        """Reads a tab separated value file."""
+        """
+        Reads a Tab Separated Values (TSV) file
+        :param input_file:
+        :param quotechar:
+        :return:
+        """
         with open(input_file, "r") as f:
             reader = csv.reader(f, delimiter="\t", quotechar=quotechar)
             lines = []
@@ -63,10 +87,15 @@ class BertProcessor(object):
             return lines
 
 
-def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer):
-    """Loads a data file into a list of `InputBatch`s."""
-
-    label_map = {label : i for i, label in enumerate(label_list)}
+def convert_examples_to_features(examples, max_seq_length, tokenizer, print_examples=False):
+    """
+    Loads a data file into a list of InputBatch objects
+    :param examples:
+    :param max_seq_length:
+    :param tokenizer:
+    :param print_examples:
+    :return: a list of InputBatch objects
+    """
 
     features = []
     for (ex_index, example) in enumerate(examples):
@@ -125,27 +154,30 @@ def convert_examples_to_features(examples, label_list, max_seq_length, tokenizer
         assert len(input_mask) == max_seq_length
         assert len(segment_ids) == max_seq_length
 
-        label_id = label_map[example.label]
-        if ex_index < 5:
-            print("*** Example ***")
-            print("guid: %s" % (example.guid))
-            print("tokens: %s" % " ".join(
-                    [str(x) for x in tokens]))
+        label_id = [float(x) for x in example.label]
+
+        if print_examples and ex_index < 5:
+            print("tokens: %s" % " ".join([str(x) for x in tokens]))
             print("input_ids: %s" % " ".join([str(x) for x in input_ids]))
             print("input_mask: %s" % " ".join([str(x) for x in input_mask]))
             print("segment_ids: %s" % " ".join([str(x) for x in segment_ids]))
-            print("label: %s (id = %d)" % (example.label, label_id))
+            print("label: %s" % example.label)
 
-        features.append(
-                InputFeatures(input_ids=input_ids,
-                              input_mask=input_mask,
-                              segment_ids=segment_ids,
-                              label_id=label_id))
+        features.append(InputFeatures(input_ids=input_ids,
+                                      input_mask=input_mask,
+                                      segment_ids=segment_ids,
+                                      label_id=label_id))
     return features
 
 
 def _truncate_seq_pair(tokens_a, tokens_b, max_length):
-    """Truncates a sequence pair in place to the maximum length."""
+    """
+    Truncates a sequence pair in place to the maximum length
+    :param tokens_a:
+    :param tokens_b:
+    :param max_length:
+    :return:
+    """
 
     # This is a simple heuristic which will always truncate the longer sequence
     # one token at a time. This makes more sense than truncating an equal percent
@@ -159,8 +191,3 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
             tokens_a.pop()
         else:
             tokens_b.pop()
-
-
-def accuracy(out, labels):
-    outputs = np.argmax(out, axis=1)
-    return np.sum(outputs == labels)
