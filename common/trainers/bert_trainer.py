@@ -5,9 +5,10 @@ from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
 from tqdm import trange
 
+from common.evaluators.bert_evaluator import BertEvaluator
 from datasets.processors.bert_processor import convert_examples_to_features
 from utils.optimization import warmup_linear
-from utils.tokenization4bert import BertTokenizer
+from utils.tokenization import BertTokenizer
 
 
 class BertTrainer(object):
@@ -16,11 +17,11 @@ class BertTrainer(object):
         self.model = model
         self.optimizer = optimizer
         self.processor = processor
-        self.tokenizer = BertTokenizer.from_pretrained(args.bert_model, do_lower_case=args.do_lower_case)
-
         self.train_examples = self.processor.get_train_examples(args.data_dir)
+        self.tokenizer = BertTokenizer.from_pretrained(args.model, is_lowercase=args.is_lowercase)
+
         self.num_train_optimization_steps = int(
-            len(self.train_examples) / args.train_batch_size / args.gradient_accumulation_steps) * args.num_train_epochs
+            len(self.train_examples) / args.batch_size / args.gradient_accumulation_steps) * args.epochs
         if args.local_rank != -1:
             self.num_train_optimization_steps = args.num_train_optimization_steps // torch.distributed.get_world_size()
         self.global_step = 0
@@ -31,8 +32,13 @@ class BertTrainer(object):
         for step, batch in enumerate(tqdm(train_dataloader, desc="Iteration")):
             batch = tuple(t.to(self.args.device) for t in batch)
             input_ids, input_mask, segment_ids, label_ids = batch
-            logits = self.model(input_ids, segment_ids, input_mask, label_ids)
-            loss = F.cross_entropy(logits.view(-1, self.args.num_labels), label_ids.view(-1))
+            logits = self.model(input_ids, segment_ids, input_mask)
+
+            if self.args.is_multilabel:
+                loss = F.binary_cross_entropy_with_logits(logits, label_ids.float())
+            else:
+                loss = F.cross_entropy(logits, torch.argmax(label_ids, dim=1))
+
             if self.args.n_gpu > 1:
                 loss = loss.mean()
             if self.args.gradient_accumulation_steps > 1:
@@ -55,13 +61,14 @@ class BertTrainer(object):
                 self.global_step += 1
 
     def train(self):
-        label_list = self.processor.get_labels()
         train_features = convert_examples_to_features(
-            self.train_examples, label_list, self.args.max_seq_length, self.tokenizer)
+            self.train_examples, self.args.max_seq_length, self.tokenizer)
+
         print("***** Running training *****")
-        print("  Num. of examples: ", len(self.train_examples))
-        print("  Batch size:", self.args.train_batch_size)
-        print("  Num of steps:", self.num_train_optimization_steps)
+        print("Number of examples: ", len(self.train_examples))
+        print("Batch size:", self.args.batch_size)
+        print("Num of steps:", self.num_train_optimization_steps)
+
         all_input_ids = torch.tensor([f.input_ids for f in train_features], dtype=torch.long)
         all_input_mask = torch.tensor([f.input_mask for f in train_features], dtype=torch.long)
         all_segment_ids = torch.tensor([f.segment_ids for f in train_features], dtype=torch.long)
@@ -72,9 +79,11 @@ class BertTrainer(object):
         else:
             train_sampler = DistributedSampler(train_data)
 
-        train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=self.args.train_batch_size)
+        train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=self.args.batch_size)
 
         self.model.train()
 
-        for _ in trange(int(self.args.num_train_epochs), desc="Epoch"):
+        for _ in trange(int(self.args.epochs), desc="Epoch"):
             self.train_epoch(train_dataloader)
+            dev_evaluator = BertEvaluator(self.model, self.processor, self.args, split='dev')
+            dev_evaluator.evaluate()
