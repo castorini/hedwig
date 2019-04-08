@@ -63,7 +63,7 @@ Organize your directory structure as follows:
 
 ```
 .
-├── Hedwig
+├── hedwig
 ├── Castor-data
 └── Castor-models
 ```
