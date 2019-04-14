@@ -1,4 +1,5 @@
 import logging
+import os
 import random
 from copy import deepcopy
 
@@ -12,8 +13,8 @@ from datasets.aapd import AAPDHierarchical as AAPD
 from datasets.imdb import IMDBHierarchical as IMDB
 from datasets.reuters import ReutersHierarchical as Reuters
 from datasets.yelp2014 import Yelp2014Hierarchical as Yelp2014
-from models.han.model import HAN
 from models.han.args import get_args
+from models.han.model import HAN
 
 
 class UnknownWordVecCache(object):
@@ -116,6 +117,10 @@ if __name__ == '__main__':
         model = HAN(config)
         if args.cuda:
             model.cuda()
+
+    if not args.trained_model:
+        save_path = os.path.join(args.save_path, dataset_map[args.dataset].NAME)
+        os.makedirs(save_path, exist_ok=True)
 
     parameter = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = torch.optim.Adam(parameter, lr=args.lr, weight_decay=args.weight_decay)

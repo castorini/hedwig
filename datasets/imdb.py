@@ -40,9 +40,9 @@ class IMDB(TabularDataset):
         return len(ex.text)
 
     @classmethod
-    def splits(cls, path, train=os.path.join('IMDB', 'data', 'imdb_train.tsv'),
-               validation=os.path.join('IMDB', 'data', 'imdb_validation.tsv'),
-               test=os.path.join('IMDB', 'data', 'imdb_test.tsv'), **kwargs):
+    def splits(cls, path, train=os.path.join('IMDB', 'train.tsv'),
+               validation=os.path.join('IMDB', 'dev.tsv'),
+               test=os.path.join('IMDB', 'test.tsv'), **kwargs):
         return super(IMDB, cls).splits(
             path, train=train, validation=validation, test=test,
             format='tsv', fields=[('label', cls.LABEL_FIELD), ('text', cls.TEXT_FIELD)]

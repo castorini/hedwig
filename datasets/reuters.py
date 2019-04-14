@@ -31,17 +31,6 @@ def char_quantize(string, max_length=1000):
         return np.concatenate((quantized_string, np.zeros((max_length - len(quantized_string), len(ReutersCharQuantized.ALPHABET)), dtype=np.float32)))
 
 
-def clean_string_fl(string):
-    """
-    Returns only the title and first line (excluding the title) for every Reuters article, then calls clean_string
-    """
-    split_string = string.split('.')
-    if len(split_string) > 1:
-            return clean_string(split_string[0] + ". " + split_string[1])
-    else:
-        return clean_string(string)
-
-
 def process_labels(string):
     """
     Returns the label string as a list of integers
@@ -64,9 +53,9 @@ class Reuters(TabularDataset):
         return len(ex.text)
 
     @classmethod
-    def splits(cls, path, train=os.path.join('Reuters-21578', 'data', 'reuters_train.tsv'),
-               validation=os.path.join('Reuters-21578', 'data', 'reuters_validation.tsv'),
-               test=os.path.join('Reuters-21578', 'data','reuters_test.tsv'), **kwargs):
+    def splits(cls, path, train=os.path.join('Reuters', 'train.tsv'),
+               validation=os.path.join('Reuters', 'dev.tsv'),
+               test=os.path.join('Reuters', 'test.tsv'), **kwargs):
         return super(Reuters, cls).splits(
             path, train=train, validation=validation, test=test,
             format='tsv', fields=[('label', cls.LABEL_FIELD), ('text', cls.TEXT_FIELD)]
