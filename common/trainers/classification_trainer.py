@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 from tensorboardX import SummaryWriter
 
-from .trainer import Trainer
+from common.trainers.trainer import Trainer
 
 
 class ClassificationTrainer(Trainer):
@@ -24,8 +24,10 @@ class ClassificationTrainer(Trainer):
             '{:>6.0f},{:>5.0f},{:>9.0f},{:>5.0f}/{:<5.0f} {:>7.0f}%,{:>8.6f},{:12.4f}'.split(','))
         self.dev_log_template = ' '.join(
             '{:>6.0f},{:>5.0f},{:>9.0f},{:>5.0f}/{:<5.0f} {:>7.4f},{:>8.4f},{:8.4f},{:12.4f},{:12.4f}'.split(','))
-        self.writer = SummaryWriter(log_dir="tensorboard_logs/" + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
-        self.snapshot_path = os.path.join(self.model_outfile, self.train_loader.dataset.NAME, 'best_model.pt')
+
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self.writer = SummaryWriter(log_dir="tensorboard_logs/" + timestamp)
+        self.snapshot_path = os.path.join(self.model_outfile, self.train_loader.dataset.NAME, '%s.pt' % timestamp)
 
     def train_epoch(self, epoch):
         self.train_loader.init_epoch()
@@ -34,7 +36,7 @@ class ClassificationTrainer(Trainer):
             self.iterations += 1
             self.model.train()
             self.optimizer.zero_grad()
-            if hasattr(self.model, 'TAR') and self.model.TAR:
+            if hasattr(self.model, 'tar') and self.model.tar:
                 if 'ignore_lengths' in self.config and self.config['ignore_lengths']:
                     scores, rnn_outs = self.model(batch.text)
                 else:
@@ -57,18 +59,18 @@ class ClassificationTrainer(Trainer):
                         n_correct += 1
                 loss = F.cross_entropy(scores, torch.argmax(batch.label.data, dim=1))
 
-            if hasattr(self.model, 'TAR') and self.model.TAR:
-                loss = loss + self.model.TAR*(rnn_outs[1:] - rnn_outs[:-1]).pow(2).mean()
-            if hasattr(self.model, 'AR') and self.model.AR:
-                loss = loss + self.model.AR*(rnn_outs[:]).pow(2).mean()
+            if hasattr(self.model, 'tar') and self.model.tar:
+                loss = loss + self.model.tar * (rnn_outs[1:] - rnn_outs[:-1]).pow(2).mean()
+            if hasattr(self.model, 'ar') and self.model.ar:
+                loss = loss + self.model.ar * (rnn_outs[:]).pow(2).mean()
 
             n_total += batch.batch_size
             train_acc = 100. * n_correct / n_total
             loss.backward()
             self.optimizer.step()
 
-            # Temp Ave
             if hasattr(self.model, 'beta_ema') and self.model.beta_ema > 0:
+                # Temporal averaging
                 self.model.update_ema()
 
             if self.iterations % self.log_interval == 1:
@@ -83,7 +85,6 @@ class ClassificationTrainer(Trainer):
         self.start = time.time()
         header = '  Time Epoch Iteration Progress    (%Epoch)   Loss     Accuracy'
         dev_header = '  Time Epoch Iteration Progress     Dev/Acc. Dev/Pr.  Dev/Recall   Dev/F1       Dev/Loss'
-        # model_outfile is actually a directory, using model_outfile to conform to Trainer naming convention
         os.makedirs(self.model_outfile, exist_ok=True)
         os.makedirs(os.path.join(self.model_outfile, self.train_loader.dataset.NAME), exist_ok=True)
 
@@ -98,6 +99,8 @@ class ClassificationTrainer(Trainer):
             self.writer.add_scalar('Dev/Precision', dev_precision, epoch)
             self.writer.add_scalar('Dev/Recall', dev_recall, epoch)
             self.writer.add_scalar('Dev/F-measure', dev_f1, epoch)
+
+            # Print validation results
             print('\n' + dev_header)
             print(self.dev_log_template.format(time.time() - self.start, epoch, self.iterations, epoch, epochs,
                                                dev_acc, dev_precision, dev_recall, dev_f1, dev_loss))
