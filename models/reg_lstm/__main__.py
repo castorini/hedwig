@@ -1,4 +1,5 @@
 import logging
+import os
 import random
 from copy import deepcopy
 
@@ -45,7 +46,9 @@ def get_logger():
 
 def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_size, device, is_multilabel):
     saved_model_evaluator = EvaluatorFactory.get_evaluator(dataset_cls, model, embedding, loader, batch_size, device)
-    saved_model_evaluator.is_multilabel = is_multilabel
+    if hasattr(saved_model_evaluator, 'is_multilabel'):
+        saved_model_evaluator.is_multilabel = is_multilabel
+
     scores, metric_names = saved_model_evaluator.get_scores()
     print('Evaluation metrics for', split_name)
     print(metric_names)
@@ -53,7 +56,7 @@ def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_si
 
 
 if __name__ == '__main__':
-    # Set default configuration in : args.py
+    # Set default configuration in args.py
     args = get_args()
     logger = get_logger()
 
@@ -111,6 +114,10 @@ if __name__ == '__main__':
         model = RegLSTM(config)
         if args.cuda:
             model.cuda()
+
+    if not args.trained_model:
+        save_path = os.path.join(args.save_path, dataset_map[args.dataset].NAME)
+        os.makedirs(save_path, exist_ok=True)
 
     parameter = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = torch.optim.Adam(parameter, lr=args.lr, weight_decay=args.weight_decay)

@@ -1,5 +1,4 @@
 import os
-import re
 
 import numpy as np
 import torch
@@ -7,7 +6,7 @@ from torchtext.data import NestedField, Field, TabularDataset
 from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
 
-from datasets.reuters import clean_string, clean_string_fl, split_sents
+from datasets.reuters import clean_string, split_sents
 
 
 def char_quantize(string, max_length=500):
@@ -41,9 +40,9 @@ class IMDB(TabularDataset):
         return len(ex.text)
 
     @classmethod
-    def splits(cls, path, train=os.path.join('IMDB', 'data', 'imdb_train.tsv'),
-               validation=os.path.join('IMDB', 'data', 'imdb_validation.tsv'),
-               test=os.path.join('IMDB', 'data', 'imdb_test.tsv'), **kwargs):
+    def splits(cls, path, train=os.path.join('IMDB', 'train.tsv'),
+               validation=os.path.join('IMDB', 'dev.tsv'),
+               test=os.path.join('IMDB', 'test.tsv'), **kwargs):
         return super(IMDB, cls).splits(
             path, train=train, validation=validation, test=test,
             format='tsv', fields=[('label', cls.LABEL_FIELD), ('text', cls.TEXT_FIELD)]

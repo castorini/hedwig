@@ -7,5 +7,6 @@ Cython==0.28.2
 pyjnius==1.1.1
 scikit-learn==0.19.1
 scipy==1.0.0
+tensorboardX==1.6
 torchtext==0.2.3
 tqdm>=4.23,<4.23.99
