@@ -14,9 +14,9 @@ def get_args():
     parser.add_argument('--epoch-decay', type=int, default=15)
     parser.add_argument('--weight-decay', type=float, default=0)
 
-    parser.add_argument('--word-vectors-dir', default=os.path.join(os.pardir, 'Castor-data', 'embeddings', 'word2vec'))
+    parser.add_argument('--word-vectors-dir', default=os.path.join(os.pardir, 'hedwig-data', 'embeddings', 'word2vec'))
     parser.add_argument('--word-vectors-file', default='GoogleNews-vectors-negative300.txt')
-    parser.add_argument('--save-path', type=str, default=os.path.join('char_cnn', 'saves'))
+    parser.add_argument('--save-path', type=str, default=os.path.join('model_checkpoints', 'char_cnn'))
     parser.add_argument('--resume-snapshot', type=str)
     parser.add_argument('--trained-model', type=str)
 

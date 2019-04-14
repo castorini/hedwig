@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 from tensorboardX import SummaryWriter
 
-from .trainer import Trainer
+from common.trainers.trainer import Trainer
 
 
 class ClassificationTrainer(Trainer):
@@ -24,8 +24,10 @@ class ClassificationTrainer(Trainer):
             '{:>6.0f},{:>5.0f},{:>9.0f},{:>5.0f}/{:<5.0f} {:>7.0f}%,{:>8.6f},{:12.4f}'.split(','))
         self.dev_log_template = ' '.join(
             '{:>6.0f},{:>5.0f},{:>9.0f},{:>5.0f}/{:<5.0f} {:>7.4f},{:>8.4f},{:8.4f},{:12.4f},{:12.4f}'.split(','))
-        self.writer = SummaryWriter(log_dir="tensorboard_logs/" + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
-        self.snapshot_path = os.path.join(self.model_outfile, self.train_loader.dataset.NAME, 'best_model.pt')
+
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self.writer = SummaryWriter(log_dir="tensorboard_logs/" + timestamp)
+        self.snapshot_path = os.path.join(self.model_outfile, self.train_loader.dataset.NAME, '%s.pt' % timestamp)
 
     def train_epoch(self, epoch):
         self.train_loader.init_epoch()
@@ -67,8 +69,8 @@ class ClassificationTrainer(Trainer):
             loss.backward()
             self.optimizer.step()
 
-            # Temp Ave
             if hasattr(self.model, 'beta_ema') and self.model.beta_ema > 0:
+                # Temporal averaging
                 self.model.update_ema()
 
             if self.iterations % self.log_interval == 1:
@@ -97,6 +99,8 @@ class ClassificationTrainer(Trainer):
             self.writer.add_scalar('Dev/Precision', dev_precision, epoch)
             self.writer.add_scalar('Dev/Recall', dev_recall, epoch)
             self.writer.add_scalar('Dev/F-measure', dev_f1, epoch)
+
+            # Print validation results
             print('\n' + dev_header)
             print(self.dev_log_template.format(time.time() - self.start, epoch, self.iterations, epoch, epochs,
                                                dev_acc, dev_precision, dev_recall, dev_f1, dev_loss))

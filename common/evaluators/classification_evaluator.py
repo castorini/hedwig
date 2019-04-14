@@ -18,14 +18,14 @@ class ClassificationEvaluator(Evaluator):
         self.data_loader.init_epoch()
         total_loss = 0
 
-        # Temp Ave
         if hasattr(self.model, 'beta_ema') and self.model.beta_ema > 0:
+            # Temporal averaging
             old_params = self.model.get_params()
             self.model.load_ema_params()
 
         predicted_labels, target_labels = list(), list()
         for batch_idx, batch in enumerate(self.data_loader):
-            if hasattr(self.model, 'tar') and self.model.tar:  # TAR condition
+            if hasattr(self.model, 'tar') and self.model.tar:
                 if self.ignore_lengths:
                     scores, rnn_outs = self.model(batch.text)
                 else:
@@ -46,7 +46,8 @@ class ClassificationEvaluator(Evaluator):
                 target_labels.extend(torch.argmax(batch.label, dim=1).cpu().detach().numpy())
                 total_loss += F.cross_entropy(scores, torch.argmax(batch.label, dim=1), size_average=False).item()
 
-            if hasattr(self.model, 'tar') and self.model.tar:  # TAR condition
+            if hasattr(self.model, 'tar') and self.model.tar:
+                # Temporal activation regularization
                 total_loss += (rnn_outs[1:] - rnn_outs[:-1]).pow(2).mean()
 
         predicted_labels = np.array(predicted_labels)
@@ -57,8 +58,8 @@ class ClassificationEvaluator(Evaluator):
         f1 = metrics.f1_score(target_labels, predicted_labels, average='micro')
         avg_loss = total_loss / len(self.data_loader.dataset.examples)
 
-        # Temp Ave
         if hasattr(self.model, 'beta_ema') and self.model.beta_ema > 0:
+            # Temporal averaging
             self.model.load_params(old_params)
 
         return [accuracy, precision, recall, f1, avg_loss], ['accuracy', 'precision', 'recall', 'f1', 'cross_entropy_loss']
