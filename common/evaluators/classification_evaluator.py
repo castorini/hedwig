@@ -1,9 +1,9 @@
+import numpy as np
 import torch
 import torch.nn.functional as F
-import numpy as np
-
 from sklearn import metrics
-from .evaluator import Evaluator
+
+from common.evaluators.evaluator import Evaluator
 
 
 class ClassificationEvaluator(Evaluator):
