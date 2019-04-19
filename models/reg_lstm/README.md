@@ -13,7 +13,7 @@ python -m models.reg_lstm --dataset Reuters --mode static --batch-size 32 --lr 0
 The best model weights will be saved in
 
 ```
-model/reg_lstm/saves/Reuters/best_model.pt
+models/reg_lstm/saves/Reuters/best_model.pt
 ```
 
 To test the model, you can use the following command.
