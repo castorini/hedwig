@@ -1,4 +1,5 @@
 from common.evaluators.classification_evaluator import ClassificationEvaluator
+from common.evaluators.relevance_transfer_evaluator import RelevanceTransferEvaluator
 
 
 class EvaluatorFactory(object):
@@ -9,7 +10,10 @@ class EvaluatorFactory(object):
         'Reuters': ClassificationEvaluator,
         'AAPD': ClassificationEvaluator,
         'IMDB': ClassificationEvaluator,
-        'Yelp2014': ClassificationEvaluator
+        'Yelp2014': ClassificationEvaluator,
+        'Robust04': RelevanceTransferEvaluator,
+        'Robust05': RelevanceTransferEvaluator,
+        'Robust45': RelevanceTransferEvaluator
     }
 
     @staticmethod
