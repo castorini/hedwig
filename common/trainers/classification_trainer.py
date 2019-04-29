@@ -1,8 +1,8 @@
+import datetime
+import os
 import time
 
-import datetime
 import numpy as np
-import os
 import torch
 import torch.nn.functional as F
 from tensorboardX import SummaryWriter

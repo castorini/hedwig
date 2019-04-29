@@ -57,12 +57,6 @@ if __name__ == '__main__':
     if n_gpu > 0:
         torch.cuda.manual_seed_all(args.seed)
 
-    if args.server_ip and args.server_port:
-        import ptvsd
-        print("Waiting for debugger attach")
-        ptvsd.enable_attach(address=(args.server_ip, args.server_port), redirect_output=True)
-        ptvsd.wait_for_attach()
-
     dataset_map = {
         'SST-2': SST2Processor,
         'Reuters': ReutersProcessor,
