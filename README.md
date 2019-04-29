@@ -7,7 +7,7 @@ This repo contains PyTorch deep learning models for document classification, imp
 ## Models
 
 + [DocBERT](models/bert/) : DocBERT: BERT for Document Classification [(Adhikari et al., 2019)](https://arxiv.org/abs/1904.08398v1)
-+ [Reg-LSTM](models/reg_lstm/): Regularized LSTM for document classification [(Merity et al., 2017)](https://arxiv.org/abs/1708.02182)
++ [Reg-LSTM](models/reg_lstm/): Rethinking Complex Neural Network Architectures for Document Classification  [(Adhikari et al., 2019)](https://cs.uwaterloo.ca/~jimmylin/publications/Adhikari_etal_NAACL2019.pdf)
 + [XML-CNN](models/xml_cnn/): CNNs for extreme multi-label text classification [(Liu et al., SIGIR 2017)](http://nyc.lti.cs.cmu.edu/yiming/Publications/jliu-sigir17.pdf)
 + [HAN](models/han/): Hierarchical Attention Networks [(Zichao et al., NAACL 2016)](https://www.cs.cmu.edu/~hovy/papers/16HLT-hierarchical-attention-networks.pdf)
 + [Char-CNN](models/char_cnn/): Character-level Convolutional Network [(Zhang et al., NIPS 2015)](http://papers.nips.cc/paper/5782-character-level-convolutional-networks-for-text-classification.pdf)
@@ -71,5 +71,23 @@ cd hedwig-data/embeddings/word2vec
 gzip -d GoogleNews-vectors-negative300.bin.gz 
 python bin2txt.py GoogleNews-vectors-negative300.bin GoogleNews-vectors-negative300.txt 
 ```
+
+## References  
+
+Please cite the following works appropriately upon the usage of this repository:
+
+    @inproceedings{adhikari2019rethinking,
+    title={Rethinking Complex Neural Network Architectures for Document Classification},
+    author={Adhikari, Ashutosh and Ram, Achyudh and Tang, Raphael and Lin, Jimmy},
+    booktitle={NAACL},
+    year={2019}
+    }
+
+    @inproceedings{ram2019docbert,
+    title={DocBERT: BERT for Document Classification},
+    author={Adhikari, Ashutosh and Ram, Achyudh and Tang, Raphael and Lin, Jimmy},
+    booktitle={CoRR},
+    year={2019}
+    }
 
 **If you are an internal Hedwig contributor using the machines in the lab, follow the instructions [here](docs/internal-instructions.md).**
