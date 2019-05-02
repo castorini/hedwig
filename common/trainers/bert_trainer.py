@@ -42,6 +42,7 @@ class BertTrainer(object):
 
     def train_epoch(self, train_dataloader):
         for step, batch in enumerate(tqdm(train_dataloader, desc="Training")):
+            self.model.train()
             batch = tuple(t.to(self.args.device) for t in batch)
             input_ids, input_mask, segment_ids, label_ids = batch
             logits = self.model(input_ids, segment_ids, input_mask)
@@ -91,8 +92,6 @@ class BertTrainer(object):
             train_sampler = DistributedSampler(train_data)
 
         train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=self.args.batch_size)
-
-        self.model.train()
 
         for epoch in trange(int(self.args.epochs), desc="Epoch"):
             self.train_epoch(train_dataloader)
