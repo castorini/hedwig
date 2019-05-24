@@ -12,7 +12,7 @@ def get_args():
     parser.add_argument('--mode', type=str, default='static', choices=['rand', 'static', 'non-static', 'multichannel'])
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--seed', type=int, default=3435)
-    parser.add_argument('--model', type=str, default='KimCNN', choices=['RegLSTM', 'KimCNN', 'HAN', 'XML-CNN'])
+    parser.add_argument('--model', type=str, default='KimCNN', choices=['RegLSTM', 'KimCNN', 'HAN', 'XML-CNN', 'BERT-Base', 'BERT-Large'])
     parser.add_argument('--dataset', type=str, default='Robust04', choices=['Robust04', 'Robust05', 'Robust45'])
     parser.add_argument('--dev_every', type=int, default=30)
     parser.add_argument('--log_every', type=int, default=10)
@@ -35,7 +35,7 @@ def get_args():
     parser.add_argument('--bidirectional', action='store_true')
     parser.add_argument('--tar', action='store_true')
     parser.add_argument('--weight-decay', type=float, default=0)
-    parser.add_argument('--beta-ema', type=float, default = 0, help="for temporal averaging")
+    parser.add_argument('--beta-ema', type=float, default=0, help="for temporal averaging")
     parser.add_argument('--wdrop', type=float, default=0.0, help="for weight-drop")
     parser.add_argument('--embed-droprate', type=float, default=0.0, help="for embedded dropout")
 
@@ -59,6 +59,14 @@ def get_args():
 
     # HR-CNN parameters
     parser.add_argument('--sentence-channel', type=int, default=100)
+
+    # BERT parameters
+    parser.add_argument('--cache-dir', default='cache', type=str)
+    parser.add_argument('--variant', type=str, choices=['bert-base-uncased', 'bert-large-uncased', 'bert-base-cased', 'bert-large-cased'])
+    parser.add_argument('--max-seq-length', default=128, type=int)
+    parser.add_argument('--warmup-proportion', default=0.1, type=float)
+    parser.add_argument('--gradient-accumulation-steps', type=int, default=1)
+    parser.add_argument('--loss-scale', type=float, default=0)
 
     # Re-ranking parameters
     parser.add_argument('--rerank', action='store_true')
