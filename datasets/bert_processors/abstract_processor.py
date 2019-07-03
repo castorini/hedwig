@@ -2,6 +2,7 @@ import csv
 
 import sys
 import numpy as np
+from nltk.tokenize import sent_tokenize
 
 
 class InputExample(object):
@@ -153,6 +154,69 @@ def convert_examples_to_features(examples, max_seq_length, tokenizer, print_exam
         assert len(input_ids) == max_seq_length
         assert len(input_mask) == max_seq_length
         assert len(segment_ids) == max_seq_length
+
+        label_id = [float(x) for x in example.label]
+
+        if print_examples and ex_index < 5:
+            print("tokens: %s" % " ".join([str(x) for x in tokens]))
+            print("input_ids: %s" % " ".join([str(x) for x in input_ids]))
+            print("input_mask: %s" % " ".join([str(x) for x in input_mask]))
+            print("segment_ids: %s" % " ".join([str(x) for x in segment_ids]))
+            print("label: %s" % example.label)
+
+        features.append(InputFeatures(input_ids=input_ids,
+                                      input_mask=input_mask,
+                                      segment_ids=segment_ids,
+                                      label_id=label_id))
+    return features
+
+
+def convert_examples_to_hierarchical_features(examples, max_seq_length, tokenizer, print_examples=False):
+    """
+    Loads a data file into a list of InputBatch objects
+    :param examples:
+    :param max_seq_length:
+    :param tokenizer:
+    :param print_examples:
+    :return: a list of InputBatch objects
+    """
+
+    features = []
+    for (ex_index, example) in enumerate(examples):
+        tokens_a = [tokenizer.tokenize(line) for line in sent_tokenize(example.text_a)]
+        tokens_b = None
+
+        if example.text_b:
+            tokens_b = [tokenizer.tokenize(line) for line in sent_tokenize(example.text_b)]
+            # Modifies `tokens_a` and `tokens_b` in place so that the total length is less than the specified length
+            # Account for [CLS], [SEP], [SEP]
+            _truncate_seq_pair(tokens_a, tokens_b, max_seq_length - 3)
+        else:
+            # Account for [CLS] and [SEP]
+            for i0 in range(len(tokens_a)):
+                if len(tokens_a[i0]) > max_seq_length - 2:
+                    tokens_a[i0] = tokens_a[i0][:(max_seq_length - 2)]
+
+        tokens = [["[CLS]"] + line + ["[SEP]"] for line in tokens_a]
+        segment_ids = [[0] * len(line) for line in tokens]
+
+        if tokens_b:
+            tokens += tokens_b + ["[SEP]"]
+            segment_ids += [1] * (len(tokens_b) + 1)
+
+        input_ids = list()
+        for line in tokens:
+            input_ids.append(tokenizer.convert_tokens_to_ids(line))
+
+        # Input mask has 1 for real tokens and 0 for padding tokens
+        input_mask = [[1] * len(line_ids) for line_ids in input_ids]
+
+        # Zero-pad up to the sequence length.
+        padding = [[0] * (max_seq_length - len(line_ids)) for line_ids in input_ids]
+        for i0 in range(len(input_ids)):
+            input_ids[i0] += padding[i0]
+            input_mask[i0] += padding[i0]
+            segment_ids[i0] += padding[i0]
 
         label_id = [float(x) for x in example.label]
 

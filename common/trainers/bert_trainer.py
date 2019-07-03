@@ -3,7 +3,6 @@ import os
 
 import torch
 import torch.nn.functional as F
-from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader, RandomSampler, TensorDataset
 from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
@@ -11,7 +10,9 @@ from tqdm import trange
 
 from common.evaluators.bert_evaluator import BertEvaluator
 from datasets.bert_processors.abstract_processor import convert_examples_to_features
+from datasets.bert_processors.abstract_processor import convert_examples_to_hierarchical_features
 from utils.optimization import warmup_linear
+from utils.preprocessing import pad_input_matrix
 from utils.tokenization import BertTokenizer
 
 
@@ -25,7 +26,6 @@ class BertTrainer(object):
         self.tokenizer = BertTokenizer.from_pretrained(args.model, is_lowercase=args.is_lowercase)
 
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        self.writer = SummaryWriter(log_dir="tensorboard_logs/" + timestamp)
         self.snapshot_path = os.path.join(self.args.save_path, self.processor.NAME, '%s.pt' % timestamp)
 
         self.num_train_optimization_steps = int(
@@ -74,18 +74,33 @@ class BertTrainer(object):
                 self.iterations += 1
 
     def train(self):
-        train_features = convert_examples_to_features(
-            self.train_examples, self.args.max_seq_length, self.tokenizer)
+        if self.args.is_hierarchical:
+            train_features = convert_examples_to_hierarchical_features(
+                self.train_examples, self.args.max_seq_length, self.tokenizer)
+        else:
+            train_features = convert_examples_to_features(
+                self.train_examples, self.args.max_seq_length, self.tokenizer)
+
+        unpadded_input_ids = [f.input_ids for f in train_features]
+        unpadded_input_mask = [f.input_mask for f in train_features]
+        unpadded_segment_ids = [f.segment_ids for f in train_features]
+
+        if self.args.is_hierarchical:
+            pad_input_matrix(unpadded_input_ids, self.args.max_doc_length)
+            pad_input_matrix(unpadded_input_mask, self.args.max_doc_length)
+            pad_input_matrix(unpadded_segment_ids, self.args.max_doc_length)
 
         print("Number of examples: ", len(self.train_examples))
         print("Batch size:", self.args.batch_size)
         print("Num of steps:", self.num_train_optimization_steps)
 
-        all_input_ids = torch.tensor([f.input_ids for f in train_features], dtype=torch.long)
-        all_input_mask = torch.tensor([f.input_mask for f in train_features], dtype=torch.long)
-        all_segment_ids = torch.tensor([f.segment_ids for f in train_features], dtype=torch.long)
-        all_label_ids = torch.tensor([f.label_id for f in train_features], dtype=torch.long)
-        train_data = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids)
+        padded_input_ids = torch.tensor(unpadded_input_ids, dtype=torch.long)
+        padded_input_mask = torch.tensor(unpadded_input_mask, dtype=torch.long)
+        padded_segment_ids = torch.tensor(unpadded_segment_ids, dtype=torch.long)
+        label_ids = torch.tensor([f.label_id for f in train_features], dtype=torch.long)
+
+        train_data = TensorDataset(padded_input_ids, padded_input_mask, padded_segment_ids, label_ids)
+
         if self.args.local_rank == -1:
             train_sampler = RandomSampler(train_data)
         else:

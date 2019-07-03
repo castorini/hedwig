@@ -14,8 +14,8 @@ from datasets.bert_processors.reuters_processor import ReutersProcessor
 from datasets.bert_processors.sogou_processor import SogouProcessor
 from datasets.bert_processors.sst_processor import SST2Processor
 from datasets.bert_processors.yelp2014_processor import Yelp2014Processor
-from models.bert.args import get_args
-from models.bert.model import BertForSequenceClassification
+from models.hbert.args import get_args
+from models.hbert.model import HierarchicalBert
 from utils.io import PYTORCH_PRETRAINED_BERT_CACHE
 from utils.optimization import BertAdam
 from utils.tokenization import BertTokenizer
@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
     processor = dataset_map[args.dataset]()
     args.is_lowercase = 'uncased' in args.model
-    args.is_hierarchical = False
+    args.is_hierarchical = True
     tokenizer = BertTokenizer.from_pretrained(args.model, is_lowercase=args.is_lowercase)
 
     train_examples = None
@@ -102,7 +102,7 @@ if __name__ == '__main__':
             num_train_optimization_steps = num_train_optimization_steps // torch.distributed.get_world_size()
 
     cache_dir = args.cache_dir if args.cache_dir else os.path.join(str(PYTORCH_PRETRAINED_BERT_CACHE), 'distributed_{}'.format(args.local_rank))
-    model = BertForSequenceClassification.from_pretrained(args.model, cache_dir=cache_dir, num_labels=args.num_labels)
+    model = HierarchicalBert(args, cache_dir=cache_dir)
 
     if args.fp16:
         model.half()
@@ -152,9 +152,9 @@ if __name__ == '__main__':
         trainer.train()
         model = torch.load(trainer.snapshot_path)
     else:
-        model = BertForSequenceClassification.from_pretrained(args.model, num_labels=args.num_labels)
-        model_ = torch.load(args.trained_model, map_location=lambda storage, loc: storage)
-        state={}
+        model = model = HierarchicalBert(args.model)
+        model_ = torch.load(args, map_location=lambda storage, loc: storage)
+        state = {}
         for key in model_.state_dict().keys():
             new_key = key.replace("module.", "")
             state[new_key] = model_.state_dict()[key]
