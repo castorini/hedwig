@@ -7,7 +7,9 @@ from sklearn import metrics
 from torch.utils.data import DataLoader, SequentialSampler, TensorDataset
 from tqdm import tqdm
 
-from datasets.bert_processors.abstract_processor import convert_examples_to_features
+from datasets.bert_processors.abstract_processor import convert_examples_to_features, \
+    convert_examples_to_hierarchical_features
+from utils.preprocessing import pad_input_matrix
 from utils.tokenization import BertTokenizer
 
 # Suppress warnings from sklearn.metrics
@@ -26,14 +28,28 @@ class BertEvaluator(object):
             self.eval_examples = self.processor.get_dev_examples(args.data_dir)
 
     def get_scores(self, silent=False):
-        eval_features = convert_examples_to_features(self.eval_examples, self.args.max_seq_length, self.tokenizer)
+        if self.args.is_hierarchical:
+            eval_features = convert_examples_to_hierarchical_features(
+                self.eval_examples, self.args.max_seq_length, self.tokenizer)
+        else:
+            eval_features = convert_examples_to_features(
+                self.eval_examples, self.args.max_seq_length, self.tokenizer)
 
-        all_input_ids = torch.tensor([f.input_ids for f in eval_features], dtype=torch.long)
-        all_input_mask = torch.tensor([f.input_mask for f in eval_features], dtype=torch.long)
-        all_segment_ids = torch.tensor([f.segment_ids for f in eval_features], dtype=torch.long)
-        all_label_ids = torch.tensor([f.label_id for f in eval_features], dtype=torch.long)
+        unpadded_input_ids = [f.input_ids for f in eval_features]
+        unpadded_input_mask = [f.input_mask for f in eval_features]
+        unpadded_segment_ids = [f.segment_ids for f in eval_features]
 
-        eval_data = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids)
+        if self.args.is_hierarchical:
+            pad_input_matrix(unpadded_input_ids, self.args.max_doc_length)
+            pad_input_matrix(unpadded_input_mask, self.args.max_doc_length)
+            pad_input_matrix(unpadded_segment_ids, self.args.max_doc_length)
+
+        padded_input_ids = torch.tensor(unpadded_input_ids, dtype=torch.long)
+        padded_input_mask = torch.tensor(unpadded_input_mask, dtype=torch.long)
+        padded_segment_ids = torch.tensor(unpadded_segment_ids, dtype=torch.long)
+        label_ids = torch.tensor([f.label_id for f in eval_features], dtype=torch.long)
+
+        eval_data = TensorDataset(padded_input_ids, padded_input_mask, padded_segment_ids, label_ids)
         eval_sampler = SequentialSampler(eval_data)
         eval_dataloader = DataLoader(eval_data, sampler=eval_sampler, batch_size=self.args.batch_size)
 
