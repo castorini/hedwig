@@ -39,7 +39,6 @@ def process_labels(string):
     :param string:
     :return:
     """
-    # return [float(x) for x in string]
     return 0 if string == '01' else 1
 
 
@@ -67,7 +66,6 @@ class Robust45(TabularDataset):
               '362', '363', '367', '372', '375', '378', '379', '389', '393', '394', '397', '399', '400', '404', '408',
               '414', '416', '419', '422', '423', '426', '427', '433', '435', '436', '439', '442', '443', '445', '614',
               '620', '626', '646', '677', '690']
-    TOPICS = ['307', '310', '321', '325', '330']
 
     @staticmethod
     def sort_key(ex):

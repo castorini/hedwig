@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 from common.evaluators.evaluator import Evaluator
 from datasets.bert_processors.robust45_processor import convert_examples_to_features
+from utils.preprocessing import pad_input_matrix
 from utils.tokenization import BertTokenizer
 
 # Suppress warnings from sklearn.metrics
@@ -21,7 +22,7 @@ class RelevanceTransferEvaluator(Evaluator):
         super().__init__(kwargs['dataset'], model, kwargs['embedding'], kwargs['data_loader'],
                          batch_size=config['batch_size'], device=config['device'])
 
-        if config['model'] in {'BERT-Base', 'BERT-Large'}:
+        if config['model'] in {'BERT-Base', 'BERT-Large', 'HBERT-Base', 'HBERT-Large'}:
             variant = 'bert-large-uncased' if config['model'] == 'BERT-Large' else 'bert-base-uncased'
             self.tokenizer = BertTokenizer.from_pretrained(variant, is_lowercase=config['is_lowercase'])
             self.processor = kwargs['processor']
@@ -43,16 +44,30 @@ class RelevanceTransferEvaluator(Evaluator):
         self.docid = list()
         total_loss = 0
 
-        if self.config['model'] in {'BERT-Base', 'BERT-Large'}:
-            eval_features = convert_examples_to_features(self.eval_examples, self.config['max_seq_length'], self.tokenizer)
+        if self.config['model'] in {'BERT-Base', 'BERT-Large', 'HBERT-Base', 'HBERT-Large'}:
+            eval_features = convert_examples_to_features(
+                self.eval_examples,
+                self.config['max_seq_length'],
+                self.tokenizer,
+                self.config['is_hierarchical']
+            )
 
-            all_input_ids = torch.tensor([f.input_ids for f in eval_features], dtype=torch.long)
-            all_input_mask = torch.tensor([f.input_mask for f in eval_features], dtype=torch.long)
-            all_segment_ids = torch.tensor([f.segment_ids for f in eval_features], dtype=torch.long)
-            all_label_ids = torch.tensor([f.label_id for f in eval_features], dtype=torch.long)
-            all_document_ids = torch.tensor([f.guid for f in eval_features], dtype=torch.long)
+            unpadded_input_ids = [f.input_ids for f in eval_features]
+            unpadded_input_mask = [f.input_mask for f in eval_features]
+            unpadded_segment_ids = [f.segment_ids for f in eval_features]
 
-            eval_data = TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_label_ids, all_document_ids)
+            if self.config['is_hierarchical']:
+                pad_input_matrix(unpadded_input_ids, self.config['max_doc_length'])
+                pad_input_matrix(unpadded_input_mask, self.config['max_doc_length'])
+                pad_input_matrix(unpadded_segment_ids, self.config['max_doc_length'])
+
+            padded_input_ids = torch.tensor(unpadded_input_ids, dtype=torch.long)
+            padded_input_mask = torch.tensor(unpadded_input_mask, dtype=torch.long)
+            padded_segment_ids = torch.tensor(unpadded_segment_ids, dtype=torch.long)
+            label_ids = torch.tensor([f.label_id for f in eval_features], dtype=torch.long)
+            document_ids = torch.tensor([f.guid for f in eval_features], dtype=torch.long)
+
+            eval_data = TensorDataset(padded_input_ids, padded_input_mask, padded_segment_ids, label_ids, document_ids)
             eval_sampler = SequentialSampler(eval_data)
             eval_dataloader = DataLoader(eval_data, sampler=eval_sampler, batch_size=self.config['batch_size'])
 

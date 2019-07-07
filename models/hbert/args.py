@@ -23,12 +23,12 @@ def get_args():
     parser.add_argument('--batchnorm', action='store_true')
     parser.add_argument('--dynamic-pool', action='store_true')
     parser.add_argument('--dynamic-pool-length', type=int, default=8)
-    parser.add_argument('--conv-output-channels', type=int, default=100)
+    parser.add_argument('--output-channel', type=int, default=100)
 
     parser.add_argument('--max-seq-length', default=128, type=int,
                         help='maximum total input sequence length after tokenization')
 
-    parser.add_argument('--max-doc-length', default=128, type=int,
+    parser.add_argument('--max-doc-length', default=16, type=int,
                         help='maximum number of lines processed in one document')
 
     parser.add_argument('--warmup-proportion', default=0.1, type=float,

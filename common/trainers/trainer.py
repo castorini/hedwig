@@ -14,12 +14,8 @@ class Trainer(object):
         self.model_outfile = trainer_config.get('model_outfile')
         self.lr_reduce_factor = trainer_config.get('lr_reduce_factor')
         self.patience = trainer_config.get('patience')
-        self.use_tensorboard = trainer_config.get('tensorboard')
         self.clip_norm = trainer_config.get('clip_norm')
 
-        if self.use_tensorboard:
-            from tensorboardX import SummaryWriter
-            self.writer = SummaryWriter(log_dir=None, comment='' if trainer_config['run_label'] is None else trainer_config['run_label'])
         self.logger = trainer_config.get('logger')
 
         self.train_evaluator = train_evaluator
