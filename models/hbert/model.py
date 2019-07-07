@@ -7,32 +7,32 @@ from models.hbert.sentence_encoder import BertSentenceEncoder
 
 class HierarchicalBert(nn.Module):
 
-    def __init__(self, args, cache_dir):
+    def __init__(self, args, cache_dir, **kwargs):
         super().__init__()
         self.args =args
-        ks = 3
         input_channels = 1
+        ks = 3
 
         self.sentence_encoder = BertSentenceEncoder.from_pretrained(
-            args.model,
+            kwargs['variant'] if 'variant' in kwargs else args.model,
             cache_dir=cache_dir,
             num_labels=args.num_labels)
 
         self.conv1 = nn.Conv2d(input_channels,
-                               args.conv_output_channels,
+                               args.output_channel,
                                (3, self.sentence_encoder.config.hidden_size),
                                padding=(2, 0))
         self.conv2 = nn.Conv2d(input_channels,
-                               args.conv_output_channels,
+                               args.output_channel,
                                (4, self.sentence_encoder.config.hidden_size),
                                padding=(3, 0))
         self.conv3 = nn.Conv2d(input_channels,
-                               args.conv_output_channels,
+                               args.output_channel,
                                (5, self.sentence_encoder.config.hidden_size),
                                padding=(4, 0))
 
         self.dropout = nn.Dropout(args.dropout)
-        self.fc1 = nn.Linear(ks * args.conv_output_channels, args.num_labels)
+        self.fc1 = nn.Linear(ks * args.output_channel, args.num_labels)
 
     def forward(self, input_ids, segment_ids=None, input_mask=None):
         """
@@ -62,14 +62,14 @@ class HierarchicalBert(nn.Module):
                  F.relu(self.conv3(x)).squeeze(3)]
 
         if self.args.dynamic_pool:
-            x = [self.dynamic_pool(i).squeeze(2) for i in x]  # (batch, output_channels) * ks
-            x = torch.cat(x, 1)  # (batch, output_channels * ks)
+            x = [self.dynamic_pool(i).squeeze(2) for i in x]  # (batch_size, output_channels) * ks
+            x = torch.cat(x, 1)  # (batch_size, output_channels * ks)
             x = x.view(-1, self.filter_widths * self.output_channel * self.dynamic_pool_length)
         else:
-            x = [F.max_pool1d(i, i.size(2)).squeeze(2) for i in x]  # (batch, output_channels, num_sentences) * ks
-            x = torch.cat(x, 1)  # (batch, channel_output * ks)
+            x = [F.max_pool1d(i, i.size(2)).squeeze(2) for i in x]  # (batch_size, output_channels, num_sentences) * ks
+            x = torch.cat(x, 1)  # (batch_size, channel_output * ks)
 
         x = self.dropout(x)
-        logit = self.fc1(x)  # (batch, num_labels)
+        logits = self.fc1(x)  # (batch_size, num_labels)
 
-        return logit
+        return logits

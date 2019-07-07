@@ -16,6 +16,7 @@ from datasets.robust04 import Robust04, Robust04Hierarchical
 from datasets.robust05 import Robust05, Robust05Hierarchical
 from datasets.robust45 import Robust45, Robust45Hierarchical
 from models.bert.model import BertForSequenceClassification as Bert
+from models.hbert.model import HierarchicalBert
 from models.han.model import HAN
 from models.kim_cnn.model import KimCNN
 from models.reg_lstm.model import RegLSTM
@@ -55,9 +56,11 @@ def evaluate_split(model, topic, split, config, **kwargs):
         'is_lowercase': True,
         'gradient_accumulation_steps': config.gradient_accumulation_steps,
         'max_seq_length': config.max_seq_length,
+        'max_doc_length': args.max_doc_length,
         'data_dir': config.data_dir,
         'n_gpu': n_gpu,
-        'device': config.device
+        'device': config.device,
+        'is_hierarchical': True if args.model in {'HBERT-Base', 'HBERT-Large'} else False
     }
 
     if config.model in {'HAN', 'HR-CNN'}:
@@ -107,6 +110,7 @@ if __name__ == '__main__':
     n_gpu = torch.cuda.device_count()
     args.device = device
     args.n_gpu = n_gpu
+    args.num_labels = 1
 
     print('Device:', str(device).upper())
     print('Number of GPUs:', n_gpu)
@@ -140,6 +144,10 @@ if __name__ == '__main__':
         'KimCNN': KimCNN,
         'HAN': HAN,
         'XML-CNN': XmlCNN,
+        'BERT-Base': Bert,
+        'BERT-Large': Bert,
+        'HBERT-Base': HierarchicalBert,
+        'HBERT-Large': HierarchicalBert
     }
 
     if args.dataset not in dataset_map:
@@ -149,7 +157,7 @@ if __name__ == '__main__':
 
         if args.model in {'HAN', 'HR-CNN'}:
             dataset = dataset_map_hier[args.dataset]
-        elif args.model in {'BERT-Base', 'BERT-Large'}:
+        elif args.model in {'BERT-Base', 'BERT-Large', 'HBERT-Base', 'HBERT-Large'}:
             dataset = dataset_map_bert[args.dataset]
         else:
             dataset = dataset_map[args.dataset]
@@ -168,7 +176,7 @@ if __name__ == '__main__':
         else:
             pred_scores = dict()
 
-        if args.model in {'BERT-Base', 'BERT-Large'}:
+        if args.model in {'BERT-Base', 'BERT-Large', 'HBERT-Base', 'HBERT-Large'}:
             if args.gradient_accumulation_steps < 1:
                 raise ValueError("Invalid gradient_accumulation_steps parameter:", args.gradient_accumulation_steps)
 
@@ -190,7 +198,11 @@ if __name__ == '__main__':
                 train_examples = processor.get_train_examples(args.data_dir, topic=topic)
                 num_train_optimization_steps = int(
                     len(train_examples) / args.batch_size / args.gradient_accumulation_steps) * args.epochs
-                model = Bert.from_pretrained(variant, cache_dir=args.cache_dir, num_labels=1)
+
+                if args.model in {'BERT-Base', 'BERT-Large'}:
+                    model = model_map[args.model].from_pretrained(variant, cache_dir=args.cache_dir, num_labels=1)
+                else:
+                    model = model_map[args.model](args, variant=variant, cache_dir=args.cache_dir)
                 model.to(device)
                 if n_gpu > 1:
                     model = torch.nn.DataParallel(model)
@@ -219,10 +231,12 @@ if __name__ == '__main__':
                     'is_lowercase': True,
                     'gradient_accumulation_steps': args.gradient_accumulation_steps,
                     'max_seq_length': args.max_seq_length,
+                    'max_doc_length': args.max_doc_length,
                     'data_dir': args.data_dir,
                     'model_outfile': args.save_path,
                     'n_gpu': n_gpu,
-                    'device': args.device
+                    'device': args.device,
+                    'is_hierarchical': True if args.model in {'HBERT-Base', 'HBERT-Large'} else False
                 }
 
                 evaluator_config = {
@@ -235,9 +249,11 @@ if __name__ == '__main__':
                     'is_lowercase': True,
                     'gradient_accumulation_steps': args.gradient_accumulation_steps,
                     'max_seq_length': args.max_seq_length,
+                    'max_doc_length': args.max_doc_length,
                     'data_dir': args.data_dir,
                     'n_gpu': n_gpu,
-                    'device': args.device
+                    'device': args.device,
+                    'is_hierarchical': True if args.model in {'HBERT-Base', 'HBERT-Large'} else False
                 }
 
                 dev_evaluator = RelevanceTransferEvaluator(model, evaluator_config, dataset=dataset, embedding=None,

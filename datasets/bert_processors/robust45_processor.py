@@ -1,5 +1,7 @@
 import os
 
+from nltk import sent_tokenize
+
 from datasets.bert_processors.abstract_processor import BertProcessor, InputExample, InputFeatures
 
 
@@ -18,7 +20,6 @@ class Robust45Processor(BertProcessor):
               '362', '363', '367', '372', '375', '378', '379', '389', '393', '394', '397', '399', '400', '404', '408',
               '414', '416', '419', '422', '423', '426', '427', '433', '435', '436', '439', '442', '443', '445', '614',
               '620', '626', '646', '677', '690']
-    TOPICS = ['307', '310', '321', '325', '330']
 
     def get_train_examples(self, data_dir, **kwargs):
         return self._create_examples(
@@ -47,9 +48,10 @@ class Robust45Processor(BertProcessor):
         return examples
 
 
-def convert_examples_to_features(examples, max_seq_length, tokenizer):
+def convert_examples_to_features(examples, max_seq_length, tokenizer, is_hierarchical=False):
     """
     Loads a data file into a list of InputBatch objects
+    :param is_hierarchical:
     :param examples:
     :param max_seq_length:
     :param tokenizer:
@@ -58,30 +60,51 @@ def convert_examples_to_features(examples, max_seq_length, tokenizer):
 
     features = []
     for (ex_index, example) in enumerate(examples):
-        tokens_a = tokenizer.tokenize(example.text_a)
+        if is_hierarchical:
+            tokens_a = [tokenizer.tokenize(line) for line in sent_tokenize(example.text_a)]
 
-        tokens_b = None
-        # Account for [CLS] and [SEP] with "- 2"
-        if len(tokens_a) > max_seq_length - 2:
-            tokens_a = tokens_a[:(max_seq_length - 2)]
+            # Account for [CLS] and [SEP]
+            for i0 in range(len(tokens_a)):
+                if len(tokens_a[i0]) > max_seq_length - 2:
+                    tokens_a[i0] = tokens_a[i0][:(max_seq_length - 2)]
 
-        tokens = ["[CLS]"] + tokens_a + ["[SEP]"]
-        segment_ids = [0] * len(tokens)
+            tokens = [["[CLS]"] + line + ["[SEP]"] for line in tokens_a]
+            segment_ids = [[0] * len(line) for line in tokens]
 
-        if tokens_b:
-            tokens += tokens_b + ["[SEP]"]
-            segment_ids += [1] * (len(tokens_b) + 1)
+            input_ids = list()
+            for line in tokens:
+                input_ids.append(tokenizer.convert_tokens_to_ids(line))
 
-        input_ids = tokenizer.convert_tokens_to_ids(tokens)
+            # Input mask has 1 for real tokens and 0 for padding tokens
+            input_mask = [[1] * len(line_ids) for line_ids in input_ids]
 
-        # The mask has 1 for real tokens and 0 for padding tokens
-        input_mask = [1] * len(input_ids)
+            # Zero-pad up to the sequence length.
+            padding = [[0] * (max_seq_length - len(line_ids)) for line_ids in input_ids]
+            for i0 in range(len(input_ids)):
+                input_ids[i0] += padding[i0]
+                input_mask[i0] += padding[i0]
+                segment_ids[i0] += padding[i0]
 
-        # Zero-pad up to the sequence length
-        padding = [0] * (max_seq_length - len(input_ids))
-        input_ids += padding
-        input_mask += padding
-        segment_ids += padding
+        else:
+            tokens_a = tokenizer.tokenize(example.text_a)
+
+            # Account for [CLS] and [SEP] with "- 2"
+            if len(tokens_a) > max_seq_length - 2:
+                tokens_a = tokens_a[:(max_seq_length - 2)]
+
+            tokens = ["[CLS]"] + tokens_a + ["[SEP]"]
+            segment_ids = [0] * len(tokens)
+
+            input_ids = tokenizer.convert_tokens_to_ids(tokens)
+
+            # The mask has 1 for real tokens and 0 for padding tokens
+            input_mask = [1] * len(input_ids)
+
+            # Zero-pad up to the sequence length
+            padding = [0] * (max_seq_length - len(input_ids))
+            input_ids += padding
+            input_mask += padding
+            segment_ids += padding
 
         try:
             docid = int(example.guid)

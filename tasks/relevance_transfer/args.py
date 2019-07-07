@@ -12,8 +12,10 @@ def get_args():
     parser.add_argument('--mode', type=str, default='static', choices=['rand', 'static', 'non-static', 'multichannel'])
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--seed', type=int, default=3435)
-    parser.add_argument('--model', type=str, default='KimCNN', choices=['RegLSTM', 'KimCNN', 'HAN', 'XML-CNN', 'BERT-Base', 'BERT-Large'])
     parser.add_argument('--dataset', type=str, default='Robust04', choices=['Robust04', 'Robust05', 'Robust45'])
+    parser.add_argument('--model', type=str, default='KimCNN', choices=['RegLSTM', 'KimCNN', 'HAN', 'XML-CNN', 'BERT-Base',
+                                                                        'BERT-Large', 'HBERT-Base', 'HBERT-Large'])
+
     parser.add_argument('--dev_every', type=int, default=30)
     parser.add_argument('--log_every', type=int, default=10)
     parser.add_argument('--patience', type=int, default=5)
@@ -64,6 +66,7 @@ def get_args():
     parser.add_argument('--cache-dir', default='cache', type=str)
     parser.add_argument('--variant', type=str, choices=['bert-base-uncased', 'bert-large-uncased', 'bert-base-cased', 'bert-large-cased'])
     parser.add_argument('--max-seq-length', default=128, type=int)
+    parser.add_argument('--max-doc-length', default=16, type=int)
     parser.add_argument('--warmup-proportion', default=0.1, type=float)
     parser.add_argument('--gradient-accumulation-steps', type=int, default=1)
     parser.add_argument('--loss-scale', type=float, default=0)
