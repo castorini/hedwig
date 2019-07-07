@@ -5,7 +5,6 @@ import time
 import numpy as np
 import torch
 import torch.nn.functional as F
-from tensorboardX import SummaryWriter
 
 from common.trainers.trainer import Trainer
 
@@ -26,7 +25,6 @@ class ClassificationTrainer(Trainer):
             '{:>6.0f},{:>5.0f},{:>9.0f},{:>5.0f}/{:<5.0f} {:>7.4f},{:>8.4f},{:8.4f},{:12.4f},{:12.4f}'.split(','))
 
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        self.writer = SummaryWriter(log_dir="tensorboard_logs/" + timestamp)
         self.snapshot_path = os.path.join(self.model_outfile, self.train_loader.dataset.NAME, '%s.pt' % timestamp)
 
     def train_epoch(self, epoch):
@@ -75,8 +73,6 @@ class ClassificationTrainer(Trainer):
 
             if self.iterations % self.log_interval == 1:
                 niter = epoch * len(self.train_loader) + batch_idx
-                self.writer.add_scalar('Train/Loss', loss.data.item(), niter)
-                self.writer.add_scalar('Train/Accuracy', train_acc, niter)
                 print(self.log_template.format(time.time() - self.start, epoch, self.iterations, 1 + batch_idx,
                                                len(self.train_loader), 100.0 * (1 + batch_idx) / len(self.train_loader),
                                                loss.item(), train_acc))
@@ -94,11 +90,6 @@ class ClassificationTrainer(Trainer):
 
             # Evaluate performance on validation set
             dev_acc, dev_precision, dev_recall, dev_f1, dev_loss = self.dev_evaluator.get_scores()[0]
-            self.writer.add_scalar('Dev/Loss', dev_loss, epoch)
-            self.writer.add_scalar('Dev/Accuracy', dev_acc, epoch)
-            self.writer.add_scalar('Dev/Precision', dev_precision, epoch)
-            self.writer.add_scalar('Dev/Recall', dev_recall, epoch)
-            self.writer.add_scalar('Dev/F-measure', dev_f1, epoch)
 
             # Print validation results
             print('\n' + dev_header)
