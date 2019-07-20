@@ -4,6 +4,10 @@
 
 This repo contains PyTorch deep learning models for document classification, implemented by the Data Systems Group at the University of Waterloo.
 
+# Modifications from Original at castorini/hedwig
+- added 'models/' in setup.py
+- add boto3 in requirements.txt
+
 ## Models
 
 + [DocBERT](models/bert/) : DocBERT: BERT for Document Classification [(Adhikari et al., 2019)](https://arxiv.org/abs/1904.08398v1)
