@@ -142,8 +142,8 @@ class BertTrainer(object):
 
         # create learning curves
         results_frame = pd.DataFrame(data=np.array(results),
-                                     columns=['Epoch', 'Accuracy', 'Precision', 'Recall', 'F1', 'Loss'],
-                                     index='Epoch')
+                                     columns=['Epoch', 'Accuracy', 'Precision', 'Recall', 'F1', 'Loss']) \
+            .set_index('Epoch')
 
 
         ax_acc = results_frame[['Accuracy', 'Precision', 'Recall', 'F1']].plot()
