@@ -1,5 +1,10 @@
+# noinspection PyPackageRequirements
 import datetime
 import os
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
 import torch
 import torch.nn.functional as F
@@ -108,6 +113,8 @@ class BertTrainer(object):
 
         train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=self.args.batch_size)
 
+        # results for graphing learning curves
+        results = []
         for epoch in trange(int(self.args.epochs), desc="Epoch"):
             self.train_epoch(train_dataloader)
             dev_evaluator = BertEvaluator(self.model, self.processor, self.args, split='dev')
@@ -117,6 +124,8 @@ class BertTrainer(object):
             tqdm.write(self.log_header)
             tqdm.write(self.log_template.format(epoch + 1, self.iterations, epoch + 1, self.args.epochs,
                                                 dev_acc, dev_precision, dev_recall, dev_f1, dev_loss))
+
+            results.append([epoch + 1, dev_acc, dev_precision, dev_recall, dev_f1, dev_loss])
 
             # Update validation results
             if dev_f1 > self.best_dev_f1:
@@ -130,3 +139,18 @@ class BertTrainer(object):
                     self.early_stop = True
                     tqdm.write("Early Stopping. Epoch: {}, Best Dev F1: {}".format(epoch, self.best_dev_f1))
                     break
+
+        # create learning curves
+        results_frame = pd.DataFrame(data=np.array(results),
+                                     columns=['Epoch', 'Accuracy', 'Precision', 'Recall', 'F1', 'Loss']) \
+            .set_index('Epoch')
+
+
+        ax_acc = results_frame[['Accuracy', 'Precision', 'Recall', 'F1']].plot()
+        ax_loss = results_frame[['Loss']].plot()
+
+        ax_acc.get_figure().savefig('accuracy_curves.png')
+        ax_loss.get_figure().savefig('loss_curves.png')
+
+
+
