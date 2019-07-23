@@ -57,23 +57,45 @@ def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_si
 
 if __name__ == '__main__':
     # Set default configuration in args.py
-    args = get_args()
+    # args = get_args()
     logger = get_logger()
 
-    # Set random seed for reproducibility
-    torch.manual_seed(args.seed)
-    torch.backends.cudnn.deterministic = True
-    np.random.seed(args.seed)
-    random.seed(args.seed)
+    # # Set random seed for reproducibility
+    # torch.manual_seed(args.seed)
+    # torch.backends.cudnn.deterministic = True
+    # np.random.seed(args.seed)
+    # random.seed(args.seed)
+    #
+    # if not args.cuda:
+    #     args.gpu = -1
+    # if torch.cuda.is_available() and args.cuda:
+    #     print('Note: You are using GPU for training')
+    #     torch.cuda.set_device(args.gpu)
+    #     torch.cuda.manual_seed(args.seed)
+    # if torch.cuda.is_available() and not args.cuda:
+    #     print('Warning: Using CPU for training')
+    args = get_args()
 
-    if not args.cuda:
-        args.gpu = -1
-    if torch.cuda.is_available() and args.cuda:
-        print('Note: You are using GPU for training')
-        torch.cuda.set_device(args.gpu)
-        torch.cuda.manual_seed(args.seed)
-    if torch.cuda.is_available() and not args.cuda:
-        print('Warning: Using CPU for training')
+    if args.local_rank == -1 or not args.cuda:
+        device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
+        n_gpu = torch.cuda.device_count()
+    else:
+        torch.cuda.set_device(args.local_rank)
+        device = torch.device("cuda", args.local_rank)
+        n_gpu = 1
+        # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
+        torch.distributed.init_process_group(backend='nccl')
+
+    print('Device:', str(device).upper())
+    print('Number of GPUs:', n_gpu)
+    print('Distributed training:', bool(args.local_rank != -1))
+
+    # Set random seed for reproducibility
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    if n_gpu > 0:
+        torch.cuda.manual_seed_all(args.seed)
 
     dataset_map = {
         'Reuters': Reuters,
@@ -81,6 +103,8 @@ if __name__ == '__main__':
         'IMDB': IMDB,
         'Yelp2014': Yelp2014
     }
+
+    args.device = device
 
     if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
@@ -91,7 +115,7 @@ if __name__ == '__main__':
                                                               args.word_vectors_file,
                                                               args.word_vectors_dir,
                                                               batch_size=args.batch_size,
-                                                              device=args.gpu,
+                                                              device=args.device,
                                                               unk_init=UnknownWordVecCache.unk)
 
     config = deepcopy(args)
@@ -113,7 +137,7 @@ if __name__ == '__main__':
     else:
         model = RegLSTM(config)
         if args.cuda:
-            model.cuda()
+            model.to(device)
 
     if not args.trained_model:
         save_path = os.path.join(args.save_path, dataset_map[args.dataset].NAME)
