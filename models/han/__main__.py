@@ -73,7 +73,7 @@ if __name__ == '__main__':
         args.gpu = -1
     if torch.cuda.is_available() and args.cuda:
         print('Note: You are using GPU for training')
-        torch.cuda.set_device(args.gpu)
+        torch.cuda.set_device('cuda:{}'.format(args.gpu))
         torch.cuda.manual_seed(args.seed)
     if torch.cuda.is_available() and not args.cuda:
         print('Warning: Using CPU for training')
