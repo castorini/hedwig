@@ -108,6 +108,8 @@ if __name__ == '__main__':
         'Yelp2014': Yelp2014
     }
 
+    args.device = device
+
     if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
 
@@ -117,7 +119,7 @@ if __name__ == '__main__':
                                                               args.word_vectors_file,
                                                               args.word_vectors_dir,
                                                               batch_size=args.batch_size,
-                                                              device=args.gpu,
+                                                              device=args.device,
                                                               unk_init=UnknownWordVecCache.unk)
 
     config = deepcopy(args)
@@ -133,7 +135,7 @@ if __name__ == '__main__':
 
     if args.resume_snapshot:
         if args.cuda:
-            model = torch.load(args.resume_snapshot, map_location=lambda storage, location: storage.cuda(args.gpu))
+            model = torch.load(args.resume_snapshot, map_location=lambda storage, location: storage.cuda(args.device))
         else:
             model = torch.load(args.resume_snapshot, map_location=lambda storage, location: storage)
     else:
