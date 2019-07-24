@@ -7,7 +7,8 @@ def get_args():
     parser = models.args.get_args()
 
     parser.add_argument('--model', default=None, type=str, required=True)
-    parser.add_argument('--dataset', type=str, default='SST-2', choices=['SST-2', 'AGNews', 'Reuters', 'AAPD', 'IMDB', 'Yelp2014'])
+    parser.add_argument('--dataset', type=str, default='SST-2', choices=['SST-2', 'AGNews', 'Reuters', 'AAPD', 'IMDB',
+                                                                         'Yelp2014', 'Lyrics'])
     parser.add_argument('--save-path', type=str, default=os.path.join('model_checkpoints', 'bert'))
     parser.add_argument('--cache-dir', default='cache', type=str)
     parser.add_argument('--trained-model', default=None, type=str)
