@@ -42,7 +42,7 @@ def process_labels(string):
 
 class Lyrics(TabularDataset):
     NAME = 'Lyrics'
-    NUM_CLASSES = 12
+    NUM_CLASSES = 10
     IS_MULTILABEL = True
 
     TEXT_FIELD = Field(batch_first=True, tokenize=clean_string, include_lengths=True)
