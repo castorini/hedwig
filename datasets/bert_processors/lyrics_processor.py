@@ -5,7 +5,7 @@ from datasets.bert_processors.abstract_processor import BertProcessor, InputExam
 
 class LyricsProcessor(BertProcessor):
     NAME = 'Lyrics'
-    NUM_CLASSES = 12            # Number of genre; len(df['genre'].unique()) = 12
+    NUM_CLASSES = 10            # Number of genre; len(df['genre'].unique()) = 10
     IS_MULTILABEL = False
 
     def get_train_examples(self, data_dir):
