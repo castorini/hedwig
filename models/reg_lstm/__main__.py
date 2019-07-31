@@ -77,7 +77,7 @@ if __name__ == '__main__':
     args = get_args()
 
     if args.local_rank == -1 or not args.cuda:
-        device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         n_gpu = torch.cuda.device_count()
     else:
         torch.cuda.set_device(args.local_rank)
@@ -137,7 +137,7 @@ if __name__ == '__main__':
     else:
         model = RegLSTM(config)
         if args.cuda:
-            model.to(device)
+            model.to(args.device)
 
     if not args.trained_model:
         save_path = os.path.join(args.save_path, dataset_map[args.dataset].NAME)
