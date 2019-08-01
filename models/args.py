@@ -13,6 +13,7 @@ def get_args():
     parser.add_argument('--seed', type=int, default=3435)
     parser.add_argument('--patience', type=int, default=5)
     parser.add_argument('--log-every', type=int, default=10)
+    parser.add_argument('--local-rank', type=int, default=-1, help='local rank for distributed training')
     parser.add_argument('--data-dir', default=os.path.join(os.pardir, 'hedwig-data', 'datasets'))
 
     return parser
