@@ -168,8 +168,8 @@ if __name__ == '__main__':
             model = torch.load(args.trained_model, map_location=lambda storage, location: storage)
 
     # Calculate dev and test metrics
-    if hasattr(trainer, 'snapshot_path'):
-        model = torch.load(trainer.snapshot_path)
+    #if hasattr(trainer, 'snapshot_path'):
+    #    model = torch.load(trainer.snapshot_path)
 
     evaluate_dataset('dev', dataset_map[args.dataset], model, None, dev_iter, args.batch_size,
                      is_multilabel=dataset_class.IS_MULTILABEL,
