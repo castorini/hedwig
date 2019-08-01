@@ -16,7 +16,6 @@ def get_args():
     parser.add_argument('--embed-dim', type=int, default=300)
     parser.add_argument('--epoch-decay', type=int, default=15)
     parser.add_argument('--weight-decay', type=float, default=0)
-    parser.add_argument('--local-rank', type=int, default=-1, help='local rank for distributed training')
 
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--wdrop', type=float, default=0.0, help="weight drop")
