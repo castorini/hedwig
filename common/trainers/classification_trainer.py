@@ -104,6 +104,7 @@ class ClassificationTrainer(Trainer):
                 print(self.snapshot_path)
             else:
                 self.iters_not_improved += 1
+                print('not improved')
                 if self.iters_not_improved >= self.patience:
                     self.early_stop = True
                     print("Early Stopping. Epoch: {}, Best Dev F1: {}".format(epoch, self.best_dev_f1))
