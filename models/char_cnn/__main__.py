@@ -12,6 +12,7 @@ from datasets.aapd import AAPDCharQuantized as AAPD
 from datasets.imdb import IMDBCharQuantized as IMDB
 from datasets.reuters import ReutersCharQuantized as Reuters
 from datasets.yelp2014 import Yelp2014CharQuantized as Yelp2014
+from datasets.lyrics import LyricsCharQuantized as Lyrics
 from models.char_cnn.args import get_args
 from models.char_cnn.model import CharCNN
 
@@ -87,7 +88,8 @@ if __name__ == '__main__':
         'Reuters': Reuters,
         'AAPD': AAPD,
         'IMDB': IMDB,
-        'Yelp2014': Yelp2014
+        'Yelp2014': Yelp2014,
+        'Lyrics': Lyrics
     }
 
     args.device = device

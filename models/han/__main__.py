@@ -13,6 +13,7 @@ from datasets.aapd import AAPDHierarchical as AAPD
 from datasets.imdb import IMDBHierarchical as IMDB
 from datasets.reuters import ReutersHierarchical as Reuters
 from datasets.yelp2014 import Yelp2014Hierarchical as Yelp2014
+from datasets.lyrics import LyricsHierarchical as Lyrics
 from models.han.args import get_args
 from models.han.model import HAN
 
@@ -105,7 +106,8 @@ if __name__ == '__main__':
         'Reuters': Reuters,
         'AAPD': AAPD,
         'IMDB': IMDB,
-        'Yelp2014': Yelp2014
+        'Yelp2014': Yelp2014,
+        'Lyrics': Lyrics
     }
 
     args.device = device

@@ -12,6 +12,7 @@ from datasets.aapd import AAPD
 from datasets.imdb import IMDB
 from datasets.reuters import Reuters
 from datasets.yelp2014 import Yelp2014
+from datasets.lyrics import Lyrics
 from models.reg_lstm.args import get_args
 from models.reg_lstm.model import RegLSTM
 
@@ -85,7 +86,8 @@ if __name__ == '__main__':
         'Reuters': Reuters,
         'AAPD': AAPD,
         'IMDB': IMDB,
-        'Yelp2014': Yelp2014
+        'Yelp2014': Yelp2014,
+        'Lyrics': Lyrics
     }
 
     args.device = device
