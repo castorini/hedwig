@@ -101,6 +101,7 @@ class ClassificationTrainer(Trainer):
                 self.iters_not_improved = 0
                 self.best_dev_f1 = dev_f1
                 torch.save(self.model, self.snapshot_path)
+                print(self.snapshot_path)
             else:
                 self.iters_not_improved += 1
                 if self.iters_not_improved >= self.patience:
