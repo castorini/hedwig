@@ -11,6 +11,7 @@ class TrainerFactory(object):
         'AAPD': ClassificationTrainer,
         'IMDB': ClassificationTrainer,
         'Yelp2014': ClassificationTrainer,
+        'Lyrics': ClassificationTrainer,
         'Robust04': RelevanceTransferTrainer,
         'Robust05': RelevanceTransferTrainer,
         'Robust45': RelevanceTransferTrainer,
