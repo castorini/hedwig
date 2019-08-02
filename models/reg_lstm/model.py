@@ -100,8 +100,9 @@ class RegLSTM(nn.Module):
         pass
     
     def load_ema_params(self):
-        for p, avg_p in zip(self.parameters(), self.avg_param):
-            p.data.copy_(avg_p/(1-self.beta_ema**self.steps_ema))
+        # for p, avg_p in zip(self.parameters(), self.avg_param):
+        #     p.data.copy_(avg_p/(1-self.beta_ema**self.steps_ema))
+        pass
 
     def load_params(self, params):
         for p,avg_p in zip(self.parameters(), params):
