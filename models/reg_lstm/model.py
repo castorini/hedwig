@@ -84,7 +84,7 @@ class RegLSTM(nn.Module):
         x = self.dropout(x)
         if self.has_bottleneck_layer:
             x = F.relu(self.fc1(x))
-            x = self.dropout(x)
+            # x = self.dropout(x)
             if self.tar or self.ar:
                 return self.fc2(x), rnn_outs.permute(1,0,2)
             return self.fc2(x)
@@ -94,9 +94,10 @@ class RegLSTM(nn.Module):
             return self.fc1(x)
 
     def update_ema(self):
-        self.steps_ema += 1
-        for p, avg_p in zip(self.parameters(), self.avg_param):
-            avg_p.mul_(self.beta_ema).add_((1-self.beta_ema)*p.data)
+        # self.steps_ema += 1
+        # for p, avg_p in zip(self.parameters(), self.avg_param):
+        #     avg_p.mul_(self.beta_ema).add_((1-self.beta_ema)*p.data)
+        pass
     
     def load_ema_params(self):
         for p, avg_p in zip(self.parameters(), self.avg_param):
