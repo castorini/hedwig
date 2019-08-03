@@ -11,12 +11,12 @@ def get_args():
     parser.add_argument('--num-layers', type=int, default=2)
     parser.add_argument('--hidden-dim', type=int, default=256)
     parser.add_argument('--mode', type=str, default='static', choices=['rand', 'static', 'non-static'])
-    parser.add_argument('--dataset', type=str, default='Reuters', choices=['Reuters', 'AAPD', 'IMDB', 'Yelp2014'])
+    parser.add_argument('--dataset', type=str, default='Reuters', choices=['Reuters', 'AAPD', 'IMDB', 'Yelp2014',
+                                                                           'Lyrics'])
     parser.add_argument('--words-dim', type=int, default=300)
     parser.add_argument('--embed-dim', type=int, default=300)
     parser.add_argument('--epoch-decay', type=int, default=15)
     parser.add_argument('--weight-decay', type=float, default=0)
-    parser.add_argument('--local-rank', type=int, default=-1, help='local rank for distributed training')
 
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--wdrop', type=float, default=0.0, help="weight drop")

@@ -94,13 +94,15 @@ class RegLSTM(nn.Module):
             return self.fc1(x)
 
     def update_ema(self):
-        self.steps_ema += 1
-        for p, avg_p in zip(self.parameters(), self.avg_param):
-            avg_p.mul_(self.beta_ema).add_((1-self.beta_ema)*p.data)
+        # self.steps_ema += 1
+        # for p, avg_p in zip(self.parameters(), self.avg_param):
+        #     avg_p.mul_(self.beta_ema).add_((1-self.beta_ema)*p.data)
+        pass
     
     def load_ema_params(self):
-        for p, avg_p in zip(self.parameters(), self.avg_param):
-            p.data.copy_(avg_p/(1-self.beta_ema**self.steps_ema))
+        # for p, avg_p in zip(self.parameters(), self.avg_param):
+        #     p.data.copy_(avg_p/(1-self.beta_ema**self.steps_ema))
+        pass
 
     def load_params(self, params):
         for p,avg_p in zip(self.parameters(), params):

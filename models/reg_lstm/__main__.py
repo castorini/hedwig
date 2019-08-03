@@ -12,6 +12,7 @@ from datasets.aapd import AAPD
 from datasets.imdb import IMDB
 from datasets.reuters import Reuters
 from datasets.yelp2014 import Yelp2014
+from datasets.lyrics import Lyrics
 from models.reg_lstm.args import get_args
 from models.reg_lstm.model import RegLSTM
 
@@ -57,23 +58,7 @@ def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_si
 
 if __name__ == '__main__':
     # Set default configuration in args.py
-    # args = get_args()
     logger = get_logger()
-
-    # # Set random seed for reproducibility
-    # torch.manual_seed(args.seed)
-    # torch.backends.cudnn.deterministic = True
-    # np.random.seed(args.seed)
-    # random.seed(args.seed)
-    #
-    # if not args.cuda:
-    #     args.gpu = -1
-    # if torch.cuda.is_available() and args.cuda:
-    #     print('Note: You are using GPU for training')
-    #     torch.cuda.set_device(args.gpu)
-    #     torch.cuda.manual_seed(args.seed)
-    # if torch.cuda.is_available() and not args.cuda:
-    #     print('Warning: Using CPU for training')
     args = get_args()
 
     if args.local_rank == -1 or not args.cuda:
@@ -101,7 +86,8 @@ if __name__ == '__main__':
         'Reuters': Reuters,
         'AAPD': AAPD,
         'IMDB': IMDB,
-        'Yelp2014': Yelp2014
+        'Yelp2014': Yelp2014,
+        'Lyrics': Lyrics
     }
 
     args.device = device

@@ -13,6 +13,7 @@ from datasets.aapd import AAPD
 from datasets.imdb import IMDB
 from datasets.reuters import Reuters
 from datasets.yelp2014 import Yelp2014
+from datasets.lyrics import Lyrics
 from models.xml_cnn.args import get_args
 from models.xml_cnn.model import XmlCNN
 
@@ -58,29 +59,39 @@ def evaluate_dataset(split_name, dataset_cls, model, embedding, loader, batch_si
 
 if __name__ == '__main__':
     # Set default configuration in args.py
+    logger = get_logger()
     args = get_args()
 
+    if args.local_rank == -1 or not args.cuda:
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        n_gpu = torch.cuda.device_count()
+    else:
+        torch.cuda.set_device(args.local_rank)
+        device = torch.device("cuda", args.local_rank)
+        n_gpu = 1
+        # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
+        torch.distributed.init_process_group(backend='nccl')
+
+    print('Device:', str(device).upper())
+    print('Number of GPUs:', n_gpu)
+    print('Distributed training:', bool(args.local_rank != -1))
+
     # Set random seed for reproducibility
-    torch.manual_seed(args.seed)
-    torch.backends.cudnn.deterministic = True
-    if not args.cuda:
-        args.gpu = -1
-    if torch.cuda.is_available() and args.cuda:
-        print('Note: You are using GPU for training')
-        torch.cuda.set_device(args.gpu)
-        torch.cuda.manual_seed(args.seed)
-    if torch.cuda.is_available() and not args.cuda:
-        print('Warning: Using CPU for training')
-    np.random.seed(args.seed)
     random.seed(args.seed)
-    logger = get_logger()
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    if n_gpu > 0:
+        torch.cuda.manual_seed_all(args.seed)
 
     dataset_map = {
         'Reuters': Reuters,
         'AAPD': AAPD,
         'IMDB': IMDB,
-        'Yelp2014': Yelp2014
+        'Yelp2014': Yelp2014,
+        'Lyrics': Lyrics
     }
+
+    args.device = device
 
     if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
@@ -88,7 +99,8 @@ if __name__ == '__main__':
         dataset_class = dataset_map[args.dataset]
         train_iter, dev_iter, test_iter = dataset_map[args.dataset].iters(args.data_dir, args.word_vectors_file,
                                                                           args.word_vectors_dir,
-                                                                          batch_size=args.batch_size, device=args.gpu,
+                                                                          batch_size=args.batch_size,
+                                                                          device=args.device,
                                                                           unk_init=UnknownWordVecCache.unk)
 
     config = deepcopy(args)
@@ -110,7 +122,7 @@ if __name__ == '__main__':
     else:
         model = XmlCNN(config)
         if args.cuda:
-            model.cuda()
+            model.to(args.device)
 
     if not args.trained_model:
         save_path = os.path.join(args.save_path, dataset_map[args.dataset].NAME)
