@@ -91,7 +91,7 @@ class BertEvaluator(object):
             pos_label = None
         else:
             score_method = 'binary'
-            pos_label = '01'
+            pos_label = 1
 
         predicted_labels, target_labels = np.array(predicted_labels), np.array(target_labels)
         accuracy = metrics.accuracy_score(target_labels, predicted_labels)
