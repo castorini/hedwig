@@ -80,17 +80,19 @@ if __name__ == '__main__':
     if args.dataset not in dataset_map:
         raise ValueError('Unrecognized dataset')
 
+    processor = dataset_map[args.dataset]()
+    processor.set_num_classes_(args.data_dir)
+
     args.batch_size = args.batch_size // args.gradient_accumulation_steps
     args.device = device
     args.n_gpu = n_gpu
-    args.num_labels = dataset_map[args.dataset].NUM_CLASSES
-    args.is_multilabel = dataset_map[args.dataset].IS_MULTILABEL
+    args.num_labels = processor.NUM_CLASSES
+    args.is_multilabel = processor.IS_MULTILABEL
 
     if not args.trained_model:
-        save_path = os.path.join(args.save_path, dataset_map[args.dataset].NAME)
+        save_path = os.path.join(args.save_path, processor.NAME)
         os.makedirs(save_path, exist_ok=True)
 
-    processor = dataset_map[args.dataset]()
     args.is_lowercase = 'uncased' in args.model
     args.is_hierarchical = False
     tokenizer = BertTokenizer.from_pretrained(args.model, is_lowercase=args.is_lowercase)
