@@ -115,7 +115,8 @@ class BertTrainer(object):
 
         # results for graphing learning curves
         results = []
-        for epoch in trange(int(self.args.epochs), desc="Epoch"):
+        iterator = trange(int(self.args.epochs), desc="Epoch")
+        for epoch in iterator:
             self.train_epoch(train_dataloader)
             dev_evaluator = BertEvaluator(self.model, self.processor, self.args, split='dev')
             dev_acc, dev_precision, dev_recall, dev_f1, dev_loss = dev_evaluator.get_scores()[0]
@@ -138,6 +139,7 @@ class BertTrainer(object):
                 if self.unimproved_iters >= self.args.patience:
                     self.early_stop = True
                     tqdm.write("Early Stopping. Epoch: {}, Best Dev F1: {}".format(epoch, self.best_dev_f1))
+                    iterator.close()
                     break
 
         # create learning curves
