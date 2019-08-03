@@ -87,7 +87,9 @@ if __name__ == '__main__':
     args.device = device
     args.n_gpu = n_gpu
     args.num_labels = processor.NUM_CLASSES
+    print(args.num_labels)
     args.is_multilabel = processor.IS_MULTILABEL
+    print(args.is_multilabel)
 
     if not args.trained_model:
         save_path = os.path.join(args.save_path, processor.NAME)
