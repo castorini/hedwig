@@ -86,11 +86,18 @@ class BertEvaluator(object):
             nb_eval_examples += input_ids.size(0)
             nb_eval_steps += 1
 
+        if self.args.is_multilabel:
+            score_method = 'micro'
+            pos_label = None
+        else:
+            score_method = 'binary'
+            pos_label = '01'
+
         predicted_labels, target_labels = np.array(predicted_labels), np.array(target_labels)
         accuracy = metrics.accuracy_score(target_labels, predicted_labels)
-        precision = metrics.precision_score(target_labels, predicted_labels, average='micro')
-        recall = metrics.recall_score(target_labels, predicted_labels, average='micro')
-        f1 = metrics.f1_score(target_labels, predicted_labels, average='micro')
+        precision = metrics.precision_score(target_labels, predicted_labels, average=score_method, pos_label=pos_label)
+        recall = metrics.recall_score(target_labels, predicted_labels, average=score_method, pos_label=pos_label)
+        f1 = metrics.f1_score(target_labels, predicted_labels, average=score_method, pos_label=pos_label)
         avg_loss = total_loss / nb_eval_steps
 
         return [accuracy, precision, recall, f1, avg_loss], ['accuracy', 'precision', 'recall', 'f1', 'avg_loss']
