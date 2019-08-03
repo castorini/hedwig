@@ -13,7 +13,7 @@ class LyricsProcessor(BertProcessor):
 
         # from one-hot class vector
         self.NUM_CLASSES = len(l1[0])
-        self.IS_MULTILABEL = self.NUM_CLASSES > 2
+        self.IS_MULTILABEL = True #self.NUM_CLASSES > 2
 
     def get_train_examples(self, data_dir):
         return self._create_examples(
