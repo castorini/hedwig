@@ -4,10 +4,17 @@ from datasets.bert_processors.abstract_processor import BertProcessor, InputExam
 
 
 class ReutersProcessor(BertProcessor):
-    NAME = 'Reuters'
-    NUM_CLASSES = 90
-    IS_MULTILABEL = True
-    
+    def __init__(self):
+        self.NAME = 'Reuters'
+
+    def set_num_classes_(self, data_dir):
+        with open(os.path.join(data_dir, 'Reuters', 'train.tsv'), 'r') as f:
+            l1 = f.readline().split('\t')
+
+        # from one-hot class vector
+        self.NUM_CLASSES = len(l1[0])
+        self.IS_MULTILABEL = self.NUM_CLASSES > 2
+
     def get_train_examples(self, data_dir):
         return self._create_examples(
             self._read_tsv(os.path.join(data_dir, 'Reuters', 'train.tsv')), 'train')
