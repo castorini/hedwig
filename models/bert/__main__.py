@@ -1,6 +1,7 @@
 import os
 import random
 import time
+import math
 
 import numpy as np
 import torch
@@ -102,7 +103,7 @@ if __name__ == '__main__':
     if not args.trained_model:
         train_examples = processor.get_train_examples(args.data_dir)
         num_train_optimization_steps = int(
-            len(train_examples) / args.batch_size / args.gradient_accumulation_steps) * args.epochs
+            math.ceil(len(train_examples) / args.batch_size) / args.gradient_accumulation_steps) * args.epochs
         if args.local_rank != -1:
             num_train_optimization_steps = num_train_optimization_steps // torch.distributed.get_world_size()
 
