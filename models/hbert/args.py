@@ -15,6 +15,7 @@ def get_args():
     parser.add_argument('--fp16', action='store_true', help='enable 16-bit floating point precision')
     parser.add_argument('--loss-scale', type=float, default=0, help='loss scaling to improve fp16 numeric stability')
 
+    parser.add_argument('--lr-mult', type=float, default=1)
     parser.add_argument('--dropout', type=float, default=0.5)
     parser.add_argument('--dropblock', type=float, default=0.0)
     parser.add_argument('--dropblock-size', type=int, default=7)
