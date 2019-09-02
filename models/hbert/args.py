@@ -38,6 +38,5 @@ def get_args():
     parser.add_argument('--gradient-accumulation-steps', type=int, default=1,
                         help='number of updates steps to accumulate before performing a backward/update pass')
 
-
     args = parser.parse_args()
     return args
