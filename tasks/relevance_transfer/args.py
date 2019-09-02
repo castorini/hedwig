@@ -11,6 +11,7 @@ def get_args():
     parser.add_argument('--batch-size', type=int, default=1024)
     parser.add_argument('--mode', type=str, default='static', choices=['rand', 'static', 'non-static', 'multichannel'])
     parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--lr-mult', type=float, default=1)
     parser.add_argument('--seed', type=int, default=3435)
     parser.add_argument('--dataset', type=str, default='Robust04', choices=['Robust04', 'Robust05', 'Robust45'])
     parser.add_argument('--model', type=str, default='KimCNN', choices=['RegLSTM', 'KimCNN', 'HAN', 'XML-CNN', 'BERT-Base',
