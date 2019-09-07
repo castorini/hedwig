@@ -1,11 +1,16 @@
+import json
 import os
 import re
+import sys
+import csv
 
 import numpy as np
 import torch
 from torchtext.data import NestedField, Field, TabularDataset
 from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
+
+csv.field_size_limit(sys.maxsize)
 
 
 def clean_string(string):
@@ -20,6 +25,11 @@ def clean_string(string):
 def split_sents(string):
     string = re.sub(r"[!?]"," ", string)
     return string.strip().split('.')
+
+
+def load_json(string):
+    split_val = json.loads(string)
+    return np.asarray(split_val, dtype=np.float32)
 
 
 def char_quantize(string, max_length=1000):
@@ -94,6 +104,36 @@ class ReutersCharQuantized(Reuters):
         :param path: directory containing train, test, dev files
         :param batch_size: batch size
         :param device: GPU device
+        :return:
+        """
+        train, val, test = cls.splits(path)
+        return BucketIterator.splits((train, val, test), batch_size=batch_size, repeat=False, shuffle=shuffle, device=device)
+
+
+class ReutersTFIDF(Reuters):
+    VOCAB_SIZE = 30485
+    TEXT_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=load_json, dtype=torch.float)
+
+    @classmethod
+    def splits(cls, path, train=os.path.join('Reuters', 'tfidf_train.tsv'),
+               validation=os.path.join('Reuters', 'tfidf_dev.tsv'),
+               test=os.path.join('Reuters', 'tfidf_test.tsv'), **kwargs):
+        return super(Reuters, cls).splits(
+            path, train=train, validation=validation, test=test,
+            format='tsv', fields=[('label', cls.LABEL_FIELD), ('text', cls.TEXT_FIELD)]
+        )
+
+    @classmethod
+    def iters(cls, path, vectors_name, vectors_cache, batch_size=64, shuffle=True, device=0, vectors=None,
+              unk_init=torch.Tensor.zero_):
+        """
+        :param path: directory containing train, test, dev files
+        :param vectors_name: name of word vectors file
+        :param vectors_cache: path to directory containing word vectors file
+        :param batch_size: batch size
+        :param device: GPU device
+        :param vectors: custom vectors - either predefined torchtext vectors or your own custom Vector classes
+        :param unk_init: function used to generate vector for OOV words
         :return:
         """
         train, val, test = cls.splits(path)
