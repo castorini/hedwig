@@ -6,7 +6,7 @@ from torchtext.data import NestedField, Field, TabularDataset
 from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
 
-from datasets.reuters import clean_string, split_sents
+from datasets.reuters import clean_string, split_sents, process_labels, generate_ngrams
 
 
 def char_quantize(string, max_length=500):
@@ -16,15 +16,6 @@ def char_quantize(string, max_length=500):
         return quantized_string[:max_length]
     else:
         return np.concatenate((quantized_string, np.zeros((max_length - len(quantized_string), len(IMDBCharQuantized.ALPHABET)), dtype=np.float32)))
-
-
-def process_labels(string):
-    """
-    Returns the label string as a list of integers
-    :param string:
-    :return:
-    """
-    return [float(x) for x in string]
 
 
 class IMDB(TabularDataset):
@@ -70,6 +61,11 @@ class IMDB(TabularDataset):
                                      sort_within_batch=True, device=device)
 
 
+class IMDBHierarchical(IMDB):
+    NESTING_FIELD = Field(batch_first=True, tokenize=clean_string)
+    TEXT_FIELD = NestedField(NESTING_FIELD, tokenize=split_sents)
+
+
 class IMDBCharQuantized(IMDB):
     ALPHABET = dict(map(lambda t: (t[1], t[0]), enumerate(list("""abcdefghijklmnopqrstuvwxyz0123456789,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]{}"""))))
     TEXT_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=char_quantize)
@@ -85,8 +81,3 @@ class IMDBCharQuantized(IMDB):
         """
         train, val, test = cls.splits(path)
         return BucketIterator.splits((train, val, test), batch_size=batch_size, repeat=False, shuffle=shuffle, device=device)
-
-
-class IMDBHierarchical(IMDB):
-    NESTING_FIELD = Field(batch_first=True, tokenize=clean_string)
-    TEXT_FIELD = NestedField(NESTING_FIELD, tokenize=split_sents)
