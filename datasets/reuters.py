@@ -27,6 +27,12 @@ def split_sents(string):
     return string.strip().split('.')
 
 
+def generate_ngrams(tokens, n=2):
+    n_grams = zip(*[tokens[i:] for i in range(n)])
+    tokens.extend(['-'.join(x) for x in n_grams])
+    return tokens
+
+
 def load_json(string):
     split_val = json.loads(string)
     return np.asarray(split_val, dtype=np.float32)
@@ -44,8 +50,6 @@ def char_quantize(string, max_length=1000):
 def process_labels(string):
     """
     Returns the label string as a list of integers
-    :param string:
-    :return:
     """
     return [float(x) for x in string]
 
@@ -93,6 +97,15 @@ class Reuters(TabularDataset):
                                      sort_within_batch=True, device=device)
 
 
+class ReutersBOW(Reuters):
+    TEXT_FIELD = Field(batch_first=True, tokenize=clean_string, preprocessing=generate_ngrams, include_lengths=True)
+
+
+class ReutersHierarchical(Reuters):
+    NESTING_FIELD = Field(batch_first=True, tokenize=clean_string)
+    TEXT_FIELD = NestedField(NESTING_FIELD, tokenize=split_sents)
+
+
 class ReutersCharQuantized(Reuters):
     ALPHABET = dict(map(lambda t: (t[1], t[0]), enumerate(list("""abcdefghijklmnopqrstuvwxyz0123456789,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]{}"""))))
     TEXT_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=char_quantize)
@@ -138,8 +151,3 @@ class ReutersTFIDF(Reuters):
         """
         train, val, test = cls.splits(path)
         return BucketIterator.splits((train, val, test), batch_size=batch_size, repeat=False, shuffle=shuffle, device=device)
-
-
-class ReutersHierarchical(Reuters):
-    NESTING_FIELD = Field(batch_first=True, tokenize=clean_string)
-    TEXT_FIELD = NestedField(NESTING_FIELD, tokenize=split_sents)
