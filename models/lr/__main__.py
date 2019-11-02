@@ -13,11 +13,10 @@ from datasets.bow_processors.aapd_processor import AAPDProcessor
 from datasets.bow_processors.imdb_processor import IMDBProcessor
 from datasets.bow_processors.reuters_processor import ReutersProcessor
 from datasets.bow_processors.yelp2014_processor import Yelp2014Processor
-from models.mlp.args import get_args
-from models.mlp.model import MLP
+from models.lr.args import get_args
+from models.lr.model import LogisticRegression
 
 # String templates for logging results
-
 LOG_HEADER = 'Split  Dev/Acc.  Dev/Pr.  Dev/Re.   Dev/F1   Dev/Loss'
 LOG_TEMPLATE = ' '.join('{:>5s},{:>9.4f},{:>8.4f},{:8.4f},{:8.4f},{:10.4f}'.split(','))
 
@@ -72,7 +71,7 @@ if __name__ == '__main__':
         save_path = os.path.join(args.save_path, dataset_map[args.dataset].NAME)
         os.makedirs(save_path, exist_ok=True)
 
-    model = MLP(args)
+    model = LogisticRegression(args)
     model.to(device)
 
     if n_gpu > 1:
