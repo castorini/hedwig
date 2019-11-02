@@ -12,7 +12,7 @@ def get_args():
     parser.add_argument('--epoch-decay', type=int, default=15)
     parser.add_argument('--weight-decay', type=float, default=0)
 
-    parser.add_argument('--save-path', type=str, default=os.path.join('model_checkpoints', 'mlp'))
+    parser.add_argument('--save-path', type=str, default=os.path.join('model_checkpoints', 'lr'))
     parser.add_argument('--resume-snapshot', type=str)
     parser.add_argument('--trained-model', type=str)
 
