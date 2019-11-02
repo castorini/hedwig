@@ -6,10 +6,8 @@ class MLP(nn.Module):
 
     def __init__(self, config):
         super().__init__()
-        dataset = config.dataset
-        target_class = config.target_class
         self.dropout = nn.Dropout(config.dropout)
-        self.fc1 = nn.Linear(dataset.VOCAB_SIZE, target_class)
+        self.fc1 = nn.Linear(config.vocab_size, config.num_labels)
 
     def forward(self, x, **kwargs):
         x = torch.squeeze(x)  # (batch, vocab_size)
