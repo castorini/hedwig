@@ -7,30 +7,26 @@ from sklearn import metrics
 from torch.utils.data import TensorDataset, SequentialSampler, DataLoader
 from tqdm import tqdm
 
-from common.evaluators.evaluator import Evaluator
+from common.constants import BERT_MODELS
 from datasets.bert_processors.robust45_processor import convert_examples_to_features
-from utils.preprocessing import pad_input_matrix
-from utils.tokenization import BertTokenizer
 
 # Suppress warnings from sklearn.metrics
 warnings.filterwarnings('ignore')
 
 
-class RelevanceTransferEvaluator(Evaluator):
-
+class RelevanceTransferEvaluator(object):
     def __init__(self, model, config, **kwargs):
-        super().__init__(kwargs['dataset'], model, kwargs['embedding'], kwargs['data_loader'],
-                         batch_size=config['batch_size'], device=config['device'])
-
-        if config['model'] in {'BERT-Base', 'BERT-Large', 'HBERT-Base', 'HBERT-Large'}:
-            variant = 'bert-large-uncased' if config['model'] == 'BERT-Large' else 'bert-base-uncased'
-            self.tokenizer = BertTokenizer.from_pretrained(variant, is_lowercase=config['is_lowercase'])
+        if config['model'] in BERT_MODELS:
             self.processor = kwargs['processor']
+            self.tokenizer = kwargs['tokenizer']
             if config['split'] == 'test':
                 self.eval_examples = self.processor.get_test_examples(config['data_dir'], topic=config['topic'])
             else:
                 self.eval_examples = self.processor.get_dev_examples(config['data_dir'], topic=config['topic'])
+        else:
+            self.data_loader = kwargs['data_loader']
 
+        self.model = model
         self.config = config
         self.ignore_lengths = config['ignore_lengths']
         self.y_target = None
@@ -48,18 +44,11 @@ class RelevanceTransferEvaluator(Evaluator):
             eval_features = convert_examples_to_features(
                 self.eval_examples,
                 self.config['max_seq_length'],
-                self.tokenizer,
-                self.config['is_hierarchical']
-            )
+                self.tokenizer)
 
             unpadded_input_ids = [f.input_ids for f in eval_features]
             unpadded_input_mask = [f.input_mask for f in eval_features]
             unpadded_segment_ids = [f.segment_ids for f in eval_features]
-
-            if self.config['is_hierarchical']:
-                pad_input_matrix(unpadded_input_ids, self.config['max_doc_length'])
-                pad_input_matrix(unpadded_input_mask, self.config['max_doc_length'])
-                pad_input_matrix(unpadded_segment_ids, self.config['max_doc_length'])
 
             padded_input_ids = torch.tensor(unpadded_input_ids, dtype=torch.long)
             padded_input_mask = torch.tensor(unpadded_input_mask, dtype=torch.long)
@@ -78,7 +67,7 @@ class RelevanceTransferEvaluator(Evaluator):
                 label_ids = label_ids.to(self.config['device'])
 
                 with torch.no_grad():
-                    logits = torch.sigmoid(self.model(input_ids, segment_ids, input_mask)).squeeze(dim=1)
+                    logits = torch.sigmoid(self.model(input_ids, segment_ids, input_mask)[0]).squeeze(dim=1)
 
                 # Computing loss and storing predictions
                 self.docid.extend(document_ids.cpu().detach().numpy())
