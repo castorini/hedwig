@@ -10,18 +10,18 @@ from tqdm import tqdm
 from datasets.bert_processors.abstract_processor import convert_examples_to_features, \
     convert_examples_to_hierarchical_features
 from utils.preprocessing import pad_input_matrix
-from utils.tokenization import BertTokenizer
 
 # Suppress warnings from sklearn.metrics
 warnings.filterwarnings('ignore')
 
 
 class BertEvaluator(object):
-    def __init__(self, model, processor, args, split='dev'):
+    def __init__(self, model, processor, tokenizer, args, split='dev'):
         self.args = args
         self.model = model
         self.processor = processor
-        self.tokenizer = BertTokenizer.from_pretrained(args.model, is_lowercase=args.is_lowercase)
+        self.tokenizer = tokenizer
+
         if split == 'test':
             self.eval_examples = self.processor.get_test_examples(args.data_dir)
         else:
@@ -66,7 +66,7 @@ class BertEvaluator(object):
             label_ids = label_ids.to(self.args.device)
 
             with torch.no_grad():
-                logits = self.model(input_ids, segment_ids, input_mask)
+                logits = self.model(input_ids, segment_ids, input_mask)[0]
 
             if self.args.is_multilabel:
                 predicted_labels.extend(F.sigmoid(logits).round().long().cpu().detach().numpy())

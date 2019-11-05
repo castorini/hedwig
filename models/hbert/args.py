@@ -21,7 +21,6 @@ def get_args():
     parser.add_argument('--dropblock-size', type=int, default=7)
     parser.add_argument('--beta-ema', type=float, default=0)
     parser.add_argument('--embed-droprate', type=float, default=0.0)
-    parser.add_argument('--batchnorm', action='store_true')
     parser.add_argument('--dynamic-pool', action='store_true')
     parser.add_argument('--dynamic-pool-length', type=int, default=8)
     parser.add_argument('--output-channel', type=int, default=100)
