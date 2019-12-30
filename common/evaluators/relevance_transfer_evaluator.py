@@ -67,7 +67,7 @@ class RelevanceTransferEvaluator(object):
                 label_ids = label_ids.to(self.config['device'])
 
                 with torch.no_grad():
-                    logits = torch.sigmoid(self.model(input_ids, segment_ids, input_mask)[0]).squeeze(dim=1)
+                    logits = torch.sigmoid(self.model(input_ids, input_mask, segment_ids)[0]).squeeze(dim=1)
 
                 # Computing loss and storing predictions
                 self.docid.extend(document_ids.cpu().detach().numpy())

@@ -66,7 +66,7 @@ class BertEvaluator(object):
             label_ids = label_ids.to(self.args.device)
 
             with torch.no_grad():
-                logits = self.model(input_ids, segment_ids, input_mask)[0]
+                logits = self.model(input_ids, input_mask, segment_ids)[0]
 
             if self.args.is_multilabel:
                 predicted_labels.extend(F.sigmoid(logits).round().long().cpu().detach().numpy())

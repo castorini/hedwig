@@ -43,7 +43,7 @@ class RelevanceTransferTrainer(object):
             if self.config['model'] in BERT_MODELS:
                 batch = tuple(t.to(self.config['device']) for t in batch)
                 input_ids, input_mask, segment_ids, label_ids = batch
-                logits = torch.sigmoid(self.model(input_ids, segment_ids, input_mask)[0]).squeeze(dim=1)
+                logits = torch.sigmoid(self.model(input_ids, input_mask, segment_ids)[0]).squeeze(dim=1)
                 loss = F.binary_cross_entropy(logits, label_ids.float())
 
                 if self.config['n_gpu'] > 1:

@@ -115,7 +115,7 @@ if __name__ == '__main__':
             optimizer = FP16_Optimizer(optimizer, static_loss_scale=args.loss_scale)
 
     else:
-        optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr, correct_bias=False)
+        optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr, weight_decay=0.01, correct_bias=False)
         scheduler = WarmupLinearSchedule(optimizer, t_total=num_train_optimization_steps,
                                          warmup_steps=args.warmup_proportion * num_train_optimization_steps)
 

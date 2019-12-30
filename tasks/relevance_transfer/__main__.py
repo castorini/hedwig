@@ -217,7 +217,7 @@ if __name__ == '__main__':
 
             pretrained_vocab_path = PRETRAINED_VOCAB_ARCHIVE_MAP[variant]
             tokenizer = BertTokenizer.from_pretrained(pretrained_vocab_path)
-            optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr, correct_bias=False)
+            optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr, weight_decay=0.01, correct_bias=False)
             scheduler = WarmupLinearSchedule(optimizer, t_total=num_train_optimization_steps,
                                              warmup_steps=args.warmup_proportion * num_train_optimization_steps)
 

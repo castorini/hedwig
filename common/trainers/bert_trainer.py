@@ -42,7 +42,7 @@ class BertTrainer(object):
             self.model.train()
             batch = tuple(t.to(self.args.device) for t in batch)
             input_ids, input_mask, segment_ids, label_ids = batch
-            logits = self.model(input_ids, segment_ids, input_mask)[0]
+            logits = self.model(input_ids, input_mask, segment_ids)[0]
 
             if self.args.is_multilabel:
                 loss = F.binary_cross_entropy_with_logits(logits, label_ids.float())
