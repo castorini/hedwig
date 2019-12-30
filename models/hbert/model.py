@@ -1,22 +1,20 @@
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
 from models.hbert.sentence_encoder import BertSentenceEncoder
 
 
 class HierarchicalBert(nn.Module):
 
-    def __init__(self, args, cache_dir, **kwargs):
+    def __init__(self, args, **kwargs):
         super().__init__()
-        self.args =args
+        self.args = args
         input_channels = 1
         ks = 3
 
         self.sentence_encoder = BertSentenceEncoder.from_pretrained(
-            kwargs['variant'] if 'variant' in kwargs else args.model,
-            cache_dir=cache_dir,
-            num_labels=args.num_labels)
+            args.pretrained_model_path, num_labels=args.num_labels)
 
         self.conv1 = nn.Conv2d(input_channels,
                                args.output_channel,
@@ -52,14 +50,9 @@ class HierarchicalBert(nn.Module):
         x = x.permute(1, 0, 2)  # (batch_size, sentences, hidden_size)
         x = x.unsqueeze(1)  # (batch_size, input_channels, sentences, hidden_size)
 
-        if self.args.batchnorm:
-            x = [F.relu(self.batchnorm1(self.conv1(x))).squeeze(3),
-                 F.relu(self.batchnorm2(self.conv2(x))).squeeze(3),
-                 F.relu(self.batchnorm3(self.conv3(x))).squeeze(3)]
-        else:
-            x = [F.relu(self.conv1(x)).squeeze(3),
-                 F.relu(self.conv2(x)).squeeze(3),
-                 F.relu(self.conv3(x)).squeeze(3)]
+        x = [F.relu(self.conv1(x)).squeeze(3),
+             F.relu(self.conv2(x)).squeeze(3),
+             F.relu(self.conv3(x)).squeeze(3)]
 
         if self.args.dynamic_pool:
             x = [self.dynamic_pool(i).squeeze(2) for i in x]  # (batch_size, output_channels) * ks
@@ -72,4 +65,4 @@ class HierarchicalBert(nn.Module):
         x = self.dropout(x)
         logits = self.fc1(x)  # (batch_size, num_labels)
 
-        return logits
+        return logits, x

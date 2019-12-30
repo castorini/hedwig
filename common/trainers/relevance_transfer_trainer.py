@@ -6,47 +6,44 @@ import torch.nn.functional as F
 from torch.utils.data import TensorDataset, RandomSampler, DataLoader
 from tqdm import trange, tqdm
 
-from common.trainers.trainer import Trainer
+from common.constants import BERT_MODELS
 from datasets.bert_processors.robust45_processor import convert_examples_to_features
 from tasks.relevance_transfer.resample import ImbalancedDatasetSampler
-from utils.preprocessing import pad_input_matrix
-from utils.tokenization import BertTokenizer
 
 
-class RelevanceTransferTrainer(Trainer):
+class RelevanceTransferTrainer(object):
     def __init__(self, model, config, **kwargs):
-        super().__init__(model, kwargs['embedding'], kwargs['train_loader'], config, None, kwargs['test_evaluator'], kwargs['dev_evaluator'])
-
-        if config['model'] in {'BERT-Base', 'BERT-Large', 'HBERT-Base', 'HBERT-Large'}:
-            variant = 'bert-large-uncased' if config['model'] == 'BERT-Large' else 'bert-base-uncased'
-            self.tokenizer = BertTokenizer.from_pretrained(variant, is_lowercase=config['is_lowercase'])
+        if config['model'] in BERT_MODELS:
             self.processor = kwargs['processor']
-            self.optimizer = config['optimizer']
+            self.scheduler = kwargs['scheduler']
+            self.tokenizer = kwargs['tokenizer']
             self.train_examples = self.processor.get_train_examples(config['data_dir'], topic=config['topic'])
-            self.num_train_optimization_steps = int(len(self.train_examples) /
-                                                    config['batch_size'] /
-                                                    config['gradient_accumulation_steps']
-                                                    ) * config['epochs']
+        else:
+            self.train_loader = kwargs['train_loader']
+
+        self.model = model
         self.config = config
         self.early_stop = False
         self.best_dev_ap = 0
         self.iterations = 0
         self.unimproved_iters = 0
+        self.optimizer = kwargs['optimizer']
+        self.dev_evaluator = kwargs['dev_evaluator']
 
         self.log_header = 'Epoch Iteration Progress   Dev/Acc.  Dev/Pr.  Dev/AP.   Dev/F1   Dev/Loss'
         self.log_template = ' '.join('{:>5.0f},{:>9.0f},{:>6.0f}/{:<5.0f} {:>6.4f},{:>8.4f},{:8.4f},{:8.4f},{:10.4f}'.split(','))
 
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        self.snapshot_path = os.path.join(self.model_outfile, config['dataset'].NAME, '%s.pt' % timestamp)
+        self.snapshot_path = os.path.join(config['save_path'], config['dataset'].NAME, '%s.pt' % timestamp)
 
     def train_epoch(self):
         for step, batch in enumerate(tqdm(self.train_loader, desc="Training")):
             self.model.train()
 
-            if self.config['model'] in {'BERT-Base', 'BERT-Large', 'HBERT-Base', 'HBERT-Large'}:
+            if self.config['model'] in BERT_MODELS:
                 batch = tuple(t.to(self.config['device']) for t in batch)
                 input_ids, input_mask, segment_ids, label_ids = batch
-                logits = torch.sigmoid(self.model(input_ids, segment_ids, input_mask)).squeeze(dim=1)
+                logits = torch.sigmoid(self.model(input_ids, input_mask, segment_ids)[0]).squeeze(dim=1)
                 loss = F.binary_cross_entropy(logits, label_ids.float())
 
                 if self.config['n_gpu'] > 1:
@@ -58,6 +55,7 @@ class RelevanceTransferTrainer(Trainer):
 
                 if (step + 1) % self.config['gradient_accumulation_steps'] == 0:
                     self.optimizer.step()
+                    self.scheduler.step()
                     self.optimizer.zero_grad()
                     self.iterations += 1
 
@@ -111,25 +109,16 @@ class RelevanceTransferTrainer(Trainer):
                     self.model.update_ema()
 
     def train(self, epochs):
-        os.makedirs(self.model_outfile, exist_ok=True)
-        os.makedirs(os.path.join(self.model_outfile, self.config['dataset'].NAME), exist_ok=True)
-
-        if self.config['model'] in {'BERT-Base', 'BERT-Large', 'HBERT-Base', 'HBERT-Large'}:
+        if self.config['model'] in BERT_MODELS:
             train_features = convert_examples_to_features(
                 self.train_examples,
                 self.config['max_seq_length'],
-                self.tokenizer,
-                self.config['is_hierarchical']
+                self.tokenizer
             )
 
             unpadded_input_ids = [f.input_ids for f in train_features]
             unpadded_input_mask = [f.input_mask for f in train_features]
             unpadded_segment_ids = [f.segment_ids for f in train_features]
-
-            if self.config['is_hierarchical']:
-                pad_input_matrix(unpadded_input_ids, self.config['max_doc_length'])
-                pad_input_matrix(unpadded_input_mask, self.config['max_doc_length'])
-                pad_input_matrix(unpadded_segment_ids, self.config['max_doc_length'])
 
             padded_input_ids = torch.tensor(unpadded_input_ids, dtype=torch.long)
             padded_input_mask = torch.tensor(unpadded_input_mask, dtype=torch.long)
@@ -157,7 +146,7 @@ class RelevanceTransferTrainer(Trainer):
                     torch.save(self.model, self.snapshot_path)
                 else:
                     self.unimproved_iters += 1
-                    if self.unimproved_iters >= self.patience:
+                    if self.unimproved_iters >= self.config['patience']:
                         self.early_stop = True
                         tqdm.write("Early Stopping. Epoch: {}, Best Dev F1: {}".format(epoch, self.best_dev_ap))
                         t_epochs.close()

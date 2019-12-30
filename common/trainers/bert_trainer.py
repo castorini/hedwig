@@ -4,7 +4,6 @@ import os
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, RandomSampler, TensorDataset
-from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm
 from tqdm import trange
 
@@ -13,25 +12,23 @@ from datasets.bert_processors.abstract_processor import convert_examples_to_feat
 from datasets.bert_processors.abstract_processor import convert_examples_to_hierarchical_features
 from utils.optimization import warmup_linear
 from utils.preprocessing import pad_input_matrix
-from utils.tokenization import BertTokenizer
 
 
 class BertTrainer(object):
-    def __init__(self, model, optimizer, processor, args):
+    def __init__(self, model, optimizer, processor, scheduler, tokenizer, args):
         self.args = args
         self.model = model
         self.optimizer = optimizer
         self.processor = processor
+        self.scheduler = scheduler
+        self.tokenizer = tokenizer
         self.train_examples = self.processor.get_train_examples(args.data_dir)
-        self.tokenizer = BertTokenizer.from_pretrained(args.model, is_lowercase=args.is_lowercase)
 
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.snapshot_path = os.path.join(self.args.save_path, self.processor.NAME, '%s.pt' % timestamp)
 
         self.num_train_optimization_steps = int(
             len(self.train_examples) / args.batch_size / args.gradient_accumulation_steps) * args.epochs
-        if args.local_rank != -1:
-            self.num_train_optimization_steps = args.num_train_optimization_steps // torch.distributed.get_world_size()
 
         self.log_header = 'Epoch Iteration Progress   Dev/Acc.  Dev/Pr.  Dev/Re.   Dev/F1   Dev/Loss'
         self.log_template = ' '.join('{:>5.0f},{:>9.0f},{:>6.0f}/{:<5.0f} {:>6.4f},{:>8.4f},{:8.4f},{:8.4f},{:10.4f}'.split(','))
@@ -45,7 +42,7 @@ class BertTrainer(object):
             self.model.train()
             batch = tuple(t.to(self.args.device) for t in batch)
             input_ids, input_mask, segment_ids, label_ids = batch
-            logits = self.model(input_ids, segment_ids, input_mask)
+            logits = self.model(input_ids, input_mask, segment_ids)[0]
 
             if self.args.is_multilabel:
                 loss = F.binary_cross_entropy_with_logits(logits, label_ids.float())
@@ -70,6 +67,7 @@ class BertTrainer(object):
                     for param_group in self.optimizer.param_groups:
                         param_group['lr'] = lr_this_step
                 self.optimizer.step()
+                self.scheduler.step()
                 self.optimizer.zero_grad()
                 self.iterations += 1
 
@@ -101,16 +99,12 @@ class BertTrainer(object):
 
         train_data = TensorDataset(padded_input_ids, padded_input_mask, padded_segment_ids, label_ids)
 
-        if self.args.local_rank == -1:
-            train_sampler = RandomSampler(train_data)
-        else:
-            train_sampler = DistributedSampler(train_data)
-
+        train_sampler = RandomSampler(train_data)
         train_dataloader = DataLoader(train_data, sampler=train_sampler, batch_size=self.args.batch_size)
 
         for epoch in trange(int(self.args.epochs), desc="Epoch"):
             self.train_epoch(train_dataloader)
-            dev_evaluator = BertEvaluator(self.model, self.processor, self.args, split='dev')
+            dev_evaluator = BertEvaluator(self.model, self.processor, self.tokenizer, self.args, split='dev')
             dev_acc, dev_precision, dev_recall, dev_f1, dev_loss = dev_evaluator.get_scores()[0]
 
             # Print validation results
