@@ -48,15 +48,23 @@ Run the Python interpreter and type the commands:
 
 ## Datasets
 
-Download the Reuters, AAPD and IMDB datasets, along with word2vec embeddings from 
-[`hedwig-data`](https://git.uwaterloo.ca/jimmylin/hedwig-data).
+There are two ways to download the Reuters, AAPD, and IMDB datasets, along with word2vec embeddings:
+
+Option 1. Our [Wasabi](https://wasabi.com/)-hosted mirror:
+
+```bash
+$ wget http://nlp.rocks/hedwig -O hedwig-data.zip
+$ unzip hedwig-data.zip
+```
+
+Option 2. Our school-hosted repository, [`hedwig-data`](https://git.uwaterloo.ca/jimmylin/hedwig-data):
 
 ```bash
 $ git clone https://github.com/castorini/hedwig.git
 $ git clone https://git.uwaterloo.ca/jimmylin/hedwig-data.git
 ```
 
-Organize your directory structure as follows:
+Next, organize your directory structure as follows:
 
 ```
 .
