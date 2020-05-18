@@ -6,7 +6,7 @@ from datasets.bow_processors.abstract_processor import BagOfWordsProcessor, Inpu
 class ReutersProcessor(BagOfWordsProcessor):
     NAME = 'Reuters'
     NUM_CLASSES = 90
-    VOCAB_SIZE = 36308
+    VOCAB_SIZE = 36311
     IS_MULTILABEL = True
 
     def get_train_examples(self, data_dir):
