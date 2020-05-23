@@ -71,9 +71,8 @@ if __name__ == '__main__':
 
     args.is_hierarchical = False
     processor = dataset_map[args.dataset]()
-    if not args.hf_checkpoint:
-        pretrained_vocab_path = PRETRAINED_VOCAB_ARCHIVE_MAP[args.model]
-    tokenizer = BertTokenizer.from_pretrained(args.model)
+    pretrained_vocab_path = PRETRAINED_VOCAB_ARCHIVE_MAP[args.model]
+    tokenizer = BertTokenizer.from_pretrained(pretrained_vocab_path)
 
     train_examples = None
     num_train_optimization_steps = None
@@ -82,7 +81,7 @@ if __name__ == '__main__':
         num_train_optimization_steps = int(
             len(train_examples) / args.batch_size / args.gradient_accumulation_steps) * args.epochs
 
-    pretrained_model_path = args.model if os.path.isfile(args.model) or args.hf_checkpoint else PRETRAINED_MODEL_ARCHIVE_MAP[args.model]
+    pretrained_model_path = args.model if os.path.isfile(args.model) else PRETRAINED_MODEL_ARCHIVE_MAP[args.model]
     model = BertForSequenceClassification.from_pretrained(pretrained_model_path, num_labels=args.num_labels)
 
     if args.fp16:
@@ -138,4 +137,3 @@ if __name__ == '__main__':
 
     evaluate_split(model, processor, tokenizer, args, split='dev')
     evaluate_split(model, processor, tokenizer, args, split='test')
-
