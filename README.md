@@ -76,8 +76,7 @@ After cloning the hedwig-data repo, you need to unzip the embeddings and run the
 
 ```bash
 cd hedwig-data/embeddings/word2vec 
-gzip -d GoogleNews-vectors-negative300.bin.gz 
-python bin2txt.py GoogleNews-vectors-negative300.bin GoogleNews-vectors-negative300.txt 
+tar -xvzf GoogleNews-vectors-negative300.tgz
 ```
 
 **If you are an internal Hedwig contributor using the machines in the lab, follow the instructions [here](docs/internal-instructions.md).**
