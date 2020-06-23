@@ -98,30 +98,28 @@ if __name__ == '__main__':
         {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)], 'weight_decay': 0.01},
         {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}]
 
-    if args.fp16:
-        try:
-            from apex.optimizers import FP16_Optimizer
-            from apex.optimizers import FusedAdam
-        except ImportError:
-            raise ImportError("Please install NVIDIA Apex for FP16 training")
-
-        optimizer = FusedAdam(optimizer_grouped_parameters,
-                              lr=args.lr,
-                              bias_correction=False,
-                              max_grad_norm=1.0)
-        if args.loss_scale == 0:
-            optimizer = FP16_Optimizer(optimizer, dynamic_loss_scale=True)
-        else:
-            optimizer = FP16_Optimizer(optimizer, static_loss_scale=args.loss_scale)
-
-    else:
-        optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr, weight_decay=0.01, correct_bias=False)
-        scheduler = WarmupLinearSchedule(optimizer, t_total=num_train_optimization_steps,
-                                         warmup_steps=args.warmup_proportion * num_train_optimization_steps)
-
-    trainer = BertTrainer(model, optimizer, processor, scheduler, tokenizer, args)
-
     if not args.trained_model:
+        if args.fp16:
+            try:
+                from apex.optimizers import FP16_Optimizer
+                from apex.optimizers import FusedAdam
+            except ImportError:
+                raise ImportError("Please install NVIDIA Apex for FP16 training")
+
+            optimizer = FusedAdam(optimizer_grouped_parameters,
+                                  lr=args.lr,
+                                  bias_correction=False,
+                                  max_grad_norm=1.0)
+            if args.loss_scale == 0:
+                optimizer = FP16_Optimizer(optimizer, dynamic_loss_scale=True)
+            else:
+                optimizer = FP16_Optimizer(optimizer, static_loss_scale=args.loss_scale)
+        else:
+            optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr, weight_decay=0.01, correct_bias=False)
+            scheduler = WarmupLinearSchedule(optimizer, t_total=num_train_optimization_steps,
+                                             warmup_steps=args.warmup_proportion * num_train_optimization_steps)
+
+        trainer = BertTrainer(model, optimizer, processor, scheduler, tokenizer, args)
         trainer.train()
         model = torch.load(trainer.snapshot_path)
 
