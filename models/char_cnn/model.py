@@ -11,16 +11,16 @@ class CharCNN(nn.Module):
         self.is_cuda_enabled = config.cuda
 
         num_conv_filters = config.num_conv_filters
-        output_channel = config.output_channel
+        output_channel = config.output_channel #this parameter is not used anymore for conv6
         num_affine_neurons = config.num_affine_neurons
         target_class = config.target_class
-        #added paremeters in the config
-        input_channel = config.number_of_characters #number of characters
+        # added paremeters in the config
+        input_channel = config.number_of_characters  # number of characters
         first_kernel_size = config.first_kernel
         second_kernel_size = config.second_kernel
         pool_size = config.pool_size
-        # we can add these parameters in the config
-        max_sentence_length = config.max_sentence_length #maximum number of characters per sentence
+
+        max_sentence_length = config.max_sentence_length  # maximum number of characters per sentence
 
         self.conv1 = nn.Conv1d(input_channel, num_conv_filters, kernel_size=first_kernel_size)
         self.conv2 = nn.Conv1d(num_conv_filters, num_conv_filters, kernel_size=first_kernel_size)
@@ -33,6 +33,7 @@ class CharCNN(nn.Module):
         temp = first_kernel_size - 1 + pool_size * (first_kernel_size - 1) + (
                 pool_size ** 2 * 4 * (second_kernel_size - 1))
         linear_size_temp = int((max_sentence_length - temp) / (pool_size ** 3)) * num_conv_filters
+
         self.dropout = nn.Dropout(config.dropout)
         self.fc1 = nn.Linear(linear_size_temp, num_affine_neurons)
         self.fc2 = nn.Linear(num_affine_neurons, num_affine_neurons)
