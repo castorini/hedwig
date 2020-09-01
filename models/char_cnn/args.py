@@ -14,6 +14,14 @@ def get_args():
     parser.add_argument('--epoch-decay', type=int, default=15)
     parser.add_argument('--weight-decay', type=float, default=0)
 
+    parser.add_argument('--number_of_characters', type=float, default=68)
+    parser.add_argument('--first_kernel', type=int, default=7)
+    parser.add_argument('--second_kernel', type=int, default=3)
+    parser.add_argument('--pool_size', type=int, default=3)
+    parser.add_argument('--max_sentence_length', type=int, default=1000)
+
+
+
     parser.add_argument('--word-vectors-dir', default=os.path.join(os.pardir, 'hedwig-data', 'embeddings', 'word2vec'))
     parser.add_argument('--word-vectors-file', default='GoogleNews-vectors-negative300.txt')
     parser.add_argument('--save-path', type=str, default=os.path.join('model_checkpoints', 'char_cnn'))
