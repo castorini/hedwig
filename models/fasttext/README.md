@@ -19,7 +19,7 @@ models/fasttext/saves/Reuters/best_model.pt
 To test the model, you can use the following command.
 
 ```
-python -m models.char_cnn --dataset Reuters --batch_size 32 --trained-model modelsfasttext/saves/Reuters/best_model.pt --seed 3435
+python -m models.fasttext --dataset Reuters --batch_size 32 --trained-model models/fasttext/saves/Reuters/best_model.pt --seed 3435
 ```
 
 ## Settings
