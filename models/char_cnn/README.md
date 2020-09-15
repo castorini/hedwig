@@ -28,6 +28,7 @@ We experiment the model on the following datasets.
 - Reuters (ModApte)
 - AAPD
 
+**It should be noted** that if version that follows the implementation of the [Char-CNN (2015)](http://papers.nips.cc/paper/5782-character-level-convolutional-networks-for-text-classification.pdf) produces an dev F1 of 0 on Reuters
 ## Settings
 
 Adam is used for training.

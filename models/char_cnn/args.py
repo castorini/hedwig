@@ -20,6 +20,8 @@ def get_args():
     parser.add_argument('--pool_size', type=int, default=3)
     parser.add_argument('--max_sentence_length', type=int, default=1000)
 
+    parser.add_argument('--using_fixed', type=bool, default=False)
+
 
 
     parser.add_argument('--word-vectors-dir', default=os.path.join(os.pardir, 'hedwig-data', 'embeddings', 'word2vec'))
