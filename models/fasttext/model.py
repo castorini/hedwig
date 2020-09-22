@@ -35,10 +35,6 @@ class FastText(nn.Module):
             x = self.static_embed(x)  # (batch, sent_len, embed_dim)
         elif self.mode == 'non-static':
             x = self.non_static_embed(x)  # (batch, sent_len, embed_dim)
-
-        x = F.avg_pool2d(x, (x.shape[1], 1)).squeeze(1)  # (batch, embed_dim)
-
+        x = F.avg_pool1d(x.transpose(1, 2), x.shape[1]).squeeze(2)  # (batch, embed_dim)
         logit = self.fc1(x)  # (batch, target_size)
         return logit
-
-
