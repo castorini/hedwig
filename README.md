@@ -50,10 +50,10 @@ Run the Python interpreter and type the commands:
 
 There are two ways to download the Reuters, AAPD, and IMDB datasets, along with word2vec embeddings:
 
-Option 1. Our [Wasabi](https://wasabi.com/)-hosted mirror:
+Option 1. Our [Digital Ocean](https://digitalocean.com/)-hosted mirror:
 
 ```bash
-$ wget http://nlp.rocks/hedwig -O hedwig-data.zip
+$ wget https://nlp.nyc3.digitaloceanspaces.com/hedwig-data.zip -O hedwig-data.zip
 $ unzip hedwig-data.zip
 ```
 
