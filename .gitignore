@@ -12,4 +12,5 @@ text/
 kim_cnn/data
 .results
 .qrel
+.ag_news
 *.onnx
