@@ -6,7 +6,7 @@ if __name__ == "__main__":
     if not os.path.exists(".ag_news"):
         os.mkdir(".ag_news")
 
-    # train_iter, test_iter = AG_NEWS(root=".ag_news")
+    train_iter, test_iter = AG_NEWS(root=".ag_news")
 
     for filename in ("test.csv", "train.csv"):
         with open(f".ag_news/ag_news_csv/{filename}", "r") as f_in:
