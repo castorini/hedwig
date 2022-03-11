@@ -11,7 +11,7 @@ def get_args():
     parser.add_argument('--num-layers', type=int, default=2)
     parser.add_argument('--hidden-dim', type=int, default=256)
     parser.add_argument('--mode', type=str, default='static', choices=['rand', 'static', 'non-static'])
-    parser.add_argument('--dataset', type=str, default='Reuters', choices=['Reuters', 'AAPD', 'IMDB', 'Yelp2014'])
+    parser.add_argument('--dataset', type=str, default='Reuters', choices=['Reuters', 'AAPD', 'IMDB', 'Yelp2014', 'AG_NEWS'])
     parser.add_argument('--words-dim', type=int, default=300)
     parser.add_argument('--embed-dim', type=int, default=300)
     parser.add_argument('--epoch-decay', type=int, default=15)
