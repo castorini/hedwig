@@ -89,21 +89,22 @@ class ClassificationTrainer(Trainer):
             self.train_epoch(epoch)
 
             # Evaluate performance on validation set
-            dev_acc, dev_precision, dev_recall, dev_f1, dev_loss = self.dev_evaluator.get_scores()[0]
+            if self.dev_evaluator:
+                dev_acc, dev_precision, dev_recall, dev_f1, dev_loss = self.dev_evaluator.get_scores()[0]
 
-            # Print validation results
-            print('\n' + dev_header)
-            print(self.dev_log_template.format(time.time() - self.start, epoch, self.iterations, epoch, epochs,
-                                               dev_acc, dev_precision, dev_recall, dev_f1, dev_loss))
+                # Print validation results
+                print('\n' + dev_header)
+                print(self.dev_log_template.format(time.time() - self.start, epoch, self.iterations, epoch, epochs,
+                                                   dev_acc, dev_precision, dev_recall, dev_f1, dev_loss))
 
-            # Update validation results
-            if dev_f1 > self.best_dev_f1:
-                self.iters_not_improved = 0
-                self.best_dev_f1 = dev_f1
-                torch.save(self.model, self.snapshot_path)
-            else:
-                self.iters_not_improved += 1
-                if self.iters_not_improved >= self.patience:
-                    self.early_stop = True
-                    print("Early Stopping. Epoch: {}, Best Dev F1: {}".format(epoch, self.best_dev_f1))
-                    break
+                # Update validation results
+                if dev_f1 > self.best_dev_f1:
+                    self.iters_not_improved = 0
+                    self.best_dev_f1 = dev_f1
+                    torch.save(self.model, self.snapshot_path)
+                else:
+                    self.iters_not_improved += 1
+                    if self.iters_not_improved >= self.patience:
+                        self.early_stop = True
+                        print("Early Stopping. Epoch: {}, Best Dev F1: {}".format(epoch, self.best_dev_f1))
+                        break

@@ -99,7 +99,7 @@ if __name__ == '__main__':
         # Some datasets (e.g. AG_NEWS) only have train and test splits
         if len(iters) == 2:
             train_iter, test_iter = iters
-            dev_iter = None
+            dev_iter = test_iter
         else:
             train_iter, dev_iter, test_iter = iters
 
@@ -156,22 +156,23 @@ if __name__ == '__main__':
 
     if not args.trained_model:
         trainer.train(args.epochs)
+        model = torch.load(trainer.snapshot_path)
     else:
         if args.cuda:
             model = torch.load(args.trained_model, map_location=lambda storage, location: storage.cuda(args.gpu))
         else:
             model = torch.load(args.trained_model, map_location=lambda storage, location: storage)
 
-    model = torch.load(trainer.snapshot_path)
-
     if model.beta_ema > 0:
         old_params = model.get_params()
         model.load_ema_params()
 
     # Calculate dev and test metrics
-    evaluate_dataset('dev', dataset_class, model, None, dev_iter, args.batch_size,
-                     is_multilabel=dataset_class.IS_MULTILABEL,
-                     device=args.gpu)
+    if dev_iter:
+        evaluate_dataset('dev', dataset_class, model, None, dev_iter, args.batch_size,
+                         is_multilabel=dataset_class.IS_MULTILABEL,
+                         device=args.gpu)
+
     evaluate_dataset('test', dataset_class, model, None, test_iter, args.batch_size,
                      is_multilabel=dataset_class.IS_MULTILABEL,
                      device=args.gpu)
