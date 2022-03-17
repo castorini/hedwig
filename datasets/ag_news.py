@@ -7,7 +7,7 @@ from torchtext.data import Field, TabularDataset
 from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
 
-from datasets.reuters import clean_string, process_labels
+from datasets.reuters import clean_string
 
 csv.field_size_limit(sys.maxsize)
 
@@ -18,7 +18,15 @@ class AGNews(TabularDataset):
     IS_MULTILABEL = False
 
     TEXT_FIELD = Field(batch_first=True, tokenize=clean_string, include_lengths=True)
-    LABEL_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=process_labels)
+    LABEL_FIELD = Field(sequential=False, use_vocab=False, batch_first=True,
+                        preprocessing=lambda s: AGNews.process_labels(s))
+
+    @classmethod
+    def process_labels(cls, label_str):
+        label_num = int(label_str)  # label is one of "1", "2", "3", "4"
+        label = [0.0] * cls.NUM_CLASSES
+        label[label_num - 1] = 1.0
+        return label
 
     @staticmethod
     def sort_key(ex):
