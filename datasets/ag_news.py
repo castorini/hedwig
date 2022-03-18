@@ -33,8 +33,8 @@ class AGNews(TabularDataset):
         return len(ex.text)
 
     @classmethod
-    def splits(cls, path, train=os.path.join('.ag_news', 'train.csv'),
-               test=os.path.join('.ag_news', 'test.csv'), **kwargs):
+    def splits(cls, path, train=os.path.join('.local_data', 'AG_NEWS', 'train.csv'),
+               test=os.path.join('.local_data', 'AG_NEWS', 'test.csv'), **kwargs):
         return super(AGNews, cls).splits(
             path, train=train, test=test, format='csv', fields=[('label', cls.LABEL_FIELD), ('text', cls.TEXT_FIELD)]
         )
