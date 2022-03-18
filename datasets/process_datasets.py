@@ -1,25 +1,39 @@
-import os
 import csv
+import os
+import sys
 
 PATH_ROOT = ".local_data"
 
+csv.field_size_limit(sys.maxsize)
 
-def process_ag_news():
+
+def concat_text(old_dir_prefix, new_dir_prefix):
+    """Concatenates all non-label entries in each dataset row and saves new csv file"""
     for filename in ("test.csv", "train.csv"):
-        path_prefix = os.path.join(PATH_ROOT, "AG_NEWS")
-        split_path_new = os.path.join(path_prefix, filename)
-        split_path_old = os.path.join(path_prefix, f"temp_{filename}")
-        os.rename(split_path_new, split_path_old)
-        with open(split_path_old, "r") as f_in:
+        split_path_old = os.path.join(old_dir_prefix, filename)
+        split_path_temp = os.path.join(old_dir_prefix, f"temp_{filename}")
+        split_path_new = os.path.join(new_dir_prefix, filename)
+
+        os.rename(split_path_old, split_path_temp)
+        with open(split_path_temp, "r") as f_in:
             reader = csv.reader(f_in)
             with open(split_path_new, "w+") as f_out:
                 writer = csv.writer(f_out)
                 for row in reader:
                     # concatenate title and description rows
-                    new_row = [row[0], " ".join([row[1], row[2]])]
+                    new_row = [row[0], " ".join(row[1:])]
                     writer.writerow(new_row)
 
-        os.remove(split_path_old)
+
+def process_ag_news():
+    path_prefix = os.path.join(PATH_ROOT, "AG_NEWS")
+    concat_text(path_prefix, path_prefix)
+
+
+def process_dbpedia():
+    path_prefix = os.path.join(PATH_ROOT, "DBpedia", "dbpedia_csv")
+    new_path_prefix = os.path.join(PATH_ROOT, "DBpedia")
+    concat_text(path_prefix, new_path_prefix)
 
 
 def process_imdb():
@@ -37,6 +51,28 @@ def process_imdb():
                 f_out.write(f"10,{line}")
 
 
+def process_sogou_news():
+    path_prefix = os.path.join(PATH_ROOT, "SogouNews", "sogou_news_csv")
+    new_path_prefix = os.path.join(PATH_ROOT, "SogouNews")
+    concat_text(path_prefix, new_path_prefix)
+
+
+def process_yahoo_answers():
+    path_prefix = os.path.join(PATH_ROOT, "YahooAnswers", "yahoo_answers_csv")
+    new_path_prefix = os.path.join(PATH_ROOT, "YahooAnswers")
+    concat_text(path_prefix, new_path_prefix)
+
+
+def process_yelp_review_polarity():
+    path_prefix = os.path.join(PATH_ROOT, "YelpReviewPolarity", "yelp_review_polarity_csv")
+    new_path_prefix = os.path.join(PATH_ROOT, "YelpReviewPolarity")
+    concat_text(path_prefix, new_path_prefix)
+
+
 if __name__ == "__main__":
     process_ag_news()
-    # process_imdb()
+    process_imdb()
+    process_dbpedia()
+    process_sogou_news()
+    process_yahoo_answers()
+    process_yelp_review_polarity()
