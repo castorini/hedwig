@@ -3,16 +3,16 @@ import csv
 from torchtext.datasets import AG_NEWS
 
 if __name__ == "__main__":
-    if not os.path.exists(".ag_news"):
-        os.mkdir(".ag_news")
+    path_root = ".local_data/ag_news"
+    if not os.path.exists(path_root):
+        os.mkdir(path_root)
 
-    train_iter, test_iter = AG_NEWS(root=".ag_news")
+    train_iter, test_iter = AG_NEWS(root=path_root)
 
     for filename in ("test.csv", "train.csv"):
-        with open(f".ag_news/ag_news_csv/{filename}", "r") as f_in:
+        with open(f"{path_root}/ag_news_csv/{filename}", "r") as f_in:
             reader = csv.reader(f_in)
-            outfile = f".ag_news/{filename}"
-            with open(f".ag_news/{filename}", "w") as f_out:
+            with open(f"{path_root}/{filename}", "w") as f_out:
                 writer = csv.writer(f_out)
                 for row in reader:
                     # concatenate title and description rows

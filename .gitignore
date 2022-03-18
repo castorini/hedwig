@@ -12,5 +12,6 @@ text/
 kim_cnn/data
 .results
 .qrel
-.ag_news
+.local_data/*
+!.local_data/.gitkeep
 *.onnx
