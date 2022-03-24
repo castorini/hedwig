@@ -13,6 +13,11 @@ from datasets.imdb import IMDB
 from datasets.reuters import Reuters
 from datasets.yelp2014 import Yelp2014
 from datasets.ag_news import AGNews
+from datasets.dbpedia import DBpedia
+from datasets.imdb_torchtext import IMDBTorchtext
+from datasets.sogou_news import SogouNews
+from datasets.yahoo_answers import YahooAnswers
+from datasets.yelp_review_polarity import YelpReviewPolarity
 from models.reg_lstm.args import get_args
 from models.reg_lstm.model import RegLSTM
 
@@ -81,7 +86,12 @@ if __name__ == '__main__':
         'AAPD': AAPD,
         'IMDB': IMDB,
         'Yelp2014': Yelp2014,
-        'AG_NEWS': AGNews
+        'AG_NEWS': AGNews,
+        'DBpedia': DBpedia,
+        'IMDB_torchtext': IMDBTorchtext,
+        'SogouNews': SogouNews,
+        'YahooAnswers': YahooAnswers,
+        'YelpReviewPolarity': YelpReviewPolarity,
     }
 
     if args.dataset not in dataset_map:

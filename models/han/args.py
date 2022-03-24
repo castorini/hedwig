@@ -7,7 +7,9 @@ def get_args():
     parser = models.args.get_args()
 
     parser.add_argument('--mode', type=str, default='static', choices=['rand', 'static', 'non-static'])
-    parser.add_argument('--dataset', type=str, default='Reuters', choices=['Reuters', 'AAPD', 'IMDB', 'Yelp2014'])
+    parser.add_argument('--dataset', type=str, default='Reuters',
+                        choices=['Reuters', 'AAPD', 'IMDB', 'Yelp2014', 'AG_NEWS', 'DBpedia', 'IMDB_torchtext',
+                                 'SogouNews', 'YahooAnswers', 'YelpReviewPolarity'])
     parser.add_argument('--output-channel', type=int, default=100)
     parser.add_argument('--words-dim', type=int, default=300)
     parser.add_argument('--embed-dim', type=int, default=300)

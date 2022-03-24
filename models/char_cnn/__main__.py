@@ -12,6 +12,12 @@ from datasets.aapd import AAPDCharQuantized as AAPD
 from datasets.imdb import IMDBCharQuantized as IMDB
 from datasets.reuters import ReutersCharQuantized as Reuters
 from datasets.yelp2014 import Yelp2014CharQuantized as Yelp2014
+from datasets.ag_news import AGNews
+from datasets.dbpedia import DBpedia
+from datasets.imdb_torchtext import IMDBTorchtext
+from datasets.sogou_news import SogouNews
+from datasets.yahoo_answers import YahooAnswers
+from datasets.yelp_review_polarity import YelpReviewPolarity
 from models.char_cnn.args import get_args
 from models.char_cnn.model import CharCNN
 
@@ -81,7 +87,13 @@ if __name__ == '__main__':
         'Reuters': Reuters,
         'AAPD': AAPD,
         'IMDB': IMDB,
-        'Yelp2014': Yelp2014
+        'Yelp2014': Yelp2014,
+        'AG_NEWS': AGNews,
+        'DBpedia': DBpedia,
+        'IMDB_torchtext': IMDBTorchtext,
+        'SogouNews': SogouNews,
+        'YahooAnswers': YahooAnswers,
+        'YelpReviewPolarity': YelpReviewPolarity,
     }
 
     if args.dataset not in dataset_map:
