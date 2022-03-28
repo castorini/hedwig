@@ -1,15 +1,32 @@
 import os
 import sys
 import csv
+import re
 
 import torch
 from torchtext.data import Field, TabularDataset
 from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
 
-from datasets.reuters import clean_string
-
 csv.field_size_limit(sys.maxsize)
+
+
+def clean_string(string):
+    """
+    Performs tokenization and string cleaning for the AG_NEWS dataset
+    """
+    # " #39;" is apostrophe
+    string = re.sub(r" #39;", "'", string)
+    # " #145;" and " #146;" are left and right single quotes
+    string = re.sub(r" #14[56];", "'", string)
+    # " #147;" and " #148;" are left and right double quotes
+    string = re.sub(r" #14[78];", "\"\"", string)
+    # " &lt;" and " &gt;" are < and >
+    string = re.sub(r" &lt;", "<", string)
+    string = re.sub(r" &gt;", ">", string)
+    string = re.sub(r"[^A-Za-z0-9(),!?\'`]", " ", string)
+    string = re.sub(r"\s{2,}", " ", string)
+    return string.lower().strip().split()
 
 
 def process_labels(label_str, num_classes):

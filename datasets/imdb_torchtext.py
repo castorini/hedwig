@@ -1,11 +1,22 @@
 import os
+import re
 
 import torch
 from torchtext.data import Field, TabularDataset
 from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
 
-from datasets.reuters import clean_string, process_labels
+from datasets.reuters import process_labels
+
+
+def clean_string(string):
+    """
+    Performs tokenization and string cleaning for the IMDB dataset
+    """
+    string = re.sub(r"<br />", " ", string)
+    string = re.sub(r"[^A-Za-z0-9(),!?\'`]", " ", string)
+    string = re.sub(r"\s{2,}", " ", string)
+    return string.lower().strip().split()
 
 
 class IMDBTorchtext(TabularDataset):
