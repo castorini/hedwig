@@ -12,4 +12,6 @@ text/
 kim_cnn/data
 .results
 .qrel
+.local_data/*
+!.local_data/.gitkeep
 *.onnx
