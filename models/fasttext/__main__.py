@@ -12,6 +12,10 @@ from datasets.aapd import AAPD
 from datasets.imdb import IMDB
 from datasets.reuters import ReutersBOW
 from datasets.twenty_news import TwentyNews
+from datasets.ohsumed import OHSUMED
+from datasets.r8 import R8
+from datasets.r52 import R52
+from datasets.trec6 import TREC6
 from datasets.yelp2014 import Yelp2014
 from models.fasttext.args import get_args
 from models.fasttext.model import FastText
@@ -77,6 +81,10 @@ if __name__ == '__main__':
         'YahooAnswers': YahooAnswers,
         'YelpReviewPolarity': YelpReviewPolarity,
         'TwentyNews': TwentyNews,
+        'OHSUMED': OHSUMED,
+        'R8': R8,
+        'R52': R52,
+        'TREC6': TREC6
     }
 
     if args.dataset not in dataset_map:
