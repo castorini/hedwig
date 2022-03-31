@@ -66,10 +66,16 @@ if __name__ == '__main__':
         print('Warning: Using CPU for training')
 
     dataset_map = {
-        'Reuters': ReutersBOW,
+        'Reuters': Reuters,
         'AAPD': AAPD,
         'IMDB': IMDB,
         'Yelp2014': Yelp2014,
+        'AG_NEWS': AGNews,
+        'DBpedia': DBpedia,
+        'IMDB_torchtext': IMDBTorchtext,
+        'SogouNews': SogouNews,
+        'YahooAnswers': YahooAnswers,
+        'YelpReviewPolarity': YelpReviewPolarity,
         'TwentyNews': TwentyNews,
     }
 

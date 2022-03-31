@@ -6,7 +6,8 @@ import models.args
 def get_args():
     parser = models.args.get_args()
 
-    parser.add_argument('--dataset', type=str, default='Reuters', choices=['Reuters', 'AAPD', 'IMDB', 'Yelp2014', 'TwentyNews'])
+    parser.add_argument('--dataset', type=str, default='Reuters', choices=['Reuters', 'AAPD', 'IMDB', 'Yelp2014', 'AG_NEWS', 'DBpedia', 'IMDB_torchtext', 'SogouNews', 'YahooAnswers', 'YelpReviewPolarity', 'TwentyNews'])
+    
     parser.add_argument('--mode', type=str, default='rand', choices=['rand', 'static', 'non-static'])
     parser.add_argument('--words-dim', type=int, default=300)
     parser.add_argument('--dropout', type=float, default=0.5)

@@ -12,27 +12,27 @@ csv.field_size_limit(sys.maxsize)
 
 
 def process_labels(label_str, num_classes):
-    label_num = int(label_str)  # label is one of "1", "2", "3", "4"
+    label_num = int(label_str)  # label is one of "1", "2", "3", F"4"
     label = [0.0] * num_classes
     label[label_num] = 1.0
     return label
 
-class TwentyNews(TabularDataset):
-    NAME = 'TwentyNews'
-    NUM_CLASSES = 20
+class OHSUMED(TabularDataset):
+    NAME = 'OHSUMED'
+    NUM_CLASSES = 23
     IS_MULTILABEL = False
 
     TEXT_FIELD = Field(batch_first=True, tokenize=clean_string, include_lengths=True)
-    LABEL_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=lambda s: process_labels(s, TwentyNews.NUM_CLASSES))
+    LABEL_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=lambda s: process_labels(s, OHSUMED.NUM_CLASSES))
 
     @staticmethod
     def sort_key(ex):
         return len(ex.text)
 
     @classmethod
-    def splits(cls, path, train=os.path.join('.local_data', 'TwentyNews', 'train.csv'),
-               test=os.path.join('.local_data', 'TwentyNews', 'test.csv'), **kwargs):
-        return super(TwentyNews, cls).splits(
+    def splits(cls, path, train=os.path.join('.local_data', 'OHSUMED', 'train.csv'),
+               test=os.path.join('.local_data', 'OHSUMED', 'test.csv'), **kwargs):
+        return super(OHSUMED, cls).splits(
             path, train=train, test=test, format='csv', fields=[('label', cls.LABEL_FIELD), ('text', cls.TEXT_FIELD)]
         )
 
