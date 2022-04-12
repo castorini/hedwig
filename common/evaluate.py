@@ -17,6 +17,10 @@ class EvaluatorFactory(object):
         'YahooAnswers': ClassificationEvaluator,
         'YelpReviewPolarity': ClassificationEvaluator,
         'Yelp2014': ClassificationEvaluator,
+        'TwentyNews': ClassificationEvaluator,
+        'R8': ClassificationEvaluator,
+        'R52': ClassificationEvaluator,
+        'OHSUMED': ClassificationEvaluator,
         'Robust04': RelevanceTransferEvaluator,
         'Robust05': RelevanceTransferEvaluator,
         'Robust45': RelevanceTransferEvaluator

@@ -6,9 +6,11 @@ import models.args
 def get_args():
     parser = models.args.get_args()
 
-    parser.add_argument('--dataset', type=str, default='Reuters',
-                        choices=['Reuters', 'AAPD', 'IMDB', 'Yelp2014', 'AG_NEWS', 'DBpedia', 'IMDB_torchtext',
-                                 'SogouNews', 'YahooAnswers', 'YelpReviewPolarity'])
+    parser.add_argument('--dataset', type=str, default='Reuters', choices=[
+                            'Reuters', 'AAPD', 'IMDB', 'Yelp2014', 'AG_NEWS', 'DBpedia',
+                            'IMDB_torchtext', 'SogouNews', 'YahooAnswers', 'YelpReviewPolarity',
+                            'TwentyNews', 'OHSUMED', 'R8', 'R52', 'TREC6'
+                        ])
     parser.add_argument('--num-conv-filters', type=int, default=256)
     parser.add_argument('--num-affine-neurons', type=int, default=1024)
     parser.add_argument('--output-channel', type=int, default=256)

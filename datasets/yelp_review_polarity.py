@@ -6,7 +6,6 @@ from torchtext.data import Field, TabularDataset
 from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
 
-from datasets.reuters import process_labels
 from datasets.ag_news import process_labels
 
 
