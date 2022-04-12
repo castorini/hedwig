@@ -31,16 +31,17 @@ class CharCNN(nn.Module):
 
     def forward(self, x, **kwargs):
         if torch.cuda.is_available() and self.is_cuda_enabled:
-            # x = x.transpose(1, 2).type(torch.cuda.FloatTensor)
             print("input to forward is: ", x, file=sys.stderr)
-            x = torch.Tensor(
-                x
-            ).transpose(
-                1, 2
-            ).type(torch.cuda.FloatTensor)
+            x = x.transpose(1, 2).type(torch.cuda.FloatTensor)
+            # x = torch.Tensor(
+            #     x
+            # ).transpose(
+            #     1, 2
+            # ).type(torch.cuda.FloatTensor)
         else:
-            # x = x.transpose(1, 2).type(torch.FloatTensor)
-            x = torch.Tensor(x).transpose(1, 2).type(torch.FloatTensor)
+            print("input to forward is: ", x, file=sys.stderr)
+            x = x.transpose(1, 2).type(torch.FloatTensor)
+            # x = torch.Tensor(x).transpose(1, 2).type(torch.FloatTensor)
 
         x = F.max_pool1d(F.relu(self.conv1(x)), 3)
         x = F.max_pool1d(F.relu(self.conv2(x)), 3)
