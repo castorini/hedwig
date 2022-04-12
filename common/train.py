@@ -20,6 +20,7 @@ class TrainerFactory(object):
         'R8': ClassificationTrainer,
         'R52': ClassificationTrainer,
         'OHSUMED': ClassificationTrainer,
+        'TREC6': ClassificationTrainer,
         'Yelp2014': ClassificationTrainer,
         'Robust04': RelevanceTransferTrainer,
         'Robust05': RelevanceTransferTrainer,

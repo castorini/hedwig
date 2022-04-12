@@ -21,6 +21,7 @@ class EvaluatorFactory(object):
         'R8': ClassificationEvaluator,
         'R52': ClassificationEvaluator,
         'OHSUMED': ClassificationEvaluator,
+        'TREC6': ClassificationEvaluator,
         'Robust04': RelevanceTransferEvaluator,
         'Robust05': RelevanceTransferEvaluator,
         'Robust45': RelevanceTransferEvaluator
