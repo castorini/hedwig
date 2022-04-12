@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import sys
 
 import torch.nn.functional as F
 
@@ -31,7 +32,12 @@ class CharCNN(nn.Module):
     def forward(self, x, **kwargs):
         if torch.cuda.is_available() and self.is_cuda_enabled:
             # x = x.transpose(1, 2).type(torch.cuda.FloatTensor)
-            x = torch.Tensor(x).transpose(1, 2).type(torch.cuda.FloatTensor)
+            print("input to forward is: ", x, file=sys.stderr)
+            x = torch.Tensor(
+                x
+            ).transpose(
+                1, 2
+            ).type(torch.cuda.FloatTensor)
         else:
             # x = x.transpose(1, 2).type(torch.FloatTensor)
             x = torch.Tensor(x).transpose(1, 2).type(torch.FloatTensor)
