@@ -31,7 +31,7 @@ class CharCNN(nn.Module):
 
     def forward(self, x, **kwargs):
         if torch.cuda.is_available() and self.is_cuda_enabled:
-            print("input to forward is: ", x, file=sys.stderr)
+            # print("input to forward is: ", x, file=sys.stderr)
             x = x.transpose(1, 2).type(torch.cuda.FloatTensor)
             # x = torch.Tensor(
             #     x
@@ -39,7 +39,7 @@ class CharCNN(nn.Module):
             #     1, 2
             # ).type(torch.cuda.FloatTensor)
         else:
-            print("input to forward is: ", x, file=sys.stderr)
+            # print("input to forward is: ", x, file=sys.stderr)
             x = x.transpose(1, 2).type(torch.FloatTensor)
             # x = torch.Tensor(x).transpose(1, 2).type(torch.FloatTensor)
 

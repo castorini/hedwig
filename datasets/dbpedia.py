@@ -6,7 +6,7 @@ from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
 
 from datasets.reuters import clean_string, process_labels
-from datasets.ag_news import process_labels
+from datasets.ag_news import process_labels, char_quantize_class, ALPHABET_DICT
 
 
 class DBpedia(TabularDataset):
@@ -48,3 +48,24 @@ class DBpedia(TabularDataset):
         cls.TEXT_FIELD.build_vocab(train, test, vectors=vectors)
         return BucketIterator.splits((train, test), batch_size=batch_size, repeat=False, shuffle=shuffle,
                                      sort_within_batch=True, device=device)
+
+
+def char_quantize_dbpedia():
+    return char_quantize_class(DBpediaCharQuantized)
+
+
+class DBpediaCharQuantized(DBpedia):
+    ALPHABET = ALPHABET_DICT
+    TEXT_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=char_quantize_dbpedia)
+
+    @classmethod
+    def iters(cls, path, vectors_name, vectors_cache, batch_size=64, shuffle=True, device=0, vectors=None,
+              unk_init=torch.Tensor.zero_):
+        """
+        :param path: directory containing train, test, dev files
+        :param batch_size: batch size
+        :param device: GPU device
+        :return:
+        """
+        train, test = cls.splits(path)
+        return BucketIterator.splits((train, test), batch_size=batch_size, repeat=False, shuffle=shuffle, device=device)

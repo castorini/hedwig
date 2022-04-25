@@ -1,6 +1,8 @@
 import os
 import sys
 import csv
+import functools
+import numpy as np
 import re
 
 import torch
@@ -78,4 +80,40 @@ class AGNews(TabularDataset):
                                      sort_within_batch=True, device=device)
 
 
+# Methods and constants common to several datasets
+def char_quantize(cls, string, max_length=1000):
+    identity = np.identity(len(cls.ALPHABET))
+    quantized_string = np.array([identity[cls.ALPHABET[char]] for char in list(string.lower()) if char in cls.ALPHABET], dtype=np.float32)
+    if len(quantized_string) > max_length:
+        return quantized_string[:max_length]
+    else:
+        return np.concatenate((quantized_string, np.zeros((max_length - len(quantized_string), len(cls.ALPHABET)), dtype=np.float32)))
 
+
+ALPHABET_DICT = dict(map(lambda t: (t[1], t[0]), enumerate(list(
+    """abcdefghijklmnopqrstuvwxyz0123456789,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]{}"""))))
+
+
+def char_quantize_class(cls):
+    return functools.partial(char_quantize, cls=cls)
+
+
+def char_quantize_agnews():
+    return char_quantize_class(AGNewsCharQuantized)
+
+
+class AGNewsCharQuantized(AGNews):
+    ALPHABET = ALPHABET_DICT
+    TEXT_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=char_quantize_agnews)
+
+    @classmethod
+    def iters(cls, path, vectors_name, vectors_cache, batch_size=64, shuffle=True, device=0, vectors=None,
+              unk_init=torch.Tensor.zero_):
+        """
+        :param path: directory containing train, test, dev files
+        :param batch_size: batch size
+        :param device: GPU device
+        :return:
+        """
+        train, test = cls.splits(path)
+        return BucketIterator.splits((train, test), batch_size=batch_size, repeat=False, shuffle=shuffle, device=device)
