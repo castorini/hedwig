@@ -7,7 +7,7 @@ from torchtext.data import Field, TabularDataset
 from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
 from datasets.reuters import clean_string
-from datasets.ag_news import char_quantize_class, ALPHABET_DICT
+from datasets.ag_news import char_quantize, ALPHABET_DICT
 
 csv.field_size_limit(sys.maxsize)
 
@@ -58,13 +58,10 @@ class R52(TabularDataset):
         return BucketIterator.splits((train, test), batch_size=batch_size, repeat=False, shuffle=shuffle,
                                      sort_within_batch=True, device=device)
 
-def char_quantize_r52():
-    return char_quantize_class(R52CharQuantized)
-
 
 class R52CharQuantized(R52):
     ALPHABET = ALPHABET_DICT
-    TEXT_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=char_quantize_r52())
+    TEXT_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=char_quantize)
 
     @classmethod
     def iters(cls, path, vectors_name, vectors_cache, batch_size=64, shuffle=True, device=0, vectors=None,

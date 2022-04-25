@@ -7,7 +7,7 @@ from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
 
 from datasets.reuters import process_labels
-from datasets.ag_news import char_quantize_class, ALPHABET_DICT
+from datasets.ag_news import char_quantize, ALPHABET_DICT
 
 
 def clean_string(string):
@@ -60,13 +60,9 @@ class IMDBTorchtext(TabularDataset):
                                      sort_within_batch=True, device=device)
 
 
-def char_quantize_imdb():
-    return char_quantize_class(IMDBTorchtextCharQuantized)
-
-
 class IMDBTorchtextCharQuantized(IMDBTorchtext):
     ALPHABET = ALPHABET_DICT
-    TEXT_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=char_quantize_imdb())
+    TEXT_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=char_quantize)
 
     @classmethod
     def iters(cls, path, vectors_name, vectors_cache, batch_size=64, shuffle=True, device=0, vectors=None,

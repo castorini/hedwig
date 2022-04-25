@@ -81,30 +81,24 @@ class AGNews(TabularDataset):
 
 
 # Methods and constants common to several datasets
-def char_quantize(cls, string, max_length=1000):
-    identity = np.identity(len(cls.ALPHABET))
-    quantized_string = np.array([identity[cls.ALPHABET[char]] for char in list(string.lower()) if char in cls.ALPHABET], dtype=np.float32)
+def char_quantize(string, max_length=1000):
+    ALPHABET = dict(map(lambda t: (t[1], t[0]), enumerate(list(
+        """abcdefghijklmnopqrstuvwxyz0123456789,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]{}"""))))
+    identity = np.identity(len(ALPHABET))
+    quantized_string = np.array([identity[ALPHABET[char]] for char in list(string.lower()) if char in ALPHABET], dtype=np.float32)
     if len(quantized_string) > max_length:
         return quantized_string[:max_length]
     else:
-        return np.concatenate((quantized_string, np.zeros((max_length - len(quantized_string), len(cls.ALPHABET)), dtype=np.float32)))
+        return np.concatenate((quantized_string, np.zeros((max_length - len(quantized_string), len(ALPHABET)), dtype=np.float32)))
 
 
 ALPHABET_DICT = dict(map(lambda t: (t[1], t[0]), enumerate(list(
     """abcdefghijklmnopqrstuvwxyz0123456789,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]{}"""))))
 
 
-def char_quantize_class(cls):
-    return functools.partial(char_quantize, cls=cls)
-
-
-def char_quantize_agnews():
-    return char_quantize_class(AGNewsCharQuantized)
-
-
 class AGNewsCharQuantized(AGNews):
     ALPHABET = ALPHABET_DICT
-    TEXT_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=char_quantize_agnews())
+    TEXT_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=char_quantize)
 
     @classmethod
     def iters(cls, path, vectors_name, vectors_cache, batch_size=64, shuffle=True, device=0, vectors=None,
