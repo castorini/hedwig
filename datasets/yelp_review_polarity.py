@@ -65,7 +65,7 @@ def char_quantize_yelp():
 
 class YelpReviewPolarityCharQuantized(YelpReviewPolarity):
     ALPHABET = ALPHABET_DICT
-    TEXT_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=char_quantize_yelp)
+    TEXT_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=char_quantize_yelp())
 
     @classmethod
     def iters(cls, path, vectors_name, vectors_cache, batch_size=64, shuffle=True, device=0, vectors=None,
