@@ -8,6 +8,7 @@ from torchtext.vocab import Vectors
 
 from datasets.reuters import process_labels
 from datasets.ag_news import process_labels
+from datasets.ag_news import char_quantize_class, ALPHABET_DICT
 
 
 def clean_string(string):
@@ -59,3 +60,25 @@ class YahooAnswers(TabularDataset):
         cls.TEXT_FIELD.build_vocab(train, test, vectors=vectors)
         return BucketIterator.splits((train, test), batch_size=batch_size, repeat=False, shuffle=shuffle,
                                      sort_within_batch=True, device=device)
+
+
+def char_quantize_yahooanswers():
+    return char_quantize_class(YahooAnswersCharQuantized)
+
+
+class YahooAnswersCharQuantized(YahooAnswers):
+    ALPHABET = ALPHABET_DICT
+    TEXT_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=char_quantize_yahooanswers)
+
+    @classmethod
+    def iters(cls, path, vectors_name, vectors_cache, batch_size=64, shuffle=True, device=0, vectors=None,
+              unk_init=torch.Tensor.zero_):
+        """
+        :param path: directory containing train, test, dev files
+        :param batch_size: batch size
+        :param device: GPU device
+        :return:
+        """
+        train, test = cls.splits(path)
+        return BucketIterator.splits((train, test), batch_size=batch_size, repeat=False, shuffle=shuffle, device=device)
+
