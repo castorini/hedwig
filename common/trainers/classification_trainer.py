@@ -36,19 +36,13 @@ class ClassificationTrainer(Trainer):
             self.optimizer.zero_grad()
             if hasattr(self.model, 'tar') and self.model.tar:
                 if 'ignore_lengths' in self.config and self.config['ignore_lengths']:
-                    print("DEBUG1")
                     scores, rnn_outs = self.model(batch.text)
                 else:
-                    print("DEBUG2")
                     scores, rnn_outs = self.model(batch.text[0], lengths=batch.text[1])
             else:
                 if 'ignore_lengths' in self.config and self.config['ignore_lengths']:
-                    print("DEBUG3")
-                    print("Batch:", batch)
                     scores = self.model(batch.text)
                 else:
-                    print("DEBUG4")
-                    print("Batch:", batch)
                     scores = self.model(batch.text[0], lengths=batch.text[1])
 
             if 'is_multilabel' in self.config and self.config['is_multilabel']:
