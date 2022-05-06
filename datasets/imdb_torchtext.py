@@ -6,8 +6,14 @@ from torchtext.data import Field, TabularDataset
 from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
 
-from datasets.reuters import process_labels
+# from datasets.reuters import process_labels
 from datasets.ag_news import char_quantize, ALPHABET_DICT
+
+
+def process_labels(string):
+    if string == "1":
+        return [float(0), float(1)]
+    return [float(x) for x in string]
 
 
 def clean_string(string):
