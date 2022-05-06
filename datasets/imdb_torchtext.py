@@ -2,12 +2,13 @@ import os
 import re
 
 import torch
-from torchtext.data import Field, TabularDataset
+from torchtext.data import Field, NestedField, TabularDataset
 from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
 
 # from datasets.reuters import process_labels
 from datasets.ag_news import char_quantize, ALPHABET_DICT
+from datasets.reuters import split_sents
 
 
 def process_labels(string):
@@ -81,3 +82,7 @@ class IMDBTorchtextCharQuantized(IMDBTorchtext):
         """
         train, test = cls.splits(path)
         return BucketIterator.splits((train, test), batch_size=batch_size, repeat=False, shuffle=shuffle, device=device)
+
+class IMDBTorchtextHierarchical(IMDBTorchtext):
+    NESTING_FIELD = Field(batch_first=True, tokenize=clean_string)
+    TEXT_FIELD = NestedField(NESTING_FIELD, tokenize=split_sents)

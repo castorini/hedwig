@@ -13,17 +13,17 @@ from datasets.aapd import AAPDHierarchical as AAPD
 from datasets.imdb import IMDBHierarchical as IMDB
 from datasets.reuters import ReutersHierarchical as Reuters
 from datasets.yelp2014 import Yelp2014Hierarchical as Yelp2014
-from datasets.ag_news import AGNews
-from datasets.dbpedia import DBpedia
-from datasets.imdb_torchtext import IMDBTorchtext
-from datasets.sogou_news import SogouNews
-from datasets.yahoo_answers import YahooAnswers
-from datasets.yelp_review_polarity import YelpReviewPolarity
-from datasets.twenty_news import TwentyNews
-from datasets.ohsumed import OHSUMED
-from datasets.r8 import R8
-from datasets.r52 import R52
-from datasets.trec6 import TREC6
+from datasets.ag_news import AGNewsHierarchical as AGNews
+from datasets.dbpedia import DBpediaHierarchical as DBpedia
+from datasets.imdb_torchtext import IMDBTorchtextHierarchical as IMDBTorchtext
+from datasets.sogou_news import SogouNewsHierarchical as SogouNews
+from datasets.yahoo_answers import YahooAnswersHierarchical as YahooAnswers
+from datasets.yelp_review_polarity import YelpReviewPolarityHierarchical as YelpReviewPolarity
+from datasets.twenty_news import TwentyNewsHierarchical as TwentyNews
+from datasets.ohsumed import OHSUMEDHierarchical as OHSUMED
+from datasets.r8 import R8Hierarchical as R8
+from datasets.r52 import R52Hierarchical as R52
+from datasets.trec6 import TREC6Hierarchical as TREC6
 from models.han.args import get_args
 from models.han.model import HAN
 
