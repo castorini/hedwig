@@ -11,7 +11,18 @@ from common.train import TrainerFactory
 from datasets.aapd import AAPD
 from datasets.imdb import IMDB
 from datasets.reuters import ReutersBOW
+from datasets.twenty_news import TwentyNews
+from datasets.ohsumed import OHSUMED
+from datasets.r8 import R8
+from datasets.r52 import R52
+from datasets.trec6 import TREC6
 from datasets.yelp2014 import Yelp2014
+from datasets.ag_news import AGNews
+from datasets.yahoo_answers import YahooAnswers
+from datasets.yelp_review_polarity import YelpReviewPolarity
+from datasets.imdb_torchtext import IMDBTorchtext
+from datasets.sogou_news import SogouNews
+from datasets.dbpedia import DBpedia
 from models.fasttext.args import get_args
 from models.fasttext.model import FastText
 
@@ -65,10 +76,21 @@ if __name__ == '__main__':
         print('Warning: Using CPU for training')
 
     dataset_map = {
-        'Reuters': ReutersBOW,
+        'Reuters': Reuters,
         'AAPD': AAPD,
         'IMDB': IMDB,
-        'Yelp2014': Yelp2014
+        'Yelp2014': Yelp2014,
+        'AG_NEWS': AGNews,
+        'DBpedia': DBpedia,
+        'IMDB_torchtext': IMDBTorchtext,
+        'SogouNews': SogouNews,
+        'YahooAnswers': YahooAnswers,
+        'YelpReviewPolarity': YelpReviewPolarity,
+        'TwentyNews': TwentyNews,
+        'OHSUMED': OHSUMED,
+        'R8': R8,
+        'R52': R52,
+        'TREC6': TREC6
     }
 
     if args.dataset not in dataset_map:

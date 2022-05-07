@@ -1,12 +1,15 @@
 import os
 import sys
 import csv
+import functools
+import numpy as np
 import re
 
 import torch
-from torchtext.data import Field, TabularDataset
+from torchtext.data import Field, NestedField, TabularDataset
 from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
+from datasets.reuters import split_sents
 
 csv.field_size_limit(sys.maxsize)
 
@@ -78,4 +81,39 @@ class AGNews(TabularDataset):
                                      sort_within_batch=True, device=device)
 
 
+# Methods and constants common to several datasets
+def char_quantize(string, max_length=1000):
+    ALPHABET = dict(map(lambda t: (t[1], t[0]), enumerate(list(
+        """abcdefghijklmnopqrstuvwxyz0123456789,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]{}"""))))
+    identity = np.identity(len(ALPHABET))
+    quantized_string = np.array([identity[ALPHABET[char]] for char in list(string.lower()) if char in ALPHABET], dtype=np.float32)
+    if len(quantized_string) > max_length:
+        return quantized_string[:max_length]
+    else:
+        return np.concatenate((quantized_string, np.zeros((max_length - len(quantized_string), len(ALPHABET)), dtype=np.float32)))
 
+
+ALPHABET_DICT = dict(map(lambda t: (t[1], t[0]), enumerate(list(
+    """abcdefghijklmnopqrstuvwxyz0123456789,;.!?:'\"/\\|_@#$%^&*~`+-=<>()[]{}"""))))
+
+
+class AGNewsCharQuantized(AGNews):
+    ALPHABET = ALPHABET_DICT
+    TEXT_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=char_quantize)
+
+    @classmethod
+    def iters(cls, path, vectors_name, vectors_cache, batch_size=64, shuffle=True, device=0, vectors=None,
+              unk_init=torch.Tensor.zero_):
+        """
+        :param path: directory containing train, test, dev files
+        :param batch_size: batch size
+        :param device: GPU device
+        :return:
+        """
+        train, test = cls.splits(path)
+        return BucketIterator.splits((train, test), batch_size=batch_size, repeat=False, shuffle=shuffle, device=device)
+
+
+class AGNewsHierarchical(AGNews):
+    NESTING_FIELD = Field(batch_first=True, tokenize=clean_string)
+    TEXT_FIELD = NestedField(NESTING_FIELD, tokenize=split_sents)

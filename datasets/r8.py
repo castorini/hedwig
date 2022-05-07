@@ -1,30 +1,39 @@
 import os
+import sys
+import csv
 
 import torch
 from torchtext.data import Field, NestedField, TabularDataset
 from torchtext.data.iterator import BucketIterator
 from torchtext.vocab import Vectors
+from datasets.reuters import clean_string, split_sents
+from datasets.ag_news import char_quantize, ALPHABET_DICT
 
-from datasets.reuters import clean_string, process_labels, split_sents
-from datasets.ag_news import process_labels, char_quantize, ALPHABET_DICT
+csv.field_size_limit(sys.maxsize)
 
 
-class SogouNews(TabularDataset):
-    NAME = 'SogouNews'
-    NUM_CLASSES = 5
+def process_labels(label_str, num_classes):
+    label_num = int(label_str)  # label is one of "1", "2", "3", F"4"
+    label = [0.0] * num_classes
+    label[label_num] = 1.0
+    return label
+
+class R8(TabularDataset):
+    NAME = 'R8'
+    NUM_CLASSES = 8
     IS_MULTILABEL = False
+
     TEXT_FIELD = Field(batch_first=True, tokenize=clean_string, include_lengths=True)
-    LABEL_FIELD = Field(sequential=False, use_vocab=False, batch_first=True,
-                        preprocessing=lambda s: process_labels(s, SogouNews.NUM_CLASSES))
+    LABEL_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=lambda s: process_labels(s, R8.NUM_CLASSES))
 
     @staticmethod
     def sort_key(ex):
         return len(ex.text)
 
     @classmethod
-    def splits(cls, path, train=os.path.join('.local_data', 'SogouNews',  'train.csv'),
-               test=os.path.join('.local_data', 'SogouNews',  'test.csv'), **kwargs):
-        return super(SogouNews, cls).splits(
+    def splits(cls, path, train=os.path.join('.local_data', 'R8', 'train.csv'),
+               test=os.path.join('.local_data', 'R8', 'test.csv'), **kwargs):
+        return super(R8, cls).splits(
             path, train=train, test=test, format='csv', fields=[('label', cls.LABEL_FIELD), ('text', cls.TEXT_FIELD)]
         )
 
@@ -50,7 +59,7 @@ class SogouNews(TabularDataset):
                                      sort_within_batch=True, device=device)
 
 
-class SogouNewsCharQuantized(SogouNews):
+class R8CharQuantized(R8):
     ALPHABET = ALPHABET_DICT
     TEXT_FIELD = Field(sequential=False, use_vocab=False, batch_first=True, preprocessing=char_quantize)
 
@@ -67,6 +76,6 @@ class SogouNewsCharQuantized(SogouNews):
         return BucketIterator.splits((train, test), batch_size=batch_size, repeat=False, shuffle=shuffle, device=device)
 
 
-class SogouNewsHierarchical(SogouNews):
+class R8Hierarchical(R8):
     NESTING_FIELD = Field(batch_first=True, tokenize=clean_string)
     TEXT_FIELD = NestedField(NESTING_FIELD, tokenize=split_sents)

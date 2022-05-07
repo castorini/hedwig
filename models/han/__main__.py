@@ -13,12 +13,17 @@ from datasets.aapd import AAPDHierarchical as AAPD
 from datasets.imdb import IMDBHierarchical as IMDB
 from datasets.reuters import ReutersHierarchical as Reuters
 from datasets.yelp2014 import Yelp2014Hierarchical as Yelp2014
-from datasets.ag_news import AGNews
-from datasets.dbpedia import DBpedia
-from datasets.imdb_torchtext import IMDBTorchtext
-from datasets.sogou_news import SogouNews
-from datasets.yahoo_answers import YahooAnswers
-from datasets.yelp_review_polarity import YelpReviewPolarity
+from datasets.ag_news import AGNewsHierarchical as AGNews
+from datasets.dbpedia import DBpediaHierarchical as DBpedia
+from datasets.imdb_torchtext import IMDBTorchtextHierarchical as IMDBTorchtext
+from datasets.sogou_news import SogouNewsHierarchical as SogouNews
+from datasets.yahoo_answers import YahooAnswersHierarchical as YahooAnswers
+from datasets.yelp_review_polarity import YelpReviewPolarityHierarchical as YelpReviewPolarity
+from datasets.twenty_news import TwentyNewsHierarchical as TwentyNews
+from datasets.ohsumed import OHSUMEDHierarchical as OHSUMED
+from datasets.r8 import R8Hierarchical as R8
+from datasets.r52 import R52Hierarchical as R52
+from datasets.trec6 import TREC6Hierarchical as TREC6
 from models.han.args import get_args
 from models.han.model import HAN
 
@@ -95,6 +100,11 @@ if __name__ == '__main__':
         'SogouNews': SogouNews,
         'YahooAnswers': YahooAnswers,
         'YelpReviewPolarity': YelpReviewPolarity,
+        'TwentyNews': TwentyNews,
+        'OHSUMED': OHSUMED,
+        'R8': R8,
+        'R52': R52,
+        'TREC6': TREC6
     }
 
     if args.dataset not in dataset_map:
