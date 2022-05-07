@@ -12,7 +12,7 @@ class WordLevelRNN(nn.Module):
         words_dim = config.words_dim
         self.mode = config.mode
         if self.mode == 'rand':
-            rand_embed_init = torch.Tensor(words_num, words_dim).uniform(-0.25, 0.25)
+            rand_embed_init = torch.Tensor(words_num, words_dim).uniform_(-0.25, 0.25)
             self.embed = nn.Embedding.from_pretrained(rand_embed_init, freeze=False)
         elif self.mode == 'static':
             self.static_embed = nn.Embedding.from_pretrained(dataset.TEXT_FIELD.vocab.vectors, freeze=True)

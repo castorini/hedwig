@@ -12,12 +12,17 @@ from datasets.aapd import AAPDCharQuantized as AAPD
 from datasets.imdb import IMDBCharQuantized as IMDB
 from datasets.reuters import ReutersCharQuantized as Reuters
 from datasets.yelp2014 import Yelp2014CharQuantized as Yelp2014
-from datasets.ag_news import AGNews
-from datasets.dbpedia import DBpedia
-from datasets.imdb_torchtext import IMDBTorchtext
-from datasets.sogou_news import SogouNews
-from datasets.yahoo_answers import YahooAnswers
-from datasets.yelp_review_polarity import YelpReviewPolarity
+from datasets.ag_news import AGNewsCharQuantized as AGNews
+from datasets.dbpedia import DBpediaCharQuantized as DBpedia
+from datasets.imdb_torchtext import IMDBTorchtextCharQuantized as IMDBTorchtext
+from datasets.sogou_news import SogouNewsCharQuantized as SogouNews
+from datasets.yahoo_answers import YahooAnswersCharQuantized as YahooAnswers
+from datasets.yelp_review_polarity import YelpReviewPolarityCharQuantized as YelpReviewPolarity
+from datasets.twenty_news import TwentyNewsCharQuantized as TwentyNews
+from datasets.ohsumed import OHSUMEDCharQuantized as OHSUMED
+from datasets.r8 import R8CharQuantized as R8
+from datasets.r52 import R52CharQuantized as R52
+from datasets.trec6 import TREC6CharQuantized as TREC6
 from models.char_cnn.args import get_args
 from models.char_cnn.model import CharCNN
 
@@ -94,6 +99,11 @@ if __name__ == '__main__':
         'SogouNews': SogouNews,
         'YahooAnswers': YahooAnswers,
         'YelpReviewPolarity': YelpReviewPolarity,
+        'TwentyNews': TwentyNews,
+        'OHSUMED': OHSUMED,
+        'R8': R8,
+        'R52': R52,
+        'TREC6': TREC6
     }
 
     if args.dataset not in dataset_map:

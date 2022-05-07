@@ -17,6 +17,12 @@ from datasets.r8 import R8
 from datasets.r52 import R52
 from datasets.trec6 import TREC6
 from datasets.yelp2014 import Yelp2014
+from datasets.ag_news import AGNews
+from datasets.yahoo_answers import YahooAnswers
+from datasets.yelp_review_polarity import YelpReviewPolarity
+from datasets.imdb_torchtext import IMDBTorchtext
+from datasets.sogou_news import SogouNews
+from datasets.dbpedia import DBpedia
 from models.fasttext.args import get_args
 from models.fasttext.model import FastText
 
