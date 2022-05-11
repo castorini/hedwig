@@ -58,7 +58,6 @@ if __name__ == '__main__':
     args.n_gpu = n_gpu
     args.num_labels = dataset_map[args.dataset].NUM_CLASSES
     args.is_multilabel = dataset_map[args.dataset].IS_MULTILABEL
-    args.vocab_size = min(args.max_vocab_size, dataset_map[args.dataset].VOCAB_SIZE)
 
     train_examples = None
     processor = dataset_map[args.dataset]()
@@ -70,6 +69,12 @@ if __name__ == '__main__':
         train_examples = processor.get_train_examples(args.data_dir)
         save_path = os.path.join(args.save_path, dataset_map[args.dataset].NAME)
         os.makedirs(save_path, exist_ok=True)
+
+    if train_examples:
+        train_features = vectorizer.fit_transform([x.text for x in train_examples])
+        dataset_map[args.dataset].VOCAB_SIZE = train_features.shape[1]
+    
+    args.vocab_size = min(args.max_vocab_size, dataset_map[args.dataset].VOCAB_SIZE)
 
     model = LogisticRegression(args)
     model.to(device)
