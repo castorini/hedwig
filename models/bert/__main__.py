@@ -27,7 +27,7 @@ def evaluate_split(model, processor, tokenizer, args, split='dev'):
     print(LOG_TEMPLATE.format(split.upper(), accuracy, precision, recall, f1, avg_loss))
 
 
-def main(args_override={}):
+def main(args_override=argparse.Namespace()):
     # Set default configuration in args.py
     args = get_args()
 
