@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 import torch
-from transformers import AdamW, BertForSequenceClassification, BertTokenizer, WarmupLinearSchedule
+from transformers import AdamW, BertForSequenceClassification, BertTokenizer, get_linear_schedule_with_warmup
 
 from common.constants import *
 from common.evaluators.bert_evaluator import BertEvaluator
@@ -17,6 +17,8 @@ from datasets.bert_processors.sst_processor import SST2Processor
 from datasets.bert_processors.yelp2014_processor import Yelp2014Processor
 from models.bert.args import get_args
 
+import argparse
+
 
 def evaluate_split(model, processor, tokenizer, args, split='dev'):
     evaluator = BertEvaluator(model, processor, tokenizer, args, split)
@@ -25,9 +27,20 @@ def evaluate_split(model, processor, tokenizer, args, split='dev'):
     print(LOG_TEMPLATE.format(split.upper(), accuracy, precision, recall, f1, avg_loss))
 
 
-if __name__ == '__main__':
+def main(args_override=argparse.Namespace()):
     # Set default configuration in args.py
     args = get_args()
+
+    # override default arguments with args_override
+    args_dict = vars(args)
+    args_override_dict = vars(args_override)
+
+    # taking union of two dicts with priority to second dict for common keys
+    final_args_dict = {**args_dict, **args_override_dict}
+
+    # converting back to args object
+    args = argparse.Namespace(**final_args_dict)
+
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
     n_gpu = torch.cuda.device_count()
 
@@ -116,8 +129,8 @@ if __name__ == '__main__':
                 optimizer = FP16_Optimizer(optimizer, static_loss_scale=args.loss_scale)
         else:
             optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr, weight_decay=0.01, correct_bias=False)
-            scheduler = WarmupLinearSchedule(optimizer, t_total=num_train_optimization_steps,
-                                             warmup_steps=args.warmup_proportion * num_train_optimization_steps)
+            scheduler = get_linear_schedule_with_warmup(optimizer, num_training_steps=num_train_optimization_steps,
+                                             num_warmup_steps=args.warmup_proportion * num_train_optimization_steps)
 
         trainer = BertTrainer(model, optimizer, processor, scheduler, tokenizer, args)
         trainer.train()
@@ -135,4 +148,7 @@ if __name__ == '__main__':
 
     evaluate_split(model, processor, tokenizer, args, split='dev')
     evaluate_split(model, processor, tokenizer, args, split='test')
+
+if __name__ == '__main__':
+    main()
 

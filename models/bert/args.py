@@ -6,7 +6,7 @@ import models.args
 def get_args():
     parser = models.args.get_args()
 
-    parser.add_argument('--model', default=None, type=str, required=True)
+    parser.add_argument('--model', default='bert-base-uncased', type=str)
     parser.add_argument('--dataset', type=str, default='SST-2', choices=['SST-2', 'AGNews', 'Reuters', 'AAPD', 'IMDB', 'Yelp2014'])
     parser.add_argument('--save-path', type=str, default=os.path.join('model_checkpoints', 'bert'))
     parser.add_argument('--cache-dir', default='cache', type=str)
@@ -36,6 +36,7 @@ def get_args():
                         help='Loss scaling to improve fp16 numeric stability. Only used when fp16 set to True.\n'
                              '0 (default value): dynamic loss scaling.\n'
                              'Positive power of 2: static loss scaling value.\n')
+
 
     args = parser.parse_args()
     return args

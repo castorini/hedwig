@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 import torch
-from transformers import AdamW, BertTokenizer, WarmupLinearSchedule
+from transformers import AdamW, BertTokenizer, get_linear_schedule_with_warmup
 
 from common.constants import *
 from common.evaluators.bert_evaluator import BertEvaluator
@@ -123,8 +123,8 @@ if __name__ == '__main__':
 
     else:
         optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr, weight_decay=0.01, correct_bias=False)
-        scheduler = WarmupLinearSchedule(optimizer, t_total=num_train_optimization_steps,
-                                         warmup_steps=args.warmup_proportion * num_train_optimization_steps)
+        scheduler = get_linear_schedule_with_warmup(optimizer, num_training_steps=num_train_optimization_steps,
+                                         num_warmup_steps=args.warmup_proportion * num_train_optimization_steps)
 
     trainer = BertTrainer(model, optimizer, processor, scheduler, tokenizer, args)
 
