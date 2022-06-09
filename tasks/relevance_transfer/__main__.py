@@ -8,7 +8,7 @@ from copy import deepcopy
 import numpy as np
 import torch
 from tqdm import tqdm
-from transformers import BertForSequenceClassification as Bert, AdamW, WarmupLinearSchedule, BertTokenizer
+from transformers import BertForSequenceClassification as Bert, AdamW, get_linear_schedule_with_warmup, BertTokenizer
 
 from common.constants import BERT_MODELS, PRETRAINED_MODEL_ARCHIVE_MAP, PRETRAINED_VOCAB_ARCHIVE_MAP
 from common.constants import LOG_HEADER, LOG_TEMPLATE
@@ -218,8 +218,8 @@ if __name__ == '__main__':
             pretrained_vocab_path = PRETRAINED_VOCAB_ARCHIVE_MAP[variant]
             tokenizer = BertTokenizer.from_pretrained(pretrained_vocab_path)
             optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr, weight_decay=0.01, correct_bias=False)
-            scheduler = WarmupLinearSchedule(optimizer, t_total=num_train_optimization_steps,
-                                             warmup_steps=args.warmup_proportion * num_train_optimization_steps)
+            scheduler = get_linear_schedule_with_warmup(optimizer, num_training_steps=num_train_optimization_steps,
+                                             num_warmup_steps=args.warmup_proportion * num_train_optimization_steps)
 
             trainer_config = {
                 'model': args.model,
