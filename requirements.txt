@@ -4,4 +4,4 @@ Cython==0.28.2
 scikit-learn==0.19.1
 scipy==1.0.0
 torchtext==0.2.3
-transformers==2.1.1
+transformers==4.30.0
