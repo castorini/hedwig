@@ -2,6 +2,6 @@ nltk==3.2.5
 numpy==1.14.0
 Cython==0.28.2
 scikit-learn==0.19.1
-scipy==1.0.0
+scipy==1.10.0
 torchtext==0.2.3
 transformers==2.1.1
